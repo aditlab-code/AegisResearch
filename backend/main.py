@@ -1,4 +1,5 @@
 import os
+import shutil
 import asyncio
 import re
 from datetime import datetime
@@ -666,12 +667,37 @@ async def search_project(
 class GitFileChange(BaseModel):
     status: str
     path: str
+    staged: bool = False
 
 class GitStatusResponse(BaseModel):
     isGitRepo: bool
     branch: Optional[str] = None
     modifiedCount: int
-    files: List[GitFileChange]
+    files: List[GitFileChange] = []
+    staged: List[GitFileChange] = []
+    unstaged: List[GitFileChange] = []
+
+class GitStageRequest(BaseModel):
+    file: Optional[str] = None
+    all: bool = False
+
+class GitUnstageRequest(BaseModel):
+    file: Optional[str] = None
+    all: bool = False
+
+class GitDiscardRequest(BaseModel):
+    file: str
+
+class GitCommitRequest(BaseModel):
+    message: str
+    smartCommit: bool = True
+
+class GitCheckoutRequest(BaseModel):
+    branch: str
+
+class GitCreateBranchRequest(BaseModel):
+    name: str
+    checkout: bool = True
 
 @app.get(
     "/api/projects/{name}/git/status",
@@ -693,6 +719,8 @@ async def get_project_git_status(name: str):
             branch=None,
             modifiedCount=0,
             files=[],
+            staged=[],
+            unstaged=[],
         )
 
     try:
@@ -714,19 +742,48 @@ async def get_project_git_status(name: str):
         status_out, _ = await status_proc.communicate()
         status_lines = status_out.decode("utf-8").splitlines()
 
-        changed_files: List[GitFileChange] = []
+        staged_files: List[GitFileChange] = []
+        unstaged_files: List[GitFileChange] = []
+        all_changed_files: List[GitFileChange] = []
+        seen_paths = set()
+
         for line in status_lines:
-            if len(line) >= 3:
-                st = line[:2].strip()
-                fp = line[3:].strip()
-                if not is_tex_artifact(fp):
-                    changed_files.append(GitFileChange(status=st, path=fp))
+            if len(line) < 3:
+                continue
+            index_char = line[0]
+            worktree_char = line[1]
+            raw_path = line[3:].strip().strip('"')
+
+            if is_tex_artifact(raw_path):
+                continue
+
+            # Staged changes (index)
+            if index_char in {'M', 'A', 'D', 'R', 'C'}:
+                staged_files.append(GitFileChange(status=index_char, path=raw_path, staged=True))
+
+            # Unstaged / Untracked changes (working tree)
+            if worktree_char in {'M', 'D'} or line.startswith("??"):
+                u_status = worktree_char if worktree_char in {'M', 'D'} else '?'
+                unstaged_files.append(GitFileChange(status=u_status, path=raw_path, staged=False))
+
+            if raw_path not in seen_paths:
+                seen_paths.add(raw_path)
+                combined_status = line[:2].strip()
+                all_changed_files.append(
+                    GitFileChange(
+                        status=combined_status,
+                        path=raw_path,
+                        staged=index_char in {'M', 'A', 'D'},
+                    )
+                )
 
         return GitStatusResponse(
             isGitRepo=True,
             branch=branch_name,
-            modifiedCount=len(changed_files),
-            files=changed_files,
+            modifiedCount=len(seen_paths),
+            files=all_changed_files,
+            staged=staged_files,
+            unstaged=unstaged_files,
         )
     except Exception:
         return GitStatusResponse(
@@ -734,6 +791,8 @@ async def get_project_git_status(name: str):
             branch=None,
             modifiedCount=0,
             files=[],
+            staged=[],
+            unstaged=[],
         )
 
 
@@ -801,11 +860,267 @@ async def init_project_git(name: str):
         "branch": "main",
         "message": "Git repository initialized successfully with LaTeX .gitignore.",
     }
+
+
+@app.post(
+    "/api/projects/{name}/git/stage",
+    tags=["Git"],
+)
+async def stage_project_git_files(name: str, req: GitStageRequest):
+    project_dir = resolve_project_dir(name)
+    if not (project_dir / ".git").exists():
+        raise HTTPException(status_code=400, detail="Not a git repository.")
+
+    if req.all or not req.file:
+        cmd = ["git", "add", "."]
+    else:
+        safe_file = resolve_file_path(project_dir, req.file)
+        rel_path = str(safe_file.relative_to(project_dir))
+        cmd = ["git", "add", rel_path]
+
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise HTTPException(status_code=400, detail=stderr.decode("utf-8", errors="replace") or "Git add failed.")
+    return {"success": True, "message": "File(s) staged successfully."}
+
+
+@app.post(
+    "/api/projects/{name}/git/unstage",
+    tags=["Git"],
+)
+async def unstage_project_git_files(name: str, req: GitUnstageRequest):
+    project_dir = resolve_project_dir(name)
+    if not (project_dir / ".git").exists():
+        raise HTTPException(status_code=400, detail="Not a git repository.")
+
+    if req.all or not req.file:
+        cmd = ["git", "restore", "--staged", "."]
+    else:
+        safe_file = resolve_file_path(project_dir, req.file)
+        rel_path = str(safe_file.relative_to(project_dir))
+        cmd = ["git", "restore", "--staged", rel_path]
+
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        # Fallback to git reset HEAD
+        fallback_target = "." if (req.all or not req.file) else str(resolve_file_path(project_dir, req.file).relative_to(project_dir))
+        f_proc = await asyncio.create_subprocess_exec(
+            "git", "reset", "HEAD", fallback_target,
+            cwd=str(project_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, f_err = await f_proc.communicate()
+        if f_proc.returncode != 0:
+            raise HTTPException(status_code=400, detail=f_err.decode("utf-8", errors="replace") or "Git unstage failed.")
+
+    return {"success": True, "message": "File(s) unstaged successfully."}
+
+
+@app.post(
+    "/api/projects/{name}/git/discard",
+    tags=["Git"],
+)
+async def discard_project_git_file(name: str, req: GitDiscardRequest):
+    project_dir = resolve_project_dir(name)
+    if not (project_dir / ".git").exists():
+        raise HTTPException(status_code=400, detail="Not a git repository.")
+
+    safe_file = resolve_file_path(project_dir, req.file)
+    rel_path = str(safe_file.relative_to(project_dir))
+
+    # Check status of file to see if untracked
+    status_proc = await asyncio.create_subprocess_exec(
+        "git", "status", "-s", rel_path,
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    s_out, _ = await status_proc.communicate()
+    s_text = s_out.decode("utf-8").strip()
+
+    if s_text.startswith("??"):
+        if safe_file.exists():
+            if safe_file.is_file():
+                safe_file.unlink()
+            elif safe_file.is_dir():
+                shutil.rmtree(safe_file)
+    else:
+        restore_proc = await asyncio.create_subprocess_exec(
+            "git", "restore", rel_path,
+            cwd=str(project_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, r_err = await restore_proc.communicate()
+        if restore_proc.returncode != 0:
+            # Fallback to git checkout --
+            co_proc = await asyncio.create_subprocess_exec(
+                "git", "checkout", "--", rel_path,
+                cwd=str(project_dir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            await co_proc.communicate()
+
+    return {"success": True, "message": f"Changes in '{req.file}' discarded."}
+
+
+@app.post(
+    "/api/projects/{name}/git/commit",
+    tags=["Git"],
+)
+async def commit_project_git(name: str, req: GitCommitRequest):
+    project_dir = resolve_project_dir(name)
+    if not (project_dir / ".git").exists():
+        raise HTTPException(status_code=400, detail="Not a git repository.")
+
+    msg = req.message.strip()
+    if not msg:
+        raise HTTPException(status_code=400, detail="Commit message cannot be empty.")
+
+    # Check if there are staged changes
+    diff_proc = await asyncio.create_subprocess_exec(
+        "git", "diff", "--cached", "--name-only",
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    diff_out, _ = await diff_proc.communicate()
+    has_staged = bool(diff_out.decode("utf-8").strip())
+
+    if not has_staged:
+        if req.smartCommit:
+            add_proc = await asyncio.create_subprocess_exec(
+                "git", "add", ".",
+                cwd=str(project_dir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            await add_proc.communicate()
+        else:
+            raise HTTPException(status_code=400, detail="No staged changes to commit.")
+
+    commit_proc = await asyncio.create_subprocess_exec(
+        "git", "commit", "-m", msg,
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    c_out, c_err = await commit_proc.communicate()
+    if commit_proc.returncode != 0:
+        err_msg = c_err.decode("utf-8", errors="replace") or c_out.decode("utf-8", errors="replace") or "Commit failed."
+        raise HTTPException(status_code=400, detail=err_msg)
+
+    return {"success": True, "message": f"Committed: {msg}"}
+
+
+@app.get(
+    "/api/projects/{name}/git/branches",
+    tags=["Git"],
+)
+async def list_project_git_branches(name: str):
+    project_dir = resolve_project_dir(name)
+    if not (project_dir / ".git").exists():
+        raise HTTPException(status_code=400, detail="Not a git repository.")
+
+    proc = await asyncio.create_subprocess_exec(
+        "git", "branch", "--list",
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    out, _ = await proc.communicate()
+    lines = out.decode("utf-8").splitlines()
+
+    branches = []
+    current_branch = "main"
+    for line in lines:
+        cleaned = line.strip()
+        if not cleaned:
+            continue
+        if cleaned.startswith("*"):
+            b_name = cleaned.lstrip("* ").strip()
+            current_branch = b_name
+            branches.append(b_name)
+        else:
+            branches.append(cleaned)
+
+    return {"branches": branches, "current": current_branch}
+
+
+@app.post(
+    "/api/projects/{name}/git/checkout",
+    tags=["Git"],
+)
+async def checkout_project_git_branch(name: str, req: GitCheckoutRequest):
+    project_dir = resolve_project_dir(name)
+    if not (project_dir / ".git").exists():
+        raise HTTPException(status_code=400, detail="Not a git repository.")
+
+    branch = req.branch.strip()
+    if not branch or not re.match(r"^[a-zA-Z0-9_\-./]+$", branch):
+        raise HTTPException(status_code=400, detail="Invalid branch name.")
+
+    proc = await asyncio.create_subprocess_exec(
+        "git", "checkout", branch,
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    out, err = await proc.communicate()
+    if proc.returncode != 0:
+        detail_msg = err.decode("utf-8", errors="replace") or out.decode("utf-8", errors="replace") or "Failed to checkout branch."
+        raise HTTPException(status_code=400, detail=detail_msg)
+
+    return {"success": True, "branch": branch, "message": f"Switched to branch '{branch}'."}
+
+
+@app.post(
+    "/api/projects/{name}/git/branch/create",
+    tags=["Git"],
+)
+async def create_project_git_branch(name: str, req: GitCreateBranchRequest):
+    project_dir = resolve_project_dir(name)
+    if not (project_dir / ".git").exists():
+        raise HTTPException(status_code=400, detail="Not a git repository.")
+
+    branch = req.name.strip()
+    if not branch or not re.match(r"^[a-zA-Z0-9_\-./]+$", branch):
+        raise HTTPException(status_code=400, detail="Invalid branch name.")
+
+    cmd = ["git", "checkout", "-b", branch] if req.checkout else ["git", "branch", branch]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    out, err = await proc.communicate()
+    if proc.returncode != 0:
+        detail_msg = err.decode("utf-8", errors="replace") or out.decode("utf-8", errors="replace") or "Failed to create branch."
+        raise HTTPException(status_code=400, detail=detail_msg)
+
+    return {"success": True, "branch": branch, "message": f"Branch '{branch}' created successfully."}
+
+
 @app.get(
     "/api/projects/{name}/git/diff",
     tags=["Git"],
 )
-async def get_project_git_diff(name: str, file: Optional[str] = None):
+async def get_project_git_diff(name: str, file: Optional[str] = None, staged: bool = False):
     project_dir = resolve_project_dir(name)
     if not project_dir.exists() or not project_dir.is_dir():
         raise HTTPException(
@@ -814,9 +1129,11 @@ async def get_project_git_diff(name: str, file: Optional[str] = None):
         )
 
     cmd = ["git", "diff"]
+    if staged:
+        cmd.append("--cached")
     if file:
         safe_file = resolve_file_path(project_dir, file)
-        cmd.append(safe_file.name)
+        cmd.append(str(safe_file.relative_to(project_dir)))
 
     try:
         diff_proc = await asyncio.create_subprocess_exec(

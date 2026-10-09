@@ -77,7 +77,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     return (
       <section className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 p-6 select-none">
         <div className="max-w-sm w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-8 flex flex-col items-center text-center shadow-lg">
-          <div className="size-14 rounded-full bg-blue-50 dark:bg-zinc-800 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 border border-zinc-200 dark:border-zinc-700">
+          <div className="size-14 rounded-full bg-blue-50 dark:bg-zinc-800 flex items-center justify-center text-[#4078f2] dark:text-[#61afef] mb-4 border border-zinc-200 dark:border-zinc-700">
             <FileCode className="size-7" />
           </div>
           <h3 className="text-zinc-900 dark:text-white font-medium text-sm mb-1">PDF Belum Terkompilasi</h3>
@@ -89,7 +89,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             <button
               type="button"
               onClick={onCompile}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 text-xs font-semibold rounded-lg shadow-sm transition-colors"
             >
               <Play className="size-3.5 fill-current" />
               Kompilasi PDF Sekarang

@@ -4,12 +4,43 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', sans-serif;
-  @apply bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100;
+:root {
+  /* Atom One Light Tokens */
+  --atom-bg-canvas: #fafafa;
+  --atom-bg-panel: #f0f0f0;
+  --atom-bg-surface: #ffffff;
+  --atom-bg-hover: #e5e5e6;
+  --atom-border: #d0d0d0;
+  --atom-border-subtle: #e5e5e6;
+  --atom-text-primary: #383a42;
+  --atom-text-secondary: #696c77;
+  --atom-text-muted: #a0a1a7;
+  --atom-accent: #4078f2;
+  --atom-accent-hover: #3362c4;
 }
 
-/* Subtle scrollbars */
+.dark {
+  /* Atom One Dark Tokens */
+  --atom-bg-canvas: #282c34;
+  --atom-bg-panel: #21252b;
+  --atom-bg-surface: #2c313a;
+  --atom-bg-hover: #353b45;
+  --atom-border: #181a1f;
+  --atom-border-subtle: #353b45;
+  --atom-text-primary: #abb2bf;
+  --atom-text-secondary: #828997;
+  --atom-text-muted: #5c6370;
+  --atom-accent: #61afef;
+  --atom-accent-hover: #528bff;
+  color-scheme: dark;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-zinc-100 text-zinc-800 dark:bg-zinc-950 dark:text-[#abb2bf];
+}
+
+/* Atom One styled scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -20,9 +51,9 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-zinc-300 dark:bg-zinc-700 rounded;
+  @apply bg-zinc-300 dark:bg-[#353b45] rounded;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-zinc-400 dark:bg-zinc-600;
+  @apply bg-zinc-400 dark:bg-[#4b5263];
 }

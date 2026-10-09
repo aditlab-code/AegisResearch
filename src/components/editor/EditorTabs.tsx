@@ -45,7 +45,7 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
             onClick={() => onSelectTab(docIdx)}
             className={`group px-3 py-2 cursor-pointer flex gap-2 border-r border-zinc-200 dark:border-zinc-800 items-center transition-colors min-w-0 max-w-[180px] ${
               isActive
-                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium border-t-2 border-t-blue-600 dark:border-t-blue-500 shadow-xs'
+                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium border-t-2 border-t-[#4078f2] dark:border-t-[#61afef] shadow-xs'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-900/60'
             }`}
           >

@@ -85,39 +85,41 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
       }
       monaco.languages.setMonarchTokensProvider(LATEX_LANGUAGE_ID, latexMonarchTokens as any)
 
-      // Define Aegis Light Theme
+      // Define Aegis Light Theme (Atom One Light)
       monaco.editor.defineTheme('aegis-light', {
         base: 'vs',
         inherit: true,
         rules: LATEX_THEME_RULES as any,
         colors: {
-          'editor.background': '#ffffff',
-          'editor.foreground': '#18181b',
-          'editorLineNumber.foreground': '#a1a1aa',
-          'editorLineNumber.activeForeground': '#2563eb',
-          'editor.lineHighlightBackground': '#f4f4f580',
-          'editorCursor.foreground': '#2563eb',
-          'editorWhitespace.foreground': '#e4e4e7',
-          'editorIndentGuide.background': '#f4f4f5',
-          'editorIndentGuide.activeBackground': '#d4d4d8',
+          'editor.background': '#fafafa',
+          'editor.foreground': '#383a42',
+          'editorLineNumber.foreground': '#9d9d9f',
+          'editorLineNumber.activeForeground': '#4078f2',
+          'editor.lineHighlightBackground': '#f2f2f2',
+          'editor.selectionBackground': '#e5e5e6',
+          'editorCursor.foreground': '#4078f2',
+          'editorWhitespace.foreground': '#dbdfe4',
+          'editorIndentGuide.background': '#eceff1',
+          'editorIndentGuide.activeBackground': '#d0d0d0',
         },
       })
 
-      // Define Aegis Dark Theme (eye-friendly Zinc charcoal)
+      // Define Aegis Dark Theme (Classic Atom One Dark)
       monaco.editor.defineTheme('aegis-dark', {
         base: 'vs-dark',
         inherit: true,
         rules: LATEX_DARK_THEME_RULES as any,
         colors: {
-          'editor.background': '#18181b',
-          'editor.foreground': '#f4f4f5',
-          'editorLineNumber.foreground': '#52525b',
-          'editorLineNumber.activeForeground': '#3b82f6',
-          'editor.lineHighlightBackground': '#27272a50',
-          'editorCursor.foreground': '#3b82f6',
-          'editorWhitespace.foreground': '#3f3f46',
-          'editorIndentGuide.background': '#27272a',
-          'editorIndentGuide.activeBackground': '#3f3f46',
+          'editor.background': '#282c34',
+          'editor.foreground': '#abb2bf',
+          'editorLineNumber.foreground': '#4b5263',
+          'editorLineNumber.activeForeground': '#61afef',
+          'editor.lineHighlightBackground': '#2c313a70',
+          'editor.selectionBackground': '#3e445180',
+          'editorCursor.foreground': '#61afef',
+          'editorWhitespace.foreground': '#3b4048',
+          'editorIndentGuide.background': '#3b4048',
+          'editorIndentGuide.activeBackground': '#5c6370',
         },
       })
 
@@ -139,7 +141,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
     }
 
     return (
-      <div className="flex-1 w-full h-full min-h-0 relative bg-white dark:bg-zinc-900">
+      <div className="flex-1 w-full h-full min-h-0 relative bg-[#fafafa] dark:bg-[#282c34]">
         <Editor
           height="100%"
           width="100%"

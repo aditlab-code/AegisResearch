@@ -102,30 +102,30 @@ export const latexMonarchTokens = {
 }
 
 export const LATEX_THEME_RULES = [
-  { token: 'comment', foreground: '15803d', fontStyle: 'italic' }, // emerald-700
-  { token: 'string.math', foreground: 'b91c1c', fontStyle: 'bold' }, // red-700
-  { token: 'string.math.display', foreground: '991b1b', fontStyle: 'bold' },
-  { token: 'keyword.section', foreground: '4338ca', fontStyle: 'bold' }, // indigo-700
-  { token: 'type.format', foreground: 'b45309', fontStyle: 'bold' }, // amber-700
-  { token: 'keyword.core', foreground: '0f766e', fontStyle: 'bold' }, // teal-700
-  { token: 'constant.spacing', foreground: '6b7280' }, // stone-500
-  { token: 'delimiter.curly', foreground: '374151', fontStyle: 'bold' }, // slate-700
-  { token: 'delimiter.square', foreground: '4b5563' },
-  { token: 'keyword', foreground: '1d4ed8' }, // blue-700
-  { token: 'number', foreground: 'd97706' },
+  { token: 'comment', foreground: 'a0a1a7', fontStyle: 'italic' }, // Atom Light Grey comment
+  { token: 'string.math', foreground: '50a14f', fontStyle: 'bold' }, // Atom Light Green
+  { token: 'string.math.display', foreground: '50a14f', fontStyle: 'bold' },
+  { token: 'keyword.section', foreground: '4078f2', fontStyle: 'bold' }, // Atom Light Blue
+  { token: 'type.format', foreground: 'c18401', fontStyle: 'bold' }, // Atom Light Amber
+  { token: 'keyword.core', foreground: 'e45649', fontStyle: 'bold' }, // Atom Light Red
+  { token: 'constant.spacing', foreground: 'a0a1a7' },
+  { token: 'delimiter.curly', foreground: '383a42', fontStyle: 'bold' }, // Atom Light Foreground
+  { token: 'delimiter.square', foreground: '0184bc' }, // Atom Light Cyan
+  { token: 'keyword', foreground: 'a626a4' }, // Atom Light Purple
+  { token: 'number', foreground: '986801' }, // Atom Light Orange
 ]
 
 export const LATEX_DARK_THEME_RULES = [
-  { token: 'comment', foreground: '34d399', fontStyle: 'italic' }, // emerald-400
-  { token: 'string.math', foreground: 'f87171', fontStyle: 'bold' }, // red-400
-  { token: 'string.math.display', foreground: 'fb7185', fontStyle: 'bold' }, // rose-400
-  { token: 'keyword.section', foreground: 'a5b4fc', fontStyle: 'bold' }, // indigo-300
-  { token: 'type.format', foreground: 'fbbf24', fontStyle: 'bold' }, // amber-400
-  { token: 'keyword.core', foreground: '2dd4bf', fontStyle: 'bold' }, // teal-400
-  { token: 'constant.spacing', foreground: '71717a' }, // zinc-500
-  { token: 'delimiter.curly', foreground: 'e4e4e7', fontStyle: 'bold' }, // zinc-200
-  { token: 'delimiter.square', foreground: 'd4d4d8' },
-  { token: 'keyword', foreground: '60a5fa' }, // blue-400
-  { token: 'number', foreground: 'fbbf24' },
+  { token: 'comment', foreground: '5c6370', fontStyle: 'italic' }, // Atom Dark Grey comment
+  { token: 'string.math', foreground: '98c379', fontStyle: 'bold' }, // Atom Dark Green
+  { token: 'string.math.display', foreground: '98c379', fontStyle: 'bold' },
+  { token: 'keyword.section', foreground: '61afef', fontStyle: 'bold' }, // Atom Dark Blue
+  { token: 'type.format', foreground: 'e5c07b', fontStyle: 'bold' }, // Atom Dark Yellow
+  { token: 'keyword.core', foreground: 'e06c75', fontStyle: 'bold' }, // Atom Dark Red/Coral
+  { token: 'constant.spacing', foreground: '5c6370' },
+  { token: 'delimiter.curly', foreground: 'abb2bf', fontStyle: 'bold' }, // Atom Dark Foreground
+  { token: 'delimiter.square', foreground: '56b6c2' }, // Atom Dark Cyan
+  { token: 'keyword', foreground: 'c678dd' }, // Atom Dark Purple
+  { token: 'number', foreground: 'd19a66' }, // Atom Dark Orange
 ]
 

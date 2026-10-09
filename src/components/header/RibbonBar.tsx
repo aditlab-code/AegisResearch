@@ -79,7 +79,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
               onClick={() => onSelectTab(tab)}
               className={`px-3 py-1.5 border-b-2 text-xs transition-colors ${
                 isActive
-                  ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 font-semibold bg-white dark:bg-zinc-900'
+                  ? 'border-[#4078f2] dark:border-[#61afef] text-[#4078f2] dark:text-[#61afef] font-semibold bg-white dark:bg-zinc-900'
                   : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
               }`}
             >
@@ -128,7 +128,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
           <select
             value={engine}
             onChange={(e) => onChangeEngine?.(e.target.value as EngineType)}
-            className="text-xs border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+            className="text-xs border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef] cursor-pointer"
           >
             <option value="pdfLaTeX">pdfLaTeX</option>
             <option value="XeLaTeX">XeLaTeX</option>
@@ -137,7 +137,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
           <button
             type="button"
             onClick={onCompile}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3.5 py-1.5 rounded font-medium flex items-center gap-1.5 shadow-sm transition-colors"
+            className="bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 text-xs px-3.5 py-1.5 rounded font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
           >
             <Play className="size-3.5 fill-current" />
             Compile
