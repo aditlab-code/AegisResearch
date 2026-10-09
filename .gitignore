@@ -23,8 +23,8 @@ __pycache__/
 *.sqlite
 *.sqlite3
 *.db
-backend/latex_workspaces/
-latex_workspaces/
+# backend/latex_workspaces/
+# latex_workspaces/
 
 # LaTeX build artifacts & temporary files
 *.aux

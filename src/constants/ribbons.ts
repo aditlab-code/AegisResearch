@@ -37,12 +37,12 @@ export const RIBBONS: Record<RibbonTab, RibbonItem[]> = {
   ],
   Insert: [
     ['Equation', Sigma],
-    ['Figure', Image],
     ['Table', Table],
-    ['Citation', BookOpen],
-    ['Footnote', Superscript],
+    ['Figure', Image],
   ],
   References: [
+    ['Citation', BookOpen],
+    ['Footnote', Superscript],
     ['Bibliography', Library],
     ['Cross-ref', ExternalLink],
     ['TOC', ListTree],

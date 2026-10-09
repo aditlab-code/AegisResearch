@@ -200,6 +200,112 @@ export default function App() {
     insertSnippet(label)
   }
 
+  // Ribbon Home Action Handlers
+  const handleClipboardAction = async (action: 'copy' | 'cut' | 'paste') => {
+    if (action === 'copy') {
+      const sel = editorRef.current?.getSelectedText() || activeDoc?.content || ''
+      if (sel) {
+        await navigator.clipboard.writeText(sel)
+        setSaveStatus('✓ Copied to clipboard')
+      }
+    } else if (action === 'cut') {
+      const sel = editorRef.current?.getSelectedText() || ''
+      if (sel) {
+        await navigator.clipboard.writeText(sel)
+        editorRef.current?.wrapSelection('', '', '')
+        setSaveStatus('✓ Cut to clipboard')
+      }
+    } else if (action === 'paste') {
+      try {
+        const text = await navigator.clipboard.readText()
+        if (text) {
+          editorRef.current?.wrapSelection('', '', text)
+          setSaveStatus('✓ Pasted from clipboard')
+        }
+      } catch {
+        // Fallback
+      }
+    }
+  }
+
+  const handleFormatAction = (type: 'bold' | 'italic' | 'quote' | 'superscript' | 'subscript') => {
+    const isLatex = activeDoc?.kind === 'tex'
+    if (type === 'bold') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\\textbf{', '}', 'teks tebal')
+        : editorRef.current?.wrapSelection('**', '**', 'teks tebal')
+    } else if (type === 'italic') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\\textit{', '}', 'teks miring')
+        : editorRef.current?.wrapSelection('*', '*', 'teks miring')
+    } else if (type === 'quote') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\\textquotedblleft{}', '\\textquotedblright{}', 'kutipan')
+        : editorRef.current?.wrapSelection('"', '"', 'kutipan')
+    } else if (type === 'superscript') {
+      isLatex
+        ? editorRef.current?.wrapSelection('^{', '}', '2')
+        : editorRef.current?.wrapSelection('^', '^', '2')
+    } else if (type === 'subscript') {
+      isLatex
+        ? editorRef.current?.wrapSelection('_{', '}', '1')
+        : editorRef.current?.wrapSelection('~', '~', '1')
+    }
+  }
+
+  const handleAlignAction = (type: 'left' | 'center' | 'right' | 'justify') => {
+    const isLatex = activeDoc?.kind === 'tex'
+    if (isLatex) {
+      if (type === 'center') {
+        editorRef.current?.wrapSelection('\\begin{center}\n', '\n\\end{center}', 'Teks Rata Tengah')
+      } else if (type === 'left') {
+        editorRef.current?.wrapSelection('\\begin{flushleft}\n', '\n\\end{flushleft}', 'Teks Rata Kiri')
+      } else if (type === 'right') {
+        editorRef.current?.wrapSelection('\\begin{flushright}\n', '\n\\end{flushright}', 'Teks Rata Kanan')
+      }
+    }
+  }
+
+  const handleStructureAction = (type: 'heading1' | 'heading2' | 'numbering' | 'bullet' | 'line') => {
+    const isLatex = activeDoc?.kind === 'tex'
+    if (type === 'heading1') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\\section{', '}\n', 'Judul Bagian')
+        : editorRef.current?.wrapSelection('# ', '\n', 'Judul Bagian')
+    } else if (type === 'heading2') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\\subsection{', '}\n', 'Subjudul')
+        : editorRef.current?.wrapSelection('## ', '\n', 'Subjudul')
+    } else if (type === 'numbering') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\\begin{enumerate}\n  \\item ', '\n\\end{enumerate}', 'Poin nomor')
+        : editorRef.current?.wrapSelection('1. ', '\n', 'Poin nomor')
+    } else if (type === 'bullet') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\\begin{itemize}\n  \\item ', '\n\\end{itemize}', 'Poin daftar')
+        : editorRef.current?.wrapSelection('- ', '\n', 'Poin daftar')
+    } else if (type === 'line') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\n\\hrule\n', '', '')
+        : editorRef.current?.wrapSelection('\n---\n', '', '')
+    }
+  }
+
+  const handlePageAction = (type: 'break' | 'next' | 'preview') => {
+    const isLatex = activeDoc?.kind === 'tex'
+    if (type === 'break') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\n\\newpage\n', '', '')
+        : editorRef.current?.wrapSelection('\n\n<div style="page-break-after: always;"></div>\n\n', '', '')
+    } else if (type === 'next') {
+      isLatex
+        ? editorRef.current?.wrapSelection('\n\\clearpage\n', '', '')
+        : editorRef.current?.wrapSelection('\n\n---\n\n', '', '')
+    } else if (type === 'preview') {
+      setSaveStatus('Preview refreshed')
+    }
+  }
+
   const handleAskAI = (text: string) => {
     if (!text.trim()) return
     const t = text.toLowerCase()
@@ -244,11 +350,18 @@ export default function App() {
       {/* Ribbon */}
       <RibbonBar
         currentTab={ribbonTab}
+        isLatex={activeDoc?.kind === 'tex'}
         onSelectTab={setRibbonTab}
         onInsertSnippet={handleRibbonSnippet}
         engine={engine}
         onChangeEngine={setEngine}
         onCompile={handleCompile}
+        onInsertCodeSnippet={(code) => editorRef.current?.wrapSelection('', '', code)}
+        onClipboardAction={handleClipboardAction}
+        onFormatAction={handleFormatAction}
+        onAlignAction={handleAlignAction}
+        onStructureAction={handleStructureAction}
+        onPageAction={handlePageAction}
       />
 
       <div className="flex flex-1 min-h-0">

@@ -15,6 +15,8 @@ export interface CodeEditorProps {
 
 export interface CodeEditorHandle {
   jumpToLine: (lineNumber: number) => void
+  wrapSelection: (prefix: string, suffix: string, placeholder?: string) => void
+  getSelectedText: () => string
 }
 
 export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
@@ -29,6 +31,35 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
           editor.setPosition({ lineNumber, column: 1 })
           editor.focus()
         }
+      },
+      wrapSelection: (prefix: string, suffix: string, placeholder = 'teks') => {
+        const editor = editorRef.current
+        if (!editor) return
+
+        const selection = editor.getSelection()
+        const model = editor.getModel()
+        if (!selection || !model) return
+
+        const selectedText = model.getValueInRange(selection)
+        const textToWrap = selectedText || placeholder
+        const newText = `${prefix}${textToWrap}${suffix}`
+
+        editor.executeEdits('ribbon-wrap', [
+          {
+            range: selection,
+            text: newText,
+            forceMoveMarkers: true,
+          },
+        ])
+        editor.focus()
+      },
+      getSelectedText: () => {
+        const editor = editorRef.current
+        if (!editor) return ''
+        const selection = editor.getSelection()
+        const model = editor.getModel()
+        if (!selection || !model) return ''
+        return model.getValueInRange(selection)
       },
     }))
 

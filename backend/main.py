@@ -198,7 +198,7 @@ async def create_project(payload: ProjectCreateRequest):
         project_dir.mkdir(parents=True, exist_ok=False)
         default_tex = project_dir / "main.tex"
         default_tex.write_text(
-            f"\\documentclass{{article}}\n\\title{{{safe_name}}}\n\\author{{User}}\n\\begin{{document}}\n\\maketitle\n\\section{{Introduction}}\n\\end{{document}}\n",
+            f"\\documentclass{{article}}\n\\usepackage{{amsmath,amssymb}}\n\\title{{{safe_name}}}\n\\author{{User}}\n\\begin{{document}}\n\\maketitle\n\\section{{Introduction}}\n\\end{{document}}\n",
             encoding="utf-8",
         )
         stat_result = default_tex.stat()

@@ -55,11 +55,11 @@ export const DocPreview: React.FC<DocPreviewProps> = ({ doc }) => {
               key={i}
               className="border-l-2 border-stone-400 pl-4 my-2 italic text-stone-700"
             >
-              {renderInlineFormatted(l.slice(2))}
+              {renderInlineFormatted(l.slice(2), false)}
             </blockquote>
           ) : l.trim() ? (
             <p key={i} className="indent-8 my-1 text-justify">
-              {renderInlineFormatted(l)}
+              {renderInlineFormatted(l, false)}
             </p>
           ) : null,
         )}
@@ -128,9 +128,17 @@ export const DocPreview: React.FC<DocPreviewProps> = ({ doc }) => {
             </h3>
           )
         }
+        if (/^\\begin\{equation\}/.test(l)) {
+          const eqContent = l.replace(/^\\begin\{equation\}\s*/, '').replace(/\s*\\end\{equation\}$/, '')
+          return (
+            <div key={i} className="my-2">
+              {renderInlineFormatted(`\\[${eqContent}\\]`, true)}
+            </div>
+          )
+        }
         return l.trim() ? (
           <p key={i} className="indent-8 my-1 text-justify">
-            {renderInlineFormatted(l)}
+            {renderInlineFormatted(l, true)}
           </p>
         ) : null
       })}

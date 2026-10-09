@@ -13,25 +13,25 @@ def test_search_min_5_chars_validation():
 
 def test_search_valid_keyword():
     # 5 or more characters
-    res = client.get("/api/projects/quantum-thesis/search?q=teknologi")
+    res = client.get("/api/projects/quantum-thesis/search?q=Quantum")
     assert res.status_code == 200
     data = res.json()
-    assert data["query"] == "teknologi"
+    assert data["query"] == "Quantum"
     assert data["totalMatches"] > 0
     assert data["fileCount"] > 0
     # Make sure matches contain line numbers
     first_file = data["results"][0]
     assert len(first_file["matches"]) > 0
     assert first_file["matches"][0]["lineNumber"] > 0
-    assert "teknologi" in first_file["matches"][0]["lineText"].lower()
+    assert "quantum" in first_file["matches"][0]["lineText"].lower()
 
 
 def test_search_case_sensitivity():
-    res_ci = client.get("/api/projects/quantum-thesis/search?q=PENDAHULUAN&case_sensitive=false")
+    res_ci = client.get("/api/projects/quantum-thesis/search?q=quantum&case_sensitive=false")
     assert res_ci.status_code == 200
     count_ci = res_ci.json()["totalMatches"]
 
-    res_cs = client.get("/api/projects/quantum-thesis/search?q=PENDAHULUAN&case_sensitive=true")
+    res_cs = client.get("/api/projects/quantum-thesis/search?q=Quantum&case_sensitive=true")
     assert res_cs.status_code == 200
     count_cs = res_cs.json()["totalMatches"]
 
