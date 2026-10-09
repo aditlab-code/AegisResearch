@@ -3,7 +3,7 @@ import { DocKind } from './document'
 export interface FileNode {
   name: string
   path: string
-  kind: DocKind | 'other'
+  kind: DocKind | 'pdf' | 'other'
   size?: number
   updatedAt?: string
 }
@@ -13,7 +13,7 @@ export interface FileTreeNode {
   name: string
   path: string
   type: 'file' | 'folder'
-  kind?: DocKind | 'other'
+  kind?: DocKind | 'pdf' | 'other'
   size?: number
   updatedAt?: string
   children?: FileTreeNode[]

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Circle, X } from 'lucide-react'
+import { Circle, X, FileText, FileCode } from 'lucide-react'
 import { Doc } from '../../types'
 
 export interface EditorTabsProps {
@@ -19,33 +19,53 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
   onSelectTab,
   onCloseTab,
 }) => {
+  if (openDocIndices.length === 0) {
+    return (
+      <div className="flex items-center h-9 bg-stone-100 border-b border-stone-200 text-xs px-3 text-stone-400 select-none">
+        Belum ada tab terbuka
+      </div>
+    )
+  }
+
   return (
-    <div className="flex bg-[#181825] text-xs">
+    <div className="flex bg-stone-100 border-b border-stone-200 text-xs select-none overflow-x-auto">
       {openDocIndices.map((docIdx) => {
         const isActive = docIdx === activeDocIndex
         const doc = docs[docIdx]
         if (!doc) return null
 
+        const isTex = doc.kind === 'tex'
+
         return (
           <div
             key={docIdx}
             onClick={() => onSelectTab(docIdx)}
-            className={`px-4 py-2 cursor-pointer flex gap-2 border-r border-black/30 items-center ${
+            className={`group px-3 py-2 cursor-pointer flex gap-2 border-r border-stone-200 items-center transition-colors min-w-0 max-w-[180px] ${
               isActive
-                ? 'bg-[#1e1e2e] text-white border-t-2 border-t-amber-400'
-                : 'text-stone-400 hover:text-stone-200'
+                ? 'bg-white text-stone-900 font-medium border-t-2 border-t-indigo-600 shadow-sm'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
             }`}
           >
-            <span>{doc.name}</span>
-            {isActive && isDirty && (
-              <Circle className="size-2 fill-amber-400 text-amber-400 shrink-0" />
+            {isTex ? (
+              <FileCode className="size-3.5 text-indigo-500 shrink-0" />
+            ) : (
+              <FileText className="size-3.5 text-emerald-600 shrink-0" />
             )}
+
+            <span className="truncate flex-1 text-xs">{doc.name}</span>
+
+            {isActive && isDirty && (
+              <Circle className="size-2 fill-amber-500 text-amber-500 shrink-0" />
+            )}
+
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation()
                 onCloseTab(docIdx)
               }}
-              className="text-stone-500 hover:text-white flex items-center justify-center p-0.5 rounded hover:bg-white/10"
+              title="Tutup tab"
+              className="text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded p-0.5 transition-colors shrink-0"
             >
               <X className="size-3" />
             </button>

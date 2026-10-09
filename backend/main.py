@@ -2,13 +2,15 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from backend.config import WORKSPACE_DIR, CORS_ORIGINS, HOST, PORT
 from backend.watcher import workspace_watcher
+from backend.services.compiler import compile_latex
 
 
 app = FastAPI(
@@ -56,6 +58,36 @@ class FileCreateRequest(BaseModel):
     path: str = Field(..., min_length=1, description="Relative path for the new file")
     content: Optional[str] = ""
 
+class CompileRequest(BaseModel):
+    mainFile: str = "main.tex"
+    engine: str = "pdfLaTeX"
+
+class CompileResponse(BaseModel):
+    success: bool
+    message: str
+    pdfUrl: Optional[str] = None
+    errors: List[str] = []
+    logOutput: Optional[str] = None
+
+class SearchMatchItem(BaseModel):
+    lineNumber: int
+    lineText: str
+    matchStart: int
+    matchEnd: int
+
+class SearchFileItem(BaseModel):
+    filePath: str
+    fileName: str
+    kind: str
+    matchCount: int
+    matches: List[SearchMatchItem]
+
+class SearchProjectResponse(BaseModel):
+    query: str
+    totalMatches: int
+    fileCount: int
+    results: List[SearchFileItem]
+
 class FileContentResponse(BaseModel):
     name: str
     path: str
@@ -88,6 +120,8 @@ def get_file_kind(file_name: str) -> str:
         return "tex"
     elif ext in [".md", ".markdown"]:
         return "md"
+    elif ext == ".pdf":
+        return "pdf"
     return "other"
 
 
@@ -461,6 +495,162 @@ async def workspace_ws(websocket: WebSocket, name: str):
     except Exception:
         workspace_watcher.disconnect(name, websocket)
 
+
+@app.post(
+    "/api/projects/{name}/compile",
+    response_model=CompileResponse,
+    tags=["Compiler"],
+)
+async def compile_project(name: str, payload: CompileRequest):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    result = await compile_latex(
+        project_dir=project_dir,
+        main_file=payload.mainFile,
+        engine=payload.engine,
+    )
+
+    pdf_url = None
+    if result.get("success") and result.get("pdfName"):
+        pdf_url = f"/api/projects/{name}/pdf/{result['pdfName']}"
+
+    return CompileResponse(
+        success=result["success"],
+        message=result["message"],
+        pdfUrl=pdf_url,
+        errors=result.get("errors", []),
+        logOutput=result.get("logOutput"),
+    )
+
+
+@app.api_route(
+    "/api/projects/{name}/pdf/{pdf_name}",
+    methods=["GET", "HEAD"],
+    tags=["Compiler"],
+)
+async def get_project_pdf(name: str, pdf_name: str):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    target_pdf = resolve_file_path(project_dir, pdf_name)
+    if not target_pdf.exists() or not target_pdf.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"PDF file '{pdf_name}' not found. Please compile first.",
+        )
+
+    return FileResponse(
+        path=str(target_pdf),
+        media_type="application/pdf",
+        filename=target_pdf.name,
+        headers={"Content-Disposition": f"inline; filename={target_pdf.name}"},
+    )
+
+SEARCH_IGNORED_EXTENSIONS = {
+    ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg",
+    ".aux", ".log", ".out", ".toc", ".gz", ".synctex", ".fls",
+    ".fdb_latexmk", ".bbl", ".blg", ".pyc", ".DS_Store"
+}
+
+@app.get(
+    "/api/projects/{name}/search",
+    response_model=SearchProjectResponse,
+    tags=["Search"],
+)
+async def search_project(
+    name: str,
+    q: str,
+    case_sensitive: bool = False,
+):
+    stripped_query = q.strip()
+    if len(stripped_query) < 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query pencarian minimal harus 5 karakter.",
+        )
+
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    flags = 0 if case_sensitive else re.IGNORECASE
+    try:
+        pattern = re.compile(stripped_query, flags)
+    except re.error:
+        # Fallback to escaped literal if user entered raw symbols
+        pattern = re.compile(re.escape(stripped_query), flags)
+
+    file_results: List[SearchFileItem] = []
+    total_matches = 0
+
+    for root, dirs, files in os.walk(project_dir):
+        # Skip hidden/cache directories
+        dirs[:] = [
+            d for d in dirs
+            if not d.startswith(".") and d not in {".git", ".venv", "node_modules", "__pycache__"}
+        ]
+
+        for file in files:
+            if file.startswith("."):
+                continue
+            file_path = Path(root) / file
+            ext = file_path.suffix.lower()
+            if ext in SEARCH_IGNORED_EXTENSIONS:
+                continue
+
+            # Max file size 3MB
+            try:
+                if file_path.stat().st_size > 3 * 1024 * 1024:
+                    continue
+                content = file_path.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+
+            lines = content.splitlines()
+            file_matches: List[SearchMatchItem] = []
+
+            for line_idx, line in enumerate(lines, start=1):
+                for match in pattern.finditer(line):
+                    file_matches.append(
+                        SearchMatchItem(
+                            lineNumber=line_idx,
+                            lineText=line.strip(),
+                            matchStart=match.start(),
+                            matchEnd=match.end(),
+                        )
+                    )
+                    total_matches += 1
+
+            if file_matches:
+                rel_path = file_path.relative_to(project_dir).as_posix()
+                file_results.append(
+                    SearchFileItem(
+                        filePath=rel_path,
+                        fileName=file,
+                        kind=get_file_kind(file),
+                        matchCount=len(file_matches),
+                        matches=file_matches,
+                    )
+                )
+
+    return SearchProjectResponse(
+        query=stripped_query,
+        totalMatches=total_matches,
+        fileCount=len(file_results),
+        results=file_results,
+    )
 
 if __name__ == "__main__":
     import uvicorn

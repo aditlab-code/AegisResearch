@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { RibbonTab, PanelType, ChatMessage, FileNode } from './src/types'
 import { DEFAULT_CHAT_MESSAGES } from './src/constants'
-import { countWords, extractOutline } from './src/utils'
+import { countWords, parseDocumentOutline } from './src/utils'
 import { projectService } from './src/services/projects'
+import { compilerService } from './src/services/compiler'
 import { useDocumentManager, useCompiler, useKeyboardShortcuts } from './src/hooks'
 import {
   TitleBar,
@@ -11,6 +12,7 @@ import {
   ActivityBar,
   Sidebar,
   Editor,
+  CodeEditorHandle,
   PreviewPanel,
   StatusBar,
 } from './src/components'
@@ -29,7 +31,8 @@ export default function App() {
     openOrCreateDoc,
   } = useDocumentManager()
   const [projectName, setProjectName] = useState('quantum-thesis')
-  const { engine, setEngine, compile, pdfBlobUrl } = useCompiler(projectName)
+  const { engine, setEngine, compile, pdfBlobUrl, setPdfBlobUrl, isCompiling, compileResult } =
+    useCompiler(projectName)
 
   const [ribbonTab, setRibbonTab] = useState<RibbonTab>('Home')
   const [panel, setPanel] = useState<PanelType>('files')
@@ -37,8 +40,15 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isDirty, setIsDirty] = useState(false)
   const [saveStatus, setSaveStatus] = useState('✓ Ready')
-  const outline = extractOutline(activeDoc.content)
-  const words = countWords(activeDoc.content)
+  const editorRef = useRef<CodeEditorHandle>(null)
+
+  const outlineTree = useMemo(() => {
+    if (!activeDoc?.content) return []
+    const isLatex = activeDoc.kind === 'tex'
+    return parseDocumentOutline(activeDoc.content, isLatex)
+  }, [activeDoc?.content, activeDoc?.kind])
+
+  const words = countWords(activeDoc?.content || '')
   // Sync initial file content on project load / switch
   useEffect(() => {
     let isMounted = true
@@ -61,7 +71,35 @@ export default function App() {
     }
   }, [projectName])
 
+  // Auto-fetch paired PDF when opening or switching to a .tex document
+  useEffect(() => {
+    let isMounted = true
+    const tryFetchPdf = async () => {
+      if (!activeDoc || activeDoc.kind !== 'tex') return
+      try {
+        const resolvedUrl = await compilerService.resolveProjectPdf(projectName, activeDoc.name)
+        if (isMounted && resolvedUrl) {
+          setPdfBlobUrl(resolvedUrl)
+        }
+      } catch {
+        // Ignore offline check
+      }
+    }
+    tryFetchPdf()
+    return () => {
+      isMounted = false
+    }
+  }, [projectName, activeDoc?.name, activeDoc?.kind, setPdfBlobUrl])
+
   const handleSelectFile = async (file: FileNode) => {
+    // Direct opening if a .pdf file is clicked in the file explorer
+    if (file.name.toLowerCase().endsWith('.pdf') || (file.kind as string) === 'pdf') {
+      const pdfUrl = `${compilerService.getDownloadPdfUrl(projectName, file.name)}?t=${Date.now()}`
+      setPdfBlobUrl(pdfUrl)
+      setSaveStatus(`✓ Viewing PDF: ${file.name}`)
+      return
+    }
+
     const kind = file.kind === 'md' ? 'md' : 'tex'
     openOrCreateDoc(file.name, kind)
     setSaveStatus(`Loading ${file.name}...`)
@@ -82,6 +120,24 @@ export default function App() {
     setSaveStatus('● Unsaved changes (Ctrl+S to save)')
   }
 
+  const handleSelectSearchResult = async (filePath: string, lineNumber: number) => {
+    const fileName = filePath.split('/').pop() || filePath
+    const kind = fileName.endsWith('.md') ? 'md' : 'tex'
+    openOrCreateDoc(fileName, kind)
+
+    try {
+      const content = await projectService.readFile(projectName, filePath)
+      setDocContent(fileName, content)
+      setSaveStatus(`✓ Jumped to ${fileName}:${lineNumber}`)
+    } catch {
+      // ignore load error
+    }
+
+    setTimeout(() => {
+      editorRef.current?.jumpToLine(lineNumber)
+    }, 100)
+  }
+
   const handleSave = async () => {
     if (!activeDoc) return
     setSaveStatus(`Saving ${activeDoc.name}...`)
@@ -95,6 +151,26 @@ export default function App() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error'
       setSaveStatus(`✗ Save failed: ${msg}`)
+    }
+  }
+
+  const handleCompile = async () => {
+    if (!activeDoc) return
+    setSaveStatus(`⚙️ Compiling ${activeDoc.name} with ${engine}...`)
+    // Auto-save before compile
+    try {
+      await projectService.saveFile(projectName, activeDoc.name, activeDoc.content)
+      setIsDirty(false)
+    } catch {
+      // ignore save failure
+    }
+
+    const res = await compile(activeDoc.name)
+    if (res.success) {
+      setSaveStatus(`✓ Compiled in ${res.durationMs || 0}ms · PDF Ready`)
+    } else {
+      const errDetail = res.errors?.[0]?.message || 'Compilation error'
+      setSaveStatus(`✗ Compile failed: ${errDetail}`)
     }
   }
 
@@ -113,14 +189,13 @@ export default function App() {
     if (label === 'Paste') {
       try {
         const text = await navigator.clipboard.readText()
-        if (text) {
+        if (text && activeDoc) {
           handleContentChange(`${activeDoc.content}\n${text}`)
           setSaveStatus('✓ Pasted from clipboard')
         }
       } catch {
         // Fallback if clipboard permission denied
       }
-      return
     }
     insertSnippet(label)
   }
@@ -133,18 +208,18 @@ export default function App() {
         ? {
             text: 'Berikut rumus master equation Lindblad:',
             code:
-              activeDoc.kind === 'tex'
+              activeDoc?.kind === 'tex'
                 ? '$\\dot{\\rho} = -i[H,\\rho] + \\sum_k \\gamma_k L_k \\rho L_k^\\dagger$'
                 : '$\\dot{\\rho} = -i[H,\\rho]$',
           }
         : t.includes('sitasi') || t.includes('cite')
         ? {
             text: 'Referensi relevan: Engel et al. (2007), Nature 446.',
-            code: activeDoc.kind === 'tex' ? '\\cite{engel2007}' : '[@engel2007]',
+            code: activeDoc?.kind === 'tex' ? '\\cite{engel2007}' : '[@engel2007]',
           }
         : t.includes('ringkas') || t.includes('summar')
         ? {
-            text: `Ringkasan: dokumen "${activeDoc.name}" berisi ${outline.length} bagian dengan ${words} kata, membahas koherensi kuantum pada sistem biologis.`,
+            text: `Ringkasan: dokumen "${activeDoc?.name || 'Dokumen'}" berisi ${outlineTree.length} bagian utama dengan ${words} kata, membahas koherensi kuantum pada sistem biologis.`,
           }
         : {
             text: 'Saran perbaikan kalimat akademik:',
@@ -173,7 +248,7 @@ export default function App() {
         onInsertSnippet={handleRibbonSnippet}
         engine={engine}
         onChangeEngine={setEngine}
-        onCompile={() => compile()}
+        onCompile={handleCompile}
       />
 
       <div className="flex flex-1 min-h-0">
@@ -188,7 +263,8 @@ export default function App() {
               panel={panel}
               docs={docs}
               activeDocIndex={activeDocIndex}
-              outlineItems={outline}
+              outlineTree={outlineTree}
+              onNavigateOutline={(line) => editorRef.current?.jumpToLine(line)}
               chat={chat}
               searchQuery={searchQuery}
               projectName={projectName}
@@ -196,8 +272,9 @@ export default function App() {
               onSelectFile={handleSelectFile}
               onSelectDoc={openDoc}
               onSendMessage={handleAskAI}
-              onInsertCodeSnippet={(code) => updateContent(`${activeDoc.content}\n${code}`)}
+              onInsertCodeSnippet={(code) => updateContent(`${activeDoc?.content || ''}\n${code}`)}
               onChangeSearch={setSearchQuery}
+              onSelectSearchResult={handleSelectSearchResult}
             />
           </Panel>
 
@@ -206,6 +283,7 @@ export default function App() {
           {/* Column 2: Editor Teks */}
           <Panel id="editor-panel" defaultSize={48} minSize={30} className="min-w-0 h-full">
             <Editor
+              ref={editorRef}
               docs={docs}
               openDocIndices={openDocIndices}
               activeDocIndex={activeDocIndex}
@@ -221,13 +299,24 @@ export default function App() {
 
           {/* Column 3: Preview PDF */}
           <Panel id="preview-panel" defaultSize={32} minSize={20} className="min-w-0 h-full">
-            <PreviewPanel doc={activeDoc} pdfBlobUrl={pdfBlobUrl} />
+            {activeDoc ? (
+              <PreviewPanel
+                doc={activeDoc}
+                pdfBlobUrl={pdfBlobUrl}
+                usePdfViewer={Boolean(pdfBlobUrl && activeDoc.kind === 'tex')}
+                onCompile={handleCompile}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-[#525659] text-stone-300 text-xs font-mono">
+                Tidak ada dokumen aktif
+              </div>
+            )}
           </Panel>
         </PanelGroup>
       </div>
 
       {/* Status bar */}
-      <StatusBar wordCount={words} docKind={activeDoc.kind} statusMessage={saveStatus} />
+      <StatusBar wordCount={words} docKind={activeDoc?.kind || 'tex'} statusMessage={saveStatus} />
     </div>
   )
 }

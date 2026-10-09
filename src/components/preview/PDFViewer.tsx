@@ -2,23 +2,27 @@ import React from 'react'
 
 export interface PDFViewerProps {
   pdfUrl?: string
-  scale?: number
 }
 
 export const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl }) => {
   if (!pdfUrl) {
     return (
-      <div className="flex-1 grid place-items-center text-stone-400 text-sm">
-        No compiled PDF ready. Click Compile to build.
+      <div className="w-full h-full flex items-center justify-center bg-stone-100 text-stone-400 text-xs font-mono">
+        Belum ada PDF terkompilasi.
       </div>
     )
   }
 
+  // view=FitH automatically fits PDF width nicely in browser viewer
+  const formattedUrl = pdfUrl.includes('#') ? pdfUrl : `${pdfUrl}#view=FitH`
+
   return (
-    <iframe
-      src={pdfUrl}
-      title="LaTeX PDF Preview"
-      className="w-full h-full min-h-[820px] rounded border-0 bg-white shadow-xl"
-    />
+    <div className="w-full h-full bg-[#525659] relative overflow-hidden">
+      <iframe
+        src={formattedUrl}
+        title="LaTeX PDF Preview"
+        className="w-full h-full border-0 bg-white block"
+      />
+    </div>
   )
 }

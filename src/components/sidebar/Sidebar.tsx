@@ -1,5 +1,5 @@
 import React from 'react'
-import { Doc, PanelType, ChatMessage, FileNode } from '../../types'
+import { Doc, PanelType, ChatMessage, FileNode, OutlineNode } from '../../types'
 import { FileTree } from './FileTree'
 import { OutlineView } from './OutlineView'
 import { AIAssistantPanel } from './AIAssistantPanel'
@@ -9,7 +9,8 @@ export interface SidebarProps {
   panel: PanelType
   docs: Doc[]
   activeDocIndex: number
-  outlineItems: string[]
+  outlineTree?: OutlineNode[]
+  onNavigateOutline?: (lineNumber: number) => void
   chat: ChatMessage[]
   projectName?: string
   searchQuery?: string
@@ -20,13 +21,15 @@ export interface SidebarProps {
   onSendMessage: (text: string) => void
   onInsertCodeSnippet: (code: string) => void
   onChangeSearch?: (val: string) => void
+  onSelectSearchResult?: (filePath: string, lineNumber: number) => void
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   panel,
   docs,
   activeDocIndex,
-  outlineItems,
+  outlineTree = [],
+  onNavigateOutline,
   chat,
   projectName,
   searchQuery,
@@ -37,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSendMessage,
   onInsertCodeSnippet,
   onChangeSearch,
+  onSelectSearchResult,
 }) => {
   return (
     <aside className="w-full h-full bg-stone-50 border-r border-stone-200 p-3 text-sm overflow-auto">
@@ -54,7 +58,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onCreateProject={onCreateProject}
         />
       )}
-      {panel === 'outline' && <OutlineView outlineItems={outlineItems} />}
+      {panel === 'outline' && (
+        <OutlineView outlineTree={outlineTree} onNavigate={onNavigateOutline} />
+      )}
       {panel === 'ai' && (
         <AIAssistantPanel
           chat={chat}
@@ -63,7 +69,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
       {panel === 'search' && (
-        <SearchPanel value={searchQuery} onChange={onChangeSearch} />
+        <SearchPanel
+          value={searchQuery}
+          projectName={projectName}
+          onChange={onChangeSearch}
+          onSelectMatch={onSelectSearchResult}
+        />
       )}
     </aside>
   )

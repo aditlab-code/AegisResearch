@@ -1,34 +1,131 @@
-import React from 'react'
-import { Doc } from '../../types'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { FileCode, Play } from 'lucide-react'
+import { Doc, PaperSize, PAPER_PRESETS } from '../../types'
 import { DocPreview } from './DocPreview'
 import { PDFViewer } from './PDFViewer'
+import { PreviewToolbar } from './PreviewToolbar'
+import { PaperSheet } from './PaperSheet'
+import { detectLatexPaperSize } from '../../utils'
 
 export interface PreviewPanelProps {
   doc: Doc
   pdfBlobUrl?: string
   usePdfViewer?: boolean
+  onCompile?: () => void
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   doc,
   pdfBlobUrl,
   usePdfViewer = false,
+  onCompile,
 }) => {
-  return (
-    <section className="w-full h-full bg-stone-200 overflow-auto p-8">
-      <div className="flex justify-between text-xs text-stone-500 mb-3 max-w-[640px] mx-auto">
-        <span>Preview · {doc.kind === 'tex' ? 'PDF' : 'HTML'}</span>
-        <span>Page 1 of 1 · 100%</span>
-      </div>
-      {usePdfViewer && pdfBlobUrl ? (
-        <div className="max-w-[640px] mx-auto min-h-[820px]">
-          <PDFViewer pdfUrl={pdfBlobUrl} />
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const [paperSize, setPaperSize] = useState<PaperSize>('a4')
+  const [zoom, setZoom] = useState<number>(1.0)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [totalPages, setTotalPages] = useState<number>(1)
+
+  const isLatex = doc.kind === 'tex'
+
+  // Auto-detect paper size from doc content if kind is tex
+  useEffect(() => {
+    if (doc.kind === 'tex') {
+      const detected = detectLatexPaperSize(doc.content)
+      setPaperSize(detected)
+    } else {
+      setPaperSize('a4')
+    }
+  }, [doc.name, doc.kind, doc.content])
+
+  const handleZoomIn = () => {
+    setZoom((prev) => Math.min(2.5, +(prev + 0.15).toFixed(2)))
+  }
+
+  const handleZoomOut = () => {
+    setZoom((prev) => Math.max(0.4, +(prev - 0.15).toFixed(2)))
+  }
+
+  const handleFitWidth = useCallback(() => {
+    if (!containerRef.current) return
+    const containerWidth = containerRef.current.clientWidth - 64
+    const preset = PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4
+    const newZoom = Math.min(2.0, Math.max(0.4, containerWidth / preset.baseWidthPx))
+    setZoom(+newZoom.toFixed(2))
+  }, [paperSize])
+
+  const handleFitPage = useCallback(() => {
+    if (!containerRef.current) return
+    const containerHeight = containerRef.current.clientHeight - 80
+    const preset = PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4
+    const newZoom = Math.min(2.0, Math.max(0.4, containerHeight / preset.baseHeightPx))
+    setZoom(+newZoom.toFixed(2))
+  }, [paperSize])
+
+  // CASE 1: LATEX WITH READY PDF -> 100% FULL-PANEL NATIVE BROWSER VIEWER (LIGHTWEIGHT & FAST)
+  if (isLatex && pdfBlobUrl) {
+    return (
+      <section className="w-full h-full bg-[#525659] overflow-hidden">
+        <PDFViewer pdfUrl={pdfBlobUrl} />
+      </section>
+    )
+  }
+
+  // CASE 2: LATEX WITHOUT COMPILED PDF -> CLEAN EMPTY STATE WITH COMPILE BUTTON
+  if (isLatex && !pdfBlobUrl) {
+    return (
+      <section className="w-full h-full flex items-center justify-center bg-[#525659] p-6 select-none">
+        <div className="max-w-sm w-full bg-[#323639] border border-[#5f6368] rounded-xl p-8 flex flex-col items-center text-center shadow-2xl">
+          <div className="size-14 rounded-full bg-[#202124] flex items-center justify-center text-indigo-400 mb-4 border border-[#5f6368]">
+            <FileCode className="size-7" />
+          </div>
+          <h3 className="text-white font-medium text-sm mb-1">PDF Belum Terkompilasi</h3>
+          <p className="text-stone-400 text-xs mb-6 leading-relaxed">
+            Dokumen LaTeX <span className="font-mono text-stone-300">"{doc.name}"</span> belum
+            memiliki file PDF di disk. Klik tombol di bawah untuk mengompilasi dengan pdflatex.
+          </p>
+          {onCompile && (
+            <button
+              type="button"
+              onClick={onCompile}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shadow transition-colors"
+            >
+              <Play className="size-3.5 fill-current" />
+              Kompilasi PDF Sekarang
+            </button>
+          )}
         </div>
-      ) : (
-        <article className="bg-white shadow-xl shadow-stone-400/30 max-w-[640px] mx-auto min-h-[820px] px-16 py-14 font-serif text-[15px] leading-7 text-stone-900">
+      </section>
+    )
+  }
+
+  // CASE 3: MARKDOWN MODE -> TRUE PRINT SHEET WITH CUSTOM TOOLBAR
+  return (
+    <section className="w-full h-full flex flex-col bg-[#525659] overflow-hidden select-none">
+      <PreviewToolbar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        zoom={zoom}
+        paperSize={paperSize}
+        onChangePage={setCurrentPage}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onSetZoom={setZoom}
+        onFitWidth={handleFitWidth}
+        onFitPage={handleFitPage}
+        onChangePaperSize={setPaperSize}
+      />
+
+      <div
+        ref={containerRef}
+        className="flex-1 w-full h-full overflow-auto p-8 flex justify-center items-start"
+        style={{ scrollBehavior: 'smooth' }}
+      >
+        <PaperSheet paperSize={paperSize} zoom={zoom} pageNumber={currentPage}>
           <DocPreview doc={doc} />
-        </article>
-      )}
+        </PaperSheet>
+      </div>
     </section>
   )
 }

@@ -101,6 +101,8 @@ export const TreeItem: React.FC<TreeItemProps> = ({
     fileIcon = <FileCode className="size-3.5 text-indigo-500 shrink-0" />
   } else if (ext === 'md' || node.kind === 'md') {
     fileIcon = <FileText className="size-3.5 text-emerald-600 shrink-0" />
+  } else if (ext === 'pdf' || node.kind === 'pdf') {
+    fileIcon = <FileText className="size-3.5 text-rose-600 shrink-0" />
   }
 
   return (

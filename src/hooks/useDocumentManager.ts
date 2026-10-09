@@ -7,9 +7,10 @@ export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
   const [activeDocIndex, setActiveDocIndex] = useState(0)
   const [openDocIndices, setOpenDocIndices] = useState<number[]>([0, 1])
 
-  const activeDoc = docs[activeDocIndex] || docs[0]
+  const activeDoc = activeDocIndex >= 0 && activeDocIndex < docs.length ? docs[activeDocIndex] : undefined
 
   const updateContent = (content: string) => {
+    if (activeDocIndex < 0) return
     setDocs((prev) =>
       prev.map((d, i) => (i === activeDocIndex ? { ...d, content } : d)),
     )
@@ -31,10 +32,21 @@ export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
   }
 
   const closeDoc = (index: number) => {
+    const currentPosition = openDocIndices.indexOf(index)
     const nextOpen = openDocIndices.filter((x) => x !== index)
     setOpenDocIndices(nextOpen)
-    if (activeDocIndex === index && nextOpen.length > 0) {
-      setActiveDocIndex(nextOpen[0])
+
+    if (activeDocIndex === index) {
+      if (nextOpen.length === 0) {
+        setActiveDocIndex(-1)
+      } else {
+        // Transition to neighbor tab (prefer previous tab if closing rightmost, else next tab)
+        const nextTargetIndex =
+          currentPosition > 0
+            ? openDocIndices[currentPosition - 1]
+            : openDocIndices[currentPosition + 1] ?? nextOpen[0]
+        setActiveDocIndex(nextTargetIndex)
+      }
     }
   }
 
@@ -71,6 +83,7 @@ export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
     setOpenDocIndices((prev) => (prev.includes(newIndex) ? prev : [...prev, newIndex]))
     return newIndex
   }
+
   return {
     docs,
     activeDoc,

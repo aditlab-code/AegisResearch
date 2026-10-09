@@ -18,15 +18,15 @@ export function useCompiler(projectName: string = 'quantum-thesis') {
           setPdfBlobUrl(result.pdfBlobUrl)
         }
         return result
-      } catch {
-        // Fallback or offline dev mock response
-        const fallbackResult: CompileResult = {
-          success: true,
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Kompilasi backend gagal.'
+        const failedResult: CompileResult = {
+          success: false,
           engine,
-          errors: [],
+          errors: [{ message: msg }],
         }
-        setCompileResult(fallbackResult)
-        return fallbackResult
+        setCompileResult(failedResult)
+        return failedResult
       } finally {
         setIsCompiling(false)
       }
@@ -40,6 +40,7 @@ export function useCompiler(projectName: string = 'quantum-thesis') {
     isCompiling,
     compileResult,
     pdfBlobUrl,
+    setPdfBlobUrl,
     compile,
   }
 }

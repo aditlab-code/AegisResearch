@@ -1,3 +1,6 @@
 export * from './wordCount'
 export * from './inlineParser'
 export * from './syntaxHighlight'
+export * from './outlineParser'
+export * from './pageLayoutParser'
+export * from './latexMonarch'
