@@ -1,4 +1,5 @@
 import os
+import asyncio
 import re
 from datetime import datetime
 from pathlib import Path
@@ -124,6 +125,16 @@ def get_file_kind(file_name: str) -> str:
         return "pdf"
     return "other"
 
+TEX_BUILD_ARTIFACT_EXTS = {
+    ".aux", ".log", ".toc", ".bbl", ".blg", ".fls",
+    ".fdb_latexmk", ".synctex.gz", ".out", ".lof", ".lot",
+    ".nav", ".snm", ".vrb", ".idx", ".ilg", ".ind"
+}
+
+def is_tex_artifact(file_name: str) -> bool:
+    lower = file_name.lower()
+    return any(lower.endswith(ext) for ext in TEX_BUILD_ARTIFACT_EXTS)
+
 
 def resolve_project_dir(name: str) -> Path:
     safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "", name.strip())
@@ -239,7 +250,7 @@ async def get_project_files(name: str):
 
     file_nodes: List[FileNodeResponse] = []
     for item in sorted(project_dir.rglob("*")):
-        if item.is_file() and not item.name.startswith("."):
+        if item.is_file() and not item.name.startswith(".") and not is_tex_artifact(item.name):
             rel_path = item.relative_to(project_dir).as_posix()
             stat_result = item.stat()
             file_nodes.append(
@@ -337,8 +348,8 @@ def build_tree_node(item_path: Path, project_root: Path) -> Optional[TreeNodeRes
     rel_path = item_path.relative_to(project_root).as_posix()
     name = item_path.name
 
-    # Ignore hidden files, caches, and dot folders
-    if name.startswith(".") or name in {".git", ".venv", "node_modules", "__pycache__", ".DS_Store"}:
+    # Ignore hidden files, caches, dot folders, and LaTeX build artifacts
+    if name.startswith(".") or name in {".git", ".venv", "node_modules", "__pycache__", ".DS_Store"} or is_tex_artifact(name):
         return None
 
     if item_path.is_dir():
@@ -651,6 +662,173 @@ async def search_project(
         fileCount=len(file_results),
         results=file_results,
     )
+
+class GitFileChange(BaseModel):
+    status: str
+    path: str
+
+class GitStatusResponse(BaseModel):
+    isGitRepo: bool
+    branch: Optional[str] = None
+    modifiedCount: int
+    files: List[GitFileChange]
+
+@app.get(
+    "/api/projects/{name}/git/status",
+    response_model=GitStatusResponse,
+    tags=["Git"],
+)
+async def get_project_git_status(name: str):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    git_dir = project_dir / ".git"
+    if not git_dir.exists() or not git_dir.is_dir():
+        return GitStatusResponse(
+            isGitRepo=False,
+            branch=None,
+            modifiedCount=0,
+            files=[],
+        )
+
+    try:
+        branch_proc = await asyncio.create_subprocess_exec(
+            "git", "branch", "--show-current",
+            cwd=str(project_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        branch_out, _ = await branch_proc.communicate()
+        branch_name = branch_out.decode("utf-8").strip() or "main"
+
+        status_proc = await asyncio.create_subprocess_exec(
+            "git", "status", "-s",
+            cwd=str(project_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        status_out, _ = await status_proc.communicate()
+        status_lines = status_out.decode("utf-8").splitlines()
+
+        changed_files: List[GitFileChange] = []
+        for line in status_lines:
+            if len(line) >= 3:
+                st = line[:2].strip()
+                fp = line[3:].strip()
+                if not is_tex_artifact(fp):
+                    changed_files.append(GitFileChange(status=st, path=fp))
+
+        return GitStatusResponse(
+            isGitRepo=True,
+            branch=branch_name,
+            modifiedCount=len(changed_files),
+            files=changed_files,
+        )
+    except Exception:
+        return GitStatusResponse(
+            isGitRepo=False,
+            branch=None,
+            modifiedCount=0,
+            files=[],
+        )
+
+
+@app.post(
+    "/api/projects/{name}/git/init",
+    status_code=status.HTTP_201_CREATED,
+    tags=["Git"],
+)
+async def init_project_git(name: str):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    # Create .gitignore for LaTeX build artifacts if it doesn't exist
+    gitignore_path = project_dir / ".gitignore"
+    if not gitignore_path.exists():
+        gitignore_content = """# LaTeX build artifacts
+*.aux
+*.log
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.out
+*.lof
+*.lot
+.DS_Store
+"""
+        gitignore_path.write_text(gitignore_content, encoding="utf-8")
+
+    # Run git init
+    init_proc = await asyncio.create_subprocess_exec(
+        "git", "init",
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await init_proc.communicate()
+
+    # Run git add .
+    add_proc = await asyncio.create_subprocess_exec(
+        "git", "add", ".",
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await add_proc.communicate()
+
+    # Initial commit (fallback if already committed or empty)
+    commit_proc = await asyncio.create_subprocess_exec(
+        "git", "commit", "-m", "Initial commit",
+        cwd=str(project_dir),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    await commit_proc.communicate()
+
+    return {
+        "success": True,
+        "branch": "main",
+        "message": "Git repository initialized successfully with LaTeX .gitignore.",
+    }
+@app.get(
+    "/api/projects/{name}/git/diff",
+    tags=["Git"],
+)
+async def get_project_git_diff(name: str, file: Optional[str] = None):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    cmd = ["git", "diff"]
+    if file:
+        safe_file = resolve_file_path(project_dir, file)
+        cmd.append(safe_file.name)
+
+    try:
+        diff_proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            cwd=str(project_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        diff_out, _ = await diff_proc.communicate()
+        return {"diff": diff_out.decode("utf-8", errors="replace")}
+    except Exception as e:
+        return {"diff": f"Git diff error: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn

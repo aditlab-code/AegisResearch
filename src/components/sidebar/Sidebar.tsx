@@ -4,6 +4,8 @@ import { FileTree } from './FileTree'
 import { OutlineView } from './OutlineView'
 import { AIAssistantPanel } from './AIAssistantPanel'
 import { SearchPanel } from './SearchPanel'
+import { ReviewNotesPanel } from './ReviewNotesPanel'
+import { GitTrackPanel } from './GitTrackPanel'
 
 export interface SidebarProps {
   panel: PanelType
@@ -22,6 +24,8 @@ export interface SidebarProps {
   onInsertCodeSnippet: (code: string) => void
   onChangeSearch?: (val: string) => void
   onSelectSearchResult?: (filePath: string, lineNumber: number) => void
+  activeDocContent?: string
+  onJumpToNoteLine?: (line: number) => void
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -41,11 +45,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onInsertCodeSnippet,
   onChangeSearch,
   onSelectSearchResult,
+  activeDocContent = '',
+  onJumpToNoteLine = () => {},
 }) => {
   return (
     <aside className="w-full h-full bg-stone-50 border-r border-stone-200 p-3 text-sm overflow-auto">
       <div className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold mb-2">
-        {panel === 'ai' ? 'AI Assistant' : panel}
+        {panel === 'ai'
+          ? 'AI Assistant'
+          : panel === 'git'
+          ? 'Track Changes (Git)'
+          : panel === 'review'
+          ? 'Review Notes & TODOs'
+          : panel}
       </div>
       {panel === 'files' && (
         <FileTree
@@ -74,6 +86,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           projectName={projectName}
           onChange={onChangeSearch}
           onSelectMatch={onSelectSearchResult}
+        />
+      )}
+      {panel === 'review' && (
+        <ReviewNotesPanel content={activeDocContent} onJumpToLine={onJumpToNoteLine} />
+      )}
+      {panel === 'git' && (
+        <GitTrackPanel
+          projectName={projectName || 'quantum-thesis'}
+          onSelectFile={(fp) => {
+            const found = docs.find((d) => d.name === fp || d.name.endsWith(fp))
+            if (found && onSelectFile) {
+              onSelectFile({ name: found.name, path: fp, kind: found.kind })
+            }
+          }}
         />
       )}
     </aside>

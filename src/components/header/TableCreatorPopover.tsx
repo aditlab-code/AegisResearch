@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { X, Table as TableIcon } from 'lucide-react'
+import { Table as TableIcon } from 'lucide-react'
+import { PopoverShell } from './PopoverShell'
 
 export interface TableCreatorPopoverProps {
   onInsert: (code: string) => void
@@ -9,25 +10,25 @@ export interface TableCreatorPopoverProps {
 export const TableCreatorPopover: React.FC<TableCreatorPopoverProps> = ({ onInsert, onClose }) => {
   const [rows, setRows] = useState(3)
   const [cols, setCols] = useState(3)
-  const [caption, setCaption] = useState('Data Penelitian')
+  const [caption, setCaption] = useState('Experiment Results')
   const [hovered, setHovered] = useState<{ r: number; c: number } | null>(null)
 
   const maxGrid = 6
 
   const handleGenerateTable = (targetRows = rows, targetCols = cols) => {
     const colAlign = Array(targetCols).fill('c').join('|')
-    const headerRow = Array.from({ length: targetCols }, (_, i) => `Kolom ${i + 1}`).join(' & ')
+    const headerRow = Array.from({ length: targetCols }, (_, i) => `Col ${i + 1}`).join(' & ')
 
     let bodyRows = ''
     for (let r = 1; r < targetRows; r++) {
-      const rowData = Array.from({ length: targetCols }, (_, c) => `Data ${r},${c + 1}`).join(' & ')
+      const rowData = Array.from({ length: targetCols }, (_, c) => `Val ${r},${c + 1}`).join(' & ')
       bodyRows += `    ${rowData} \\\\\n`
     }
 
     const latexCode = `\\begin{table}[htbp]
   \\centering
-  \\caption{${caption || 'Judul Tabel'}}
-  \\label{tab:${(caption || 'tabel').toLowerCase().replace(/\\s+/g, '-')}}
+  \\caption{${caption || 'Table Caption'}}
+  \\label{tab:${(caption || 'table').toLowerCase().replace(/[^a-z0-9]/g, '-')}}
   \\begin{tabular}{|${colAlign}|}
     \\hline
     ${headerRow} \\\\
@@ -41,24 +42,9 @@ ${bodyRows}    \\hline
   }
 
   return (
-    <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-stone-300 rounded-lg shadow-xl z-50 text-stone-800 select-none p-3">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-stone-200 mb-3">
-        <div className="flex items-center gap-1.5">
-          <TableIcon className="size-4 text-indigo-600" />
-          <span className="text-xs font-semibold text-stone-700">Buat Tabel Interaktif</span>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-100"
-        >
-          <X className="size-3.5" />
-        </button>
-      </div>
-
+    <PopoverShell title="Table Builder" icon={TableIcon} onClose={onClose} widthClass="w-72">
       {/* Visual Grid Selector */}
-      <div className="flex flex-col items-center mb-3">
+      <div className="flex flex-col items-center mb-2.5">
         <div className="grid grid-cols-6 gap-1 p-2 bg-stone-50 border border-stone-200 rounded">
           {Array.from({ length: maxGrid }).map((_, rIdx) =>
             Array.from({ length: maxGrid }).map((_, cIdx) => {
@@ -89,22 +75,19 @@ ${bodyRows}    \\hline
           )}
         </div>
         <span className="text-[11px] font-mono text-stone-500 mt-1">
-          {hovered ? `${hovered.r} Baris × ${hovered.c} Kolom` : `${rows} Baris × ${cols} Kolom`}
+          {hovered ? `${hovered.r} Rows × ${hovered.c} Cols` : `${rows} Rows × ${cols} Cols`}
         </span>
       </div>
 
-      {/* Inputs for manual rows/cols & caption */}
-      <div className="space-y-2 mb-3">
-        <div>
-          <label className="text-[10px] font-medium text-stone-500 block mb-0.5">Judul Tabel (Caption)</label>
-          <input
-            type="text"
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            placeholder="Deskripsi tabel..."
-            className="w-full text-xs px-2 py-1 border border-stone-300 rounded focus:outline-none focus:border-indigo-500"
-          />
-        </div>
+      {/* Caption Input */}
+      <div className="mb-2.5">
+        <input
+          type="text"
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          placeholder="Table caption..."
+          className="w-full text-xs px-2 py-1 border border-stone-300 rounded focus:outline-none focus:border-indigo-500"
+        />
       </div>
 
       {/* Action Button */}
@@ -113,8 +96,8 @@ ${bodyRows}    \\hline
         onClick={() => handleGenerateTable(rows, cols)}
         className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow-sm transition-colors"
       >
-        Sisipkan Tabel ({rows}×{cols})
+        Insert Table ({rows}×{cols})
       </button>
-    </div>
+    </PopoverShell>
   )
 }

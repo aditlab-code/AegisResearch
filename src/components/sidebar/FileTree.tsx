@@ -16,6 +16,26 @@ export interface FileTreeProps {
   onCreateProject?: (name: string) => Promise<void>
 }
 
+const CLIENT_TEX_ARTIFACTS = new Set([
+  'aux', 'log', 'toc', 'bbl', 'blg', 'fls',
+  'fdb_latexmk', 'synctex.gz', 'out', 'lof', 'lot'
+])
+
+function filterTreeArtifacts(nodes: FileTreeNode[]): FileTreeNode[] {
+  return nodes
+    .filter((n) => {
+      if (n.type === 'file') {
+        const ext = n.name.split('.').pop()?.toLowerCase() || ''
+        if (CLIENT_TEX_ARTIFACTS.has(ext)) return false
+      }
+      return true
+    })
+    .map((n) => ({
+      ...n,
+      children: n.children ? filterTreeArtifacts(n.children) : undefined,
+    }))
+}
+
 export const FileTree: React.FC<FileTreeProps> = ({
   docs,
   activeDocIndex,
@@ -42,12 +62,13 @@ export const FileTree: React.FC<FileTreeProps> = ({
     setError(null)
     try {
       const data = await projectService.getProjectTree(projectName)
-      setTree(data)
+      const cleanData = filterTreeArtifacts(data)
+      setTree(cleanData)
       // Auto-expand root folders if empty set initially
       setExpandedKeys((prev) => {
         if (prev.size === 0) {
           const initialFolders = new Set<string>()
-          data.forEach((node) => {
+          cleanData.forEach((node) => {
             if (node.type === 'folder') {
               initialFolders.add(node.path)
             }
@@ -111,10 +132,11 @@ export const FileTree: React.FC<FileTreeProps> = ({
     }
     if (onSelectFile) {
       onSelectFile(fileNode)
-    }
-    const existingIndex = docs.findIndex((d) => d.name === node.name)
-    if (existingIndex !== -1) {
-      onSelectDoc(existingIndex)
+    } else {
+      const existingIndex = docs.findIndex((d) => d.name === node.name)
+      if (existingIndex !== -1) {
+        onSelectDoc(existingIndex)
+      }
     }
   }
 

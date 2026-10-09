@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { RibbonTab, PanelType, ChatMessage, FileNode } from './src/types'
 import { DEFAULT_CHAT_MESSAGES } from './src/constants'
-import { countWords, parseDocumentOutline } from './src/utils'
+import { countWords, parseDocumentOutline, parseBibtex, serializeBibtex, scanDocumentLabels, BibEntry } from './src/utils'
 import { projectService } from './src/services/projects'
 import { compilerService } from './src/services/compiler'
 import { useDocumentManager, useCompiler, useKeyboardShortcuts } from './src/hooks'
@@ -42,6 +42,60 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState('✓ Ready')
   const editorRef = useRef<CodeEditorHandle>(null)
 
+
+  const [bibEntries, setBibEntries] = useState<BibEntry[]>([])
+
+  // Load references.bib on project load
+  useEffect(() => {
+    const loadBib = async () => {
+      try {
+        const rawBib = await projectService.readFile(projectName, 'references.bib')
+        if (rawBib) {
+          setBibEntries(parseBibtex(rawBib))
+        }
+      } catch {
+        // ignore if references.bib not found
+      }
+    }
+    loadBib()
+  }, [projectName])
+
+  const scannedLabels = useMemo(() => {
+    if (!activeDoc?.content || activeDoc.kind !== 'tex') return []
+    return scanDocumentLabels(activeDoc.content)
+  }, [activeDoc?.content, activeDoc?.kind])
+
+  const handleSaveBibEntries = async (newEntries: BibEntry[]) => {
+    setBibEntries(newEntries)
+    const serialized = serializeBibtex(newEntries)
+    try {
+      await projectService.saveFile(projectName, 'references.bib', serialized)
+      setSaveStatus('✓ references.bib tersimpan')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error'
+      setSaveStatus(`✗ Gagal menyimpan .bib: ${msg}`)
+    }
+  }
+
+  const handleInsertCite = (citationKey: string) => {
+    editorRef.current?.wrapSelection(`\\cite{${citationKey}}`, '', '')
+  }
+
+  const handleInsertStyle = (style: 'apa' | 'ieee') => {
+    const code =
+      style === 'apa'
+        ? '\n\\bibliographystyle{apalike}\n\\bibliography{references}\n'
+        : '\n\\bibliographystyle{ieeetr}\n\\bibliography{references}\n'
+    editorRef.current?.wrapSelection(code, '', '')
+  }
+
+  const handleInsertRef = (refCode: string) => {
+    editorRef.current?.wrapSelection(refCode, '', '')
+  }
+
+  const handleInsertTocCode = (tocCode: string) => {
+    editorRef.current?.wrapSelection(tocCode, '', '')
+  }
   const outlineTree = useMemo(() => {
     if (!activeDoc?.content) return []
     const isLatex = activeDoc.kind === 'tex'
@@ -232,16 +286,16 @@ export default function App() {
     const isLatex = activeDoc?.kind === 'tex'
     if (type === 'bold') {
       isLatex
-        ? editorRef.current?.wrapSelection('\\textbf{', '}', 'teks tebal')
-        : editorRef.current?.wrapSelection('**', '**', 'teks tebal')
+        ? editorRef.current?.wrapSelection('\\textbf{', '}', 'bold text')
+        : editorRef.current?.wrapSelection('**', '**', 'bold text')
     } else if (type === 'italic') {
       isLatex
-        ? editorRef.current?.wrapSelection('\\textit{', '}', 'teks miring')
-        : editorRef.current?.wrapSelection('*', '*', 'teks miring')
+        ? editorRef.current?.wrapSelection('\\textit{', '}', 'italic text')
+        : editorRef.current?.wrapSelection('*', '*', 'italic text')
     } else if (type === 'quote') {
       isLatex
-        ? editorRef.current?.wrapSelection('\\textquotedblleft{}', '\\textquotedblright{}', 'kutipan')
-        : editorRef.current?.wrapSelection('"', '"', 'kutipan')
+        ? editorRef.current?.wrapSelection('\\textquotedblleft{}', '\\textquotedblright{}', 'quote')
+        : editorRef.current?.wrapSelection('"', '"', 'quote')
     } else if (type === 'superscript') {
       isLatex
         ? editorRef.current?.wrapSelection('^{', '}', '2')
@@ -257,11 +311,11 @@ export default function App() {
     const isLatex = activeDoc?.kind === 'tex'
     if (isLatex) {
       if (type === 'center') {
-        editorRef.current?.wrapSelection('\\begin{center}\n', '\n\\end{center}', 'Teks Rata Tengah')
+        editorRef.current?.wrapSelection('\\begin{center}\n', '\n\\end{center}', 'Centered Text')
       } else if (type === 'left') {
-        editorRef.current?.wrapSelection('\\begin{flushleft}\n', '\n\\end{flushleft}', 'Teks Rata Kiri')
+        editorRef.current?.wrapSelection('\\begin{flushleft}\n', '\n\\end{flushleft}', 'Left Aligned Text')
       } else if (type === 'right') {
-        editorRef.current?.wrapSelection('\\begin{flushright}\n', '\n\\end{flushright}', 'Teks Rata Kanan')
+        editorRef.current?.wrapSelection('\\begin{flushright}\n', '\n\\end{flushright}', 'Right Aligned Text')
       }
     }
   }
@@ -270,20 +324,20 @@ export default function App() {
     const isLatex = activeDoc?.kind === 'tex'
     if (type === 'heading1') {
       isLatex
-        ? editorRef.current?.wrapSelection('\\section{', '}\n', 'Judul Bagian')
-        : editorRef.current?.wrapSelection('# ', '\n', 'Judul Bagian')
+        ? editorRef.current?.wrapSelection('\\section{', '}\n', 'Section Title')
+        : editorRef.current?.wrapSelection('# ', '\n', 'Section Title')
     } else if (type === 'heading2') {
       isLatex
-        ? editorRef.current?.wrapSelection('\\subsection{', '}\n', 'Subjudul')
-        : editorRef.current?.wrapSelection('## ', '\n', 'Subjudul')
+        ? editorRef.current?.wrapSelection('\\subsection{', '}\n', 'Subsection Title')
+        : editorRef.current?.wrapSelection('## ', '\n', 'Subsection Title')
     } else if (type === 'numbering') {
       isLatex
-        ? editorRef.current?.wrapSelection('\\begin{enumerate}\n  \\item ', '\n\\end{enumerate}', 'Poin nomor')
-        : editorRef.current?.wrapSelection('1. ', '\n', 'Poin nomor')
+        ? editorRef.current?.wrapSelection('\\begin{enumerate}\n  \\item ', '\n\\end{enumerate}', 'Numbered item')
+        : editorRef.current?.wrapSelection('1. ', '\n', 'Numbered item')
     } else if (type === 'bullet') {
       isLatex
-        ? editorRef.current?.wrapSelection('\\begin{itemize}\n  \\item ', '\n\\end{itemize}', 'Poin daftar')
-        : editorRef.current?.wrapSelection('- ', '\n', 'Poin daftar')
+        ? editorRef.current?.wrapSelection('\\begin{itemize}\n  \\item ', '\n\\end{itemize}', 'List item')
+        : editorRef.current?.wrapSelection('- ', '\n', 'List item')
     } else if (type === 'line') {
       isLatex
         ? editorRef.current?.wrapSelection('\n\\hrule\n', '', '')
@@ -361,7 +415,18 @@ export default function App() {
         onFormatAction={handleFormatAction}
         onAlignAction={handleAlignAction}
         onStructureAction={handleStructureAction}
+        onSelectHeadingStyle={(styleCode) => editorRef.current?.wrapSelection(styleCode, '', '')}
         onPageAction={handlePageAction}
+        bibEntries={bibEntries}
+        scannedLabels={scannedLabels}
+        onInsertCite={handleInsertCite}
+        onInsertStyle={handleInsertStyle}
+        onSaveBibEntries={handleSaveBibEntries}
+        onInsertRef={handleInsertRef}
+        onInsertTocCode={handleInsertTocCode}
+        onInsertComment={(commentCode) => editorRef.current?.wrapSelection(commentCode, '', '')}
+        onOpenReviewPanel={() => setPanel('review')}
+        onOpenGitPanel={() => setPanel('git')}
       />
 
       <div className="flex flex-1 min-h-0">
@@ -388,6 +453,8 @@ export default function App() {
               onInsertCodeSnippet={(code) => updateContent(`${activeDoc?.content || ''}\n${code}`)}
               onChangeSearch={setSearchQuery}
               onSelectSearchResult={handleSelectSearchResult}
+              activeDocContent={activeDoc?.content || ''}
+              onJumpToNoteLine={(line) => editorRef.current?.jumpToLine(line)}
             />
           </Panel>
 

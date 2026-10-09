@@ -17,7 +17,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
     setActivePopover((prev) => (prev === type ? null : type))
   }
 
-  // Click-outside listener to dismiss popover cleanly
+  // Click-outside listener
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -37,10 +37,10 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
   return (
     <div
       ref={containerRef}
-      className="flex items-stretch gap-2 py-0.5 select-none overflow-visible relative"
+      className="h-full flex items-stretch gap-2 select-none overflow-visible relative"
     >
       {/* 1. Sub-panel Equations */}
-      <div className="relative flex flex-col items-center justify-between px-3 border-r border-stone-200">
+      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-stone-200">
         <button
           type="button"
           onClick={() => togglePopover('equation')}
@@ -71,7 +71,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
       </div>
 
       {/* 2. Sub-panel Tables */}
-      <div className="relative flex flex-col items-center justify-between px-3 border-r border-stone-200">
+      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-stone-200">
         <button
           type="button"
           onClick={() => togglePopover('table')}
@@ -82,7 +82,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
           }`}
         >
           <Table className="size-4 text-indigo-600" />
-          <span>Table Generator</span>
+          <span>Table Builder</span>
           <ChevronDown className="size-3 text-stone-400" />
         </button>
 
@@ -101,7 +101,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
       </div>
 
       {/* 3. Sub-panel Illustrations / Figures */}
-      <div className="relative flex flex-col items-center justify-between px-3">
+      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3">
         <button
           type="button"
           onClick={() => togglePopover('figure')}
@@ -112,7 +112,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
           }`}
         >
           <Image className="size-4 text-indigo-600" />
-          <span>Sisipkan Gambar</span>
+          <span>Insert Figure</span>
           <ChevronDown className="size-3 text-stone-400" />
         </button>
 

@@ -4,8 +4,16 @@ from pathlib import Path
 from typing import Dict, Set, List
 from fastapi import WebSocket, WebSocketDisconnect
 
-# Directory names or file prefixes to ignore
+# Directory names to ignore
 IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", ".idea", ".vscode"}
+
+# File extensions produced by LaTeX builds that should NOT trigger watcher events
+TEX_BUILD_ARTIFACT_EXTS = {
+    ".aux", ".log", ".toc", ".bbl", ".blg", ".fls",
+    ".fdb_latexmk", ".synctex.gz", ".out", ".lof", ".lot",
+    ".nav", ".snm", ".vrb", ".idx", ".ilg", ".ind"
+}
+
 IGNORED_FILES = {".DS_Store"}
 
 
@@ -18,17 +26,12 @@ class WorkspaceWatcherManager:
         # Map project_name -> snapshot of paths to mtime
         self._snapshots: Dict[str, Dict[str, float]] = {}
 
-    def _should_ignore(self, path: Path, project_root: Path) -> bool:
-        try:
-            rel = path.relative_to(project_root)
-        except ValueError:
+    def _should_ignore_file(self, filename: str) -> bool:
+        if filename in IGNORED_FILES or filename.startswith("."):
             return True
-
-        for part in rel.parts:
-            if part in IGNORED_DIRS or part.startswith("."):
+        for ext in TEX_BUILD_ARTIFACT_EXTS:
+            if filename.lower().endswith(ext):
                 return True
-        if path.name in IGNORED_FILES or path.name.startswith("."):
-            return True
         return False
 
     def _scan_mtimes(self, project_dir: Path) -> Dict[str, float]:
@@ -49,7 +52,7 @@ class WorkspaceWatcherManager:
                 pass
 
             for f in files:
-                if f in IGNORED_FILES or f.startswith("."):
+                if self._should_ignore_file(f):
                     continue
                 file_path = root_path / f
                 try:
@@ -71,7 +74,6 @@ class WorkspaceWatcherManager:
             self._active_connections[project_name].discard(websocket)
             if not self._active_connections[project_name]:
                 del self._active_connections[project_name]
-                # Cancel task if no listeners
                 if project_name in self._tasks:
                     self._tasks[project_name].cancel()
                     del self._tasks[project_name]
@@ -102,7 +104,7 @@ class WorkspaceWatcherManager:
     async def _watch_loop(self, project_name: str, project_dir: Path):
         try:
             while True:
-                await asyncio.sleep(0.4)  # Poll every 400ms (fast & lightweight)
+                await asyncio.sleep(0.5)  # 500ms smooth debounce
                 if project_name not in self._active_connections or not self._active_connections[project_name]:
                     break
 

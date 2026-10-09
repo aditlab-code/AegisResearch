@@ -27,9 +27,12 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
     )
   }
 
+  // Defense-in-depth: deduplicate unique open document indices
+  const uniqueOpenIndices = Array.from(new Set(openDocIndices))
+
   return (
     <div className="flex bg-stone-100 border-b border-stone-200 text-xs select-none overflow-x-auto">
-      {openDocIndices.map((docIdx) => {
+      {uniqueOpenIndices.map((docIdx) => {
         const isActive = docIdx === activeDocIndex
         const doc = docs[docIdx]
         if (!doc) return null

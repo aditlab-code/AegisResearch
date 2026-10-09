@@ -8,7 +8,7 @@ export interface Doc {
 
 export type RibbonTab = 'Home' | 'Insert' | 'References' | 'Review'
 
-export type PanelType = 'files' | 'outline' | 'search' | 'ai'
+export type PanelType = 'files' | 'outline' | 'search' | 'review' | 'git' | 'ai'
 
 export interface OutlineNode {
   id: string

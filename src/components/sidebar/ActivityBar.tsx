@@ -1,5 +1,5 @@
 import React from 'react'
-import { Files, ListTree, Search, Sparkles, type LucideIcon } from 'lucide-react'
+import { Files, ListTree, Search, Sparkles, MessageSquare, GitCompare, type LucideIcon } from 'lucide-react'
 import { PanelType } from '../../types'
 
 export interface ActivityBarProps {
@@ -11,6 +11,8 @@ const PANELS: [PanelType, LucideIcon, string][] = [
   ['files', Files, 'Explorer'],
   ['outline', ListTree, 'Outline'],
   ['search', Search, 'Search'],
+  ['review', MessageSquare, 'Review Notes & TODOs'],
+  ['git', GitCompare, 'Track Changes (Git)'],
   ['ai', Sparkles, 'AI Assistant'],
 ]
 

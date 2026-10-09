@@ -5,9 +5,11 @@ import { INITIAL_DOCS, SNIPPETS } from '../constants'
 export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
   const [docs, setDocs] = useState<Doc[]>(initialDocs)
   const [activeDocIndex, setActiveDocIndex] = useState(0)
-  const [openDocIndices, setOpenDocIndices] = useState<number[]>([0, 1])
+  // Initially open only unique valid document index
+  const [openDocIndices, setOpenDocIndices] = useState<number[]>([0])
 
-  const activeDoc = activeDocIndex >= 0 && activeDocIndex < docs.length ? docs[activeDocIndex] : undefined
+  const activeDoc =
+    activeDocIndex >= 0 && activeDocIndex < docs.length ? docs[activeDocIndex] : undefined
 
   const updateContent = (content: string) => {
     if (activeDocIndex < 0) return
@@ -25,29 +27,31 @@ export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
   }
 
   const openDoc = (index: number) => {
+    if (index < 0 || index >= docs.length) return
     setActiveDocIndex(index)
-    if (!openDocIndices.includes(index)) {
-      setOpenDocIndices((prev) => [...prev, index])
-    }
+    setOpenDocIndices((prev) => (prev.includes(index) ? prev : [...prev, index]))
   }
 
   const closeDoc = (index: number) => {
-    const currentPosition = openDocIndices.indexOf(index)
-    const nextOpen = openDocIndices.filter((x) => x !== index)
-    setOpenDocIndices(nextOpen)
+    setOpenDocIndices((prev) => {
+      const currentPosition = prev.indexOf(index)
+      const nextOpen = prev.filter((x) => x !== index)
 
-    if (activeDocIndex === index) {
-      if (nextOpen.length === 0) {
-        setActiveDocIndex(-1)
-      } else {
-        // Transition to neighbor tab (prefer previous tab if closing rightmost, else next tab)
-        const nextTargetIndex =
-          currentPosition > 0
-            ? openDocIndices[currentPosition - 1]
-            : openDocIndices[currentPosition + 1] ?? nextOpen[0]
-        setActiveDocIndex(nextTargetIndex)
+      if (activeDocIndex === index) {
+        if (nextOpen.length === 0) {
+          setActiveDocIndex(-1)
+        } else {
+          // Transition to neighbor tab (prefer previous tab, else next tab)
+          const nextTargetIndex =
+            currentPosition > 0
+              ? prev[currentPosition - 1]
+              : prev[currentPosition + 1] ?? nextOpen[0]
+          setActiveDocIndex(nextTargetIndex)
+        }
       }
-    }
+
+      return nextOpen
+    })
   }
 
   const setDocContent = (fileName: string, content: string) => {
@@ -56,7 +60,11 @@ export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
     )
   }
 
-  const openOrCreateDoc = (fileName: string, kind: 'tex' | 'md' = 'tex', initialContent?: string) => {
+  const openOrCreateDoc = (
+    fileName: string,
+    kind: 'tex' | 'md' = 'tex',
+    initialContent?: string,
+  ) => {
     const existingIndex = docs.findIndex((d) => d.name === fileName)
     if (existingIndex !== -1) {
       if (initialContent !== undefined) {
@@ -67,18 +75,20 @@ export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
       openDoc(existingIndex)
       return existingIndex
     }
+
     const newDoc: Doc = {
       name: fileName,
       kind,
-      content: initialContent !== undefined
-        ? initialContent
-        : kind === 'tex'
-        ? `\\documentclass{article}\n\\title{${fileName.replace(/\\.tex$/, '')}}\n\\begin{document}\n\\section{Introduction}\n\\end{document}\n`
-        : `# ${fileName}\n`,
+      content:
+        initialContent !== undefined
+          ? initialContent
+          : kind === 'tex'
+          ? `\\documentclass{article}\n\\title{${fileName.replace(/\\.tex$/, '')}}\n\\begin{document}\n\\section{Introduction}\n\\end{document}\n`
+          : `# ${fileName}\n`,
     }
-    const newDocs = [...docs, newDoc]
-    const newIndex = newDocs.length - 1
-    setDocs(newDocs)
+
+    const newIndex = docs.length
+    setDocs((prev) => [...prev, newDoc])
     setActiveDocIndex(newIndex)
     setOpenDocIndices((prev) => (prev.includes(newIndex) ? prev : [...prev, newIndex]))
     return newIndex
