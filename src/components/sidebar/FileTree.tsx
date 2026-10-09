@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { Folder, RefreshCw, Plus, FolderPlus, FilePlus, X } from 'lucide-react'
+import { Folder, RefreshCw, Plus, FolderPlus, FilePlus, X, Trash2 } from 'lucide-react'
 import { Doc, FileNode, FileTreeNode } from '../../types'
 import { projectService } from '../../services/projects'
 import { TreeItem } from './TreeItem'
@@ -14,6 +14,7 @@ export interface FileTreeProps {
   onSelectFile?: (file: FileNode) => void
   onSelectProject?: (project: string) => void
   onCreateProject?: (name: string) => Promise<void>
+  onDeleteFile?: (filePath: string) => void
 }
 
 const CLIENT_TEX_ARTIFACTS = new Set([
@@ -44,12 +45,17 @@ export const FileTree: React.FC<FileTreeProps> = ({
   onSelectFile,
   onSelectProject,
   onCreateProject,
+  onDeleteFile,
 }) => {
   const [tree, setTree] = useState<FileTreeNode[]>([])
   const [projects, setProjects] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
+
+  // Delete modal state
+  const [nodeToDelete, setNodeToDelete] = useState<FileTreeNode | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Creation dialog modes
   const [modalMode, setModalMode] = useState<'project' | 'file' | 'folder' | null>(null)
@@ -79,7 +85,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
       })
     } catch (err) {
       console.warn('Backend tree scan failed, using fallback:', err)
-      setError('Backend offline · Menggunakan cache lokal')
+      setError('Backend offline · Using local cache')
       setTree([])
     } finally {
       setLoading(false)
@@ -166,9 +172,25 @@ export const FileTree: React.FC<FileTreeProps> = ({
       setModalMode(null)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error'
-      alert(`Gagal membuat item: ${message}`)
+      alert(`Failed to create item: ${message}`)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!nodeToDelete) return
+    setIsDeleting(true)
+    try {
+      await projectService.deleteFile(projectName, nodeToDelete.path)
+      onDeleteFile?.(nodeToDelete.path)
+      setNodeToDelete(null)
+      await loadTree()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error'
+      alert(`Failed to delete item: ${msg}`)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -182,7 +204,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
             <select
               value={projectName}
               onChange={(e) => onSelectProject?.(e.target.value)}
-              aria-label="Pilih Proyek"
+              aria-label="Select Project"
               className="text-xs font-semibold text-zinc-800 dark:text-zinc-100 bg-transparent border-0 py-0.5 pr-4 pl-0 focus:ring-0 cursor-pointer truncate max-w-[120px]"
             >
               {projects.map((p) => (
@@ -206,7 +228,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               setModalMode(modalMode === 'file' ? null : 'file')
               setInputValue('')
             }}
-            title="File Baru (contoh: chapters/intro.tex)"
+            title="New File (e.g., chapters/intro.tex)"
             className="p-1 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-xs transition-colors"
           >
             <FilePlus className="size-3.5" />
@@ -217,7 +239,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               setModalMode(modalMode === 'folder' ? null : 'folder')
               setInputValue('')
             }}
-            title="Folder Baru (contoh: chapters)"
+            title="New Folder (e.g., chapters)"
             className="p-1 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-xs transition-colors"
           >
             <FolderPlus className="size-3.5" />
@@ -228,7 +250,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               setModalMode(modalMode === 'project' ? null : 'project')
               setInputValue('')
             }}
-            title="Proyek Baru"
+            title="New Project"
             className="p-1 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-xs transition-colors"
           >
             <Plus className="size-3.5" />
@@ -254,10 +276,10 @@ export const FileTree: React.FC<FileTreeProps> = ({
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={
               modalMode === 'project'
-                ? 'Nama proyek baru...'
+                ? 'New project name...'
                 : modalMode === 'folder'
-                ? 'Nama folder (misal: images)...'
-                : 'Nama file (misal: intro.tex)...'
+                ? 'Folder name (e.g., images)...'
+                : 'File name (e.g., intro.tex)...'
             }
             autoFocus
             className="flex-1 text-xs px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
@@ -267,7 +289,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
             disabled={!inputValue.trim()}
             className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50"
           >
-            Buat
+            Create
           </button>
           <button
             type="button"
@@ -282,7 +304,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
       {/* Loading & Error Indicators */}
       {loading && !modalMode && (
         <div className="text-[11px] text-zinc-400 animate-pulse px-1">
-          Menyinkronkan file...
+          Syncing files...
         </div>
       )}
       {error && (
@@ -303,6 +325,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               expandedKeys={expandedKeys}
               onToggleFolder={toggleFolder}
               onSelectFile={handleSelectFile}
+              onDeleteNode={(node) => setNodeToDelete(node)}
             />
           ))}
         </div>
@@ -327,6 +350,41 @@ export const FileTree: React.FC<FileTreeProps> = ({
               </button>
             )
           })}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {nodeToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-2xl max-w-sm w-full p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-semibold text-sm">
+              <Trash2 className="size-4" />
+              <span>Delete {nodeToDelete.type === 'folder' ? 'Folder' : 'File'}?</span>
+            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              Are you sure you want to permanently delete{' '}
+              <strong className="text-zinc-900 dark:text-zinc-100 font-mono font-semibold">{nodeToDelete.name}</strong>?
+              This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setNodeToDelete(null)}
+                className="px-3 py-1.5 rounded text-xs border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="px-3 py-1.5 rounded text-xs bg-red-600 hover:bg-red-700 text-white font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

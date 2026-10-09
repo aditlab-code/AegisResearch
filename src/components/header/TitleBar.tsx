@@ -1,5 +1,5 @@
 import React from 'react'
-import { Search, ShieldCheck, Sun, Moon } from 'lucide-react'
+import { ShieldCheck, Sun, Moon } from 'lucide-react'
 
 export interface TitleBarProps {
   appName?: string
@@ -8,8 +8,6 @@ export interface TitleBarProps {
   theme?: 'dark' | 'light'
   onToggleTheme?: () => void
 }
-
-const MENU_ITEMS = ['File', 'Edit', 'View', 'Build', 'Help']
 
 export const TitleBar: React.FC<TitleBarProps> = ({
   appName = 'Aegis Research',
@@ -28,22 +26,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         <span className="text-sm font-semibold">{appName}</span>
       </div>
 
-      {/* Menu items */}
-      <nav className="flex gap-3 text-zinc-500 dark:text-zinc-400 text-xs">
-        {MENU_ITEMS.map((menu) => (
-          <button key={menu} className="hover:text-zinc-900 dark:hover:text-white transition-colors">
-            {menu}
-          </button>
-        ))}
-      </nav>
-
-      {/* Command search */}
-      <div className="flex-1 flex justify-center">
-        <div className="bg-white/90 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 rounded-md px-4 py-1 text-xs text-zinc-600 dark:text-zinc-400 w-80 text-center flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs">
-          <Search className="size-3.5 text-zinc-400 dark:text-zinc-500" />
-          <span>Search commands — Ctrl+Shift+P</span>
-        </div>
-      </div>
+      {/* Spacer */}
+      <div className="flex-1" />
 
       {/* Status indicator */}
       <span className="text-xs text-zinc-500 dark:text-zinc-400">{statusText}</span>

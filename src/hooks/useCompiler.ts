@@ -19,7 +19,7 @@ export function useCompiler(projectName: string = 'quantum-thesis') {
         }
         return result
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Kompilasi backend gagal.'
+        const msg = err instanceof Error ? err.message : 'Backend compilation failed.'
         const failedResult: CompileResult = {
           success: false,
           engine,

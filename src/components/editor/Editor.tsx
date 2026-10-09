@@ -56,8 +56,8 @@ export const Editor = forwardRef<CodeEditorHandle, EditorProps>(
             <div className="size-12 rounded-full bg-zinc-200/60 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 mb-3">
               <FileEdit className="size-6" />
             </div>
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1">Tidak ada dokumen yang terbuka</p>
-            <p className="text-xs text-zinc-400">Pilih file dari sidebar di sebelah kiri untuk mulai mengedit.</p>
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1">No documents open</p>
+            <p className="text-xs text-zinc-400">Select a file from the explorer on the left to start editing.</p>
           </div>
         )}
       </main>

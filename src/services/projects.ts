@@ -56,4 +56,13 @@ export const projectService = {
       { content },
     )
   },
+
+  async deleteFile(
+    projectName: string,
+    filePath: string,
+  ): Promise<{ success: boolean; message?: string; path?: string }> {
+    return apiClient.delete<{ success: boolean; message?: string; path?: string }>(
+      `/api/projects/${encodeURIComponent(projectName)}/files/${encodeURIComponent(filePath)}`,
+    )
+  },
 }

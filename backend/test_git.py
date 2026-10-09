@@ -187,3 +187,88 @@ def test_git_commit_and_branches_lifecycle():
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
 
+
+def test_git_log_endpoint():
+    res = client.get("/api/projects/quantum-thesis/git/log")
+    assert res.status_code == 200
+    data = res.json()
+    assert "commits" in data
+    assert isinstance(data["commits"], list)
+    if data["commits"]:
+        commit = data["commits"][0]
+        assert "hash" in commit
+        assert "message" in commit
+        assert "author" in commit
+        assert "lane" in commit
+
+
+def test_delete_file_endpoint():
+    project_name = "pytest-delete-file"
+    temp_dir = WORKSPACE_DIR / project_name
+    if temp_dir.exists():
+        shutil.rmtree(temp_dir)
+
+    try:
+        client.post("/api/projects", json={"name": project_name})
+        # Create a test file
+        client.post(
+            f"/api/projects/{project_name}/files",
+            json={"path": "to_delete.txt", "content": "delete me"},
+        )
+        assert (temp_dir / "to_delete.txt").exists()
+
+        # Delete it
+        del_res = client.delete(f"/api/projects/{project_name}/files/to_delete.txt")
+        assert del_res.status_code == 200
+        assert del_res.json()["success"] is True
+        assert not (temp_dir / "to_delete.txt").exists()
+    finally:
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir)
+
+
+def test_search_replace_endpoint():
+    project_name = "pytest-search-replace"
+    temp_dir = WORKSPACE_DIR / project_name
+    if temp_dir.exists():
+        shutil.rmtree(temp_dir)
+
+    try:
+        client.post("/api/projects", json={"name": project_name})
+        client.post(
+            f"/api/projects/{project_name}/files",
+            json={"path": "chapter1.tex", "content": "Hello Universe\nWelcome to Universe"},
+        )
+
+        # 1. Single line replace
+        rep1 = client.post(
+            f"/api/projects/{project_name}/search/replace",
+            json={
+                "query": "Universe",
+                "replaceWith": "World",
+                "filePath": "chapter1.tex",
+                "lineNumber": 1,
+            },
+        )
+        assert rep1.status_code == 200
+        assert rep1.json()["replacedCount"] == 1
+        content1 = (temp_dir / "chapter1.tex").read_text()
+        assert "Hello World\nWelcome to Universe" == content1
+
+        # 2. Multi-file / project-wide replace
+        rep2 = client.post(
+            f"/api/projects/{project_name}/search/replace",
+            json={
+                "query": "Universe",
+                "replaceWith": "Cosmos",
+            },
+        )
+        assert rep2.status_code == 200
+        assert rep2.json()["replacedCount"] == 1
+        content2 = (temp_dir / "chapter1.tex").read_text()
+        assert "Hello World\nWelcome to Cosmos" == content2
+    finally:
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir)
+
+

@@ -7,6 +7,7 @@ import {
   FileText,
   FileCode,
   File,
+  Trash2,
 } from 'lucide-react'
 import { FileTreeNode } from '../../types'
 
@@ -17,6 +18,7 @@ export interface TreeItemProps {
   expandedKeys: Set<string>
   onToggleFolder: (path: string) => void
   onSelectFile: (file: FileTreeNode) => void
+  onDeleteNode?: (node: FileTreeNode) => void
 }
 
 function formatBytes(bytes?: number): string {
@@ -34,6 +36,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   expandedKeys,
   onToggleFolder,
   onSelectFile,
+  onDeleteNode,
 }) => {
   const isFolder = node.type === 'folder'
   const isExpanded = expandedKeys.has(node.path)
@@ -44,26 +47,43 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   if (isFolder) {
     return (
       <div className="flex flex-col select-none">
-        <button
-          type="button"
-          onClick={() => onToggleFolder(node.path)}
+        <div
           style={{ paddingLeft }}
-          className="group w-full flex items-center gap-1.5 py-1 pr-2 rounded text-left transition-colors hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
+          className="group w-full flex items-center justify-between py-1 pr-2 rounded text-left transition-colors hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
         >
-          <span className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 shrink-0">
+          <div
+            onClick={() => onToggleFolder(node.path)}
+            className="flex items-center gap-1.5 min-w-0 flex-1 cursor-pointer"
+          >
+            <span className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 shrink-0">
+              {isExpanded ? (
+                <ChevronDown className="size-3.5" />
+              ) : (
+                <ChevronRight className="size-3.5" />
+              )}
+            </span>
             {isExpanded ? (
-              <ChevronDown className="size-3.5" />
+              <FolderOpen className="size-3.5 text-amber-500 shrink-0" />
             ) : (
-              <ChevronRight className="size-3.5" />
+              <Folder className="size-3.5 text-amber-500 shrink-0" />
             )}
-          </span>
-          {isExpanded ? (
-            <FolderOpen className="size-3.5 text-amber-500 shrink-0" />
-          ) : (
-            <Folder className="size-3.5 text-amber-500 shrink-0" />
+            <span className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{node.name}</span>
+          </div>
+
+          {onDeleteNode && (
+            <button
+              type="button"
+              title={`Delete ${node.name}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                onDeleteNode(node)
+              }}
+              className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 p-0.5 rounded transition-opacity shrink-0"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
           )}
-          <span className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{node.name}</span>
-        </button>
+        </div>
 
         {isExpanded && node.children && node.children.length > 0 && (
           <div className="flex flex-col">
@@ -76,6 +96,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
                 expandedKeys={expandedKeys}
                 onToggleFolder={onToggleFolder}
                 onSelectFile={onSelectFile}
+                onDeleteNode={onDeleteNode}
               />
             ))}
           </div>
@@ -86,7 +107,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
             style={{ paddingLeft: `${(level + 1) * 14 + 18}px` }}
             className="py-1 text-[11px] text-zinc-400 dark:text-zinc-500 italic"
           >
-            Kosong
+            Empty
           </div>
         )}
       </div>
@@ -106,11 +127,10 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   }
 
   return (
-    <button
-      type="button"
+    <div
       onClick={() => onSelectFile(node)}
       style={{ paddingLeft }}
-      className={`group w-full flex items-center justify-between py-1 pr-2 rounded text-left transition-colors ${
+      className={`group w-full flex items-center justify-between py-1 pr-2 rounded text-left transition-colors cursor-pointer ${
         isActive
           ? 'bg-blue-50 dark:bg-zinc-800 text-blue-700 dark:text-blue-400 font-medium'
           : 'hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
@@ -120,11 +140,26 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         <span className="shrink-0 ml-1">{fileIcon}</span>
         <span className="truncate text-xs">{node.name}</span>
       </div>
-      {node.size !== undefined && node.size > 0 && (
-        <span className="text-[10px] text-zinc-400 font-mono ml-2 shrink-0">
-          {formatBytes(node.size)}
-        </span>
-      )}
-    </button>
+      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+        {node.size !== undefined && node.size > 0 && (
+          <span className="text-[10px] text-zinc-400 font-mono">
+            {formatBytes(node.size)}
+          </span>
+        )}
+        {onDeleteNode && (
+          <button
+            type="button"
+            title={`Delete ${node.name}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onDeleteNode(node)
+            }}
+            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 p-0.5 rounded transition-opacity"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
   )
 }

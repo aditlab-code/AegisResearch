@@ -47,6 +47,17 @@ export default function App() {
 
   const [bibEntries, setBibEntries] = useState<BibEntry[]>([])
 
+  const isOutlineSupported = Boolean(
+    activeDoc && (activeDoc.kind === 'tex' || activeDoc.kind === 'md')
+  )
+
+  // Auto-close Outline panel if active doc is not .tex or .md (or no file open)
+  useEffect(() => {
+    if (panel === 'outline' && !isOutlineSupported) {
+      setPanel('files')
+    }
+  }, [panel, isOutlineSupported])
+
   // Load references.bib on project load
   useEffect(() => {
     const loadBib = async () => {
@@ -72,10 +83,10 @@ export default function App() {
     const serialized = serializeBibtex(newEntries)
     try {
       await projectService.saveFile(projectName, 'references.bib', serialized)
-      setSaveStatus('✓ references.bib tersimpan')
+      setSaveStatus('✓ references.bib saved')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error'
-      setSaveStatus(`✗ Gagal menyimpan .bib: ${msg}`)
+      setSaveStatus(`✗ Failed to save .bib: ${msg}`)
     }
   }
 
@@ -368,7 +379,7 @@ export default function App() {
     const response =
       t.includes('rumus') || t.includes('equation')
         ? {
-            text: 'Berikut rumus master equation Lindblad:',
+            text: 'Here is the Lindblad master equation:',
             code:
               activeDoc?.kind === 'tex'
                 ? '$\\dot{\\rho} = -i[H,\\rho] + \\sum_k \\gamma_k L_k \\rho L_k^\\dagger$'
@@ -376,19 +387,42 @@ export default function App() {
           }
         : t.includes('sitasi') || t.includes('cite')
         ? {
-            text: 'Referensi relevan: Engel et al. (2007), Nature 446.',
+            text: 'Relevant reference: Engel et al. (2007), Nature 446.',
             code: activeDoc?.kind === 'tex' ? '\\cite{engel2007}' : '[@engel2007]',
           }
         : t.includes('ringkas') || t.includes('summar')
         ? {
-            text: `Ringkasan: dokumen "${activeDoc?.name || 'Dokumen'}" berisi ${outlineTree.length} bagian utama dengan ${words} kata, membahas koherensi kuantum pada sistem biologis.`,
+            text: `Summary: Document "${activeDoc?.name || 'Document'}" contains ${outlineTree.length} main sections with ${words} words, discussing quantum coherence in biological systems.`,
           }
         : {
-            text: 'Saran perbaikan kalimat akademik:',
+            text: 'Academic sentence improvement suggestion:',
             code: 'Recent evidence indicates that quantum coherence persists in photosynthetic complexes.',
           }
 
     setChat((prev) => [...prev, { role: 'user', text }, { role: 'ai', ...response }])
+  }
+
+  const handleDeleteFile = (filePath: string) => {
+    const matchingIndices = docs
+      .map((d, idx) => ({ d, idx }))
+      .filter(({ d }) => d.name === filePath || d.name.endsWith('/' + filePath) || filePath.endsWith('/' + d.name))
+
+    matchingIndices.forEach(({ idx }) => {
+      closeDoc(idx)
+    })
+  }
+
+  const handleRefreshDocs = async () => {
+    if (activeDoc) {
+      try {
+        const updated = await projectService.readFile(projectName, activeDoc.name)
+        if (updated !== undefined) {
+          setDocContent(activeDoc.name, updated)
+        }
+      } catch {
+        // ignore
+      }
+    }
   }
 
   useKeyboardShortcuts({
@@ -433,7 +467,11 @@ export default function App() {
 
       <div className="flex flex-1 min-h-0">
         {/* Activity bar */}
-        <ActivityBar activePanel={panel} onSelectPanel={setPanel} />
+        <ActivityBar
+          activePanel={panel}
+          onSelectPanel={setPanel}
+          isOutlineDisabled={!isOutlineSupported}
+        />
 
         {/* Resizable 3-panel layout */}
         <PanelGroup direction="horizontal" className="flex-1 h-full min-h-0">
@@ -443,6 +481,7 @@ export default function App() {
               panel={panel}
               docs={docs}
               activeDocIndex={activeDocIndex}
+              activeDocName={activeDoc?.name}
               outlineTree={outlineTree}
               onNavigateOutline={(line) => editorRef.current?.jumpToLine(line)}
               chat={chat}
@@ -457,6 +496,8 @@ export default function App() {
               onSelectSearchResult={handleSelectSearchResult}
               activeDocContent={activeDoc?.content || ''}
               onJumpToNoteLine={(line) => editorRef.current?.jumpToLine(line)}
+              onDeleteFile={handleDeleteFile}
+              onRefreshDocs={handleRefreshDocs}
             />
           </Panel>
 
@@ -491,7 +532,7 @@ export default function App() {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 text-zinc-400 text-xs font-mono">
-                Tidak ada dokumen aktif
+                No active document
               </div>
             )}
           </Panel>

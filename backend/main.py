@@ -251,7 +251,10 @@ async def get_project_files(name: str):
 
     file_nodes: List[FileNodeResponse] = []
     for item in sorted(project_dir.rglob("*")):
-        if item.is_file() and not item.name.startswith(".") and not is_tex_artifact(item.name):
+        rel_parts = item.relative_to(project_dir).parts
+        if any(part.startswith(".") or part in {".git", ".venv", "node_modules", "__pycache__"} for part in rel_parts):
+            continue
+        if item.is_file() and not is_tex_artifact(item.name):
             rel_path = item.relative_to(project_dir).as_posix()
             stat_result = item.stat()
             file_nodes.append(
@@ -481,6 +484,44 @@ async def create_file(name: str, payload: FileCreateRequest):
     }
 
 
+@app.delete(
+    "/api/projects/{name}/files/{file_path:path}",
+    response_model=dict,
+    tags=["Projects"],
+)
+async def delete_project_file(name: str, file_path: str):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    target = resolve_file_path(project_dir, file_path)
+    if not target.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Path '{file_path}' not found.",
+        )
+
+    try:
+        if target.is_file() or target.is_symlink():
+            target.unlink()
+        elif target.is_dir():
+            shutil.rmtree(target)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete '{file_path}': {str(e)}",
+        )
+
+    return {
+        "success": True,
+        "message": f"Successfully deleted '{file_path}'.",
+        "path": file_path,
+    }
+
+
 @app.websocket("/api/ws/workspace/{name}")
 async def workspace_ws(websocket: WebSocket, name: str):
     try:
@@ -663,6 +704,122 @@ async def search_project(
         fileCount=len(file_results),
         results=file_results,
     )
+
+
+class SearchReplaceRequest(BaseModel):
+    query: str
+    replaceWith: str = ""
+    caseSensitive: bool = False
+    filePath: Optional[str] = None
+    lineNumber: Optional[int] = None
+    matchStart: Optional[int] = None
+    matchEnd: Optional[int] = None
+
+
+class SearchReplaceResponse(BaseModel):
+    success: bool
+    message: str
+    replacedCount: int
+    modifiedFiles: List[str]
+
+
+@app.post(
+    "/api/projects/{name}/search/replace",
+    response_model=SearchReplaceResponse,
+    tags=["Search"],
+)
+async def replace_project_matches(name: str, payload: SearchReplaceRequest):
+    stripped_query = payload.query
+    if not stripped_query:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query string cannot be empty.",
+        )
+
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    flags = 0 if payload.caseSensitive else re.IGNORECASE
+    pattern = re.compile(re.escape(stripped_query), flags)
+
+    total_replaced = 0
+    modified_files: List[str] = []
+
+    # Case A: Single file replacement
+    if payload.filePath:
+        target_file = resolve_file_path(project_dir, payload.filePath)
+        if not target_file.exists() or not target_file.is_file():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File '{payload.filePath}' not found.",
+            )
+
+        try:
+            content = target_file.read_text(encoding="utf-8")
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Failed to read file: {str(e)}",
+            )
+
+        if payload.lineNumber is not None:
+            lines = content.splitlines(keepends=True)
+            target_idx = payload.lineNumber - 1
+            if 0 <= target_idx < len(lines):
+                orig_line = lines[target_idx]
+                new_line, count = pattern.subn(payload.replaceWith, orig_line, count=1)
+                if count > 0:
+                    lines[target_idx] = new_line
+                    target_file.write_text("".join(lines), encoding="utf-8")
+                    total_replaced = count
+                    modified_files.append(payload.filePath)
+        else:
+            new_content, count = pattern.subn(payload.replaceWith, content)
+            if count > 0:
+                target_file.write_text(new_content, encoding="utf-8")
+                total_replaced = count
+                modified_files.append(payload.filePath)
+
+    # Case B: Multi-file replacement across project
+    else:
+        for root, dirs, files in os.walk(project_dir):
+            dirs[:] = [
+                d for d in dirs
+                if not d.startswith(".") and d not in {".git", ".venv", "node_modules", "__pycache__"}
+            ]
+
+            for file in files:
+                ext = Path(file).suffix.lower()
+                if ext in SEARCH_IGNORED_EXTENSIONS or is_tex_artifact(file):
+                    continue
+
+                file_path = Path(root) / file
+                try:
+                    content = file_path.read_text(encoding="utf-8", errors="ignore")
+                except Exception:
+                    continue
+
+                new_content, count = pattern.subn(payload.replaceWith, content)
+                if count > 0:
+                    try:
+                        file_path.write_text(new_content, encoding="utf-8")
+                        total_replaced += count
+                        rel = file_path.relative_to(project_dir).as_posix()
+                        modified_files.append(rel)
+                    except Exception:
+                        pass
+
+    return SearchReplaceResponse(
+        success=True,
+        message=f"Replaced {total_replaced} occurrences across {len(modified_files)} file(s).",
+        replacedCount=total_replaced,
+        modifiedFiles=modified_files,
+    )
+
 
 class GitFileChange(BaseModel):
     status: str
@@ -1146,6 +1303,100 @@ async def get_project_git_diff(name: str, file: Optional[str] = None, staged: bo
         return {"diff": diff_out.decode("utf-8", errors="replace")}
     except Exception as e:
         return {"diff": f"Git diff error: {str(e)}"}
+
+
+class GitCommitNode(BaseModel):
+    hash: str
+    parents: List[str] = []
+    refs: List[str] = []
+    isHead: bool = False
+    message: str
+    author: str
+    date: str
+    graphPrefix: str = "*"
+    lane: int = 0
+
+
+class GitLogResponse(BaseModel):
+    commits: List[GitCommitNode]
+
+
+@app.get(
+    "/api/projects/{name}/git/log",
+    response_model=GitLogResponse,
+    tags=["Git"],
+)
+async def get_project_git_log(name: str, limit: int = 50):
+    project_dir = resolve_project_dir(name)
+    if not (project_dir / ".git").exists():
+        return GitLogResponse(commits=[])
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "git", "log", "--all", "--graph", "--date=short",
+            "--format=format:__COMMIT__%h|%p|%d|%s|%an|%cd",
+            f"-n{limit}",
+            cwd=str(project_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        out, _ = await proc.communicate()
+        raw_text = out.decode("utf-8", errors="replace")
+    except Exception:
+        return GitLogResponse(commits=[])
+
+    commits: List[GitCommitNode] = []
+    lines = raw_text.splitlines()
+
+    for line in lines:
+        if "__COMMIT__" not in line:
+            continue
+
+        graph_prefix, commit_data = line.split("__COMMIT__", 1)
+        graph_prefix = graph_prefix.rstrip() or "*"
+        parts = commit_data.split("|")
+        if len(parts) < 6:
+            continue
+
+        c_hash = parts[0].strip()
+        parents = [p.strip() for p in parts[1].split() if p.strip()]
+        ref_raw = parts[2].strip()
+        message = parts[3].strip()
+        author = parts[4].strip()
+        date_str = parts[5].strip()
+
+        # Parse refs like (HEAD -> main, origin/main, tag: v1.0)
+        refs: List[str] = []
+        is_head = False
+        if ref_raw.startswith("(") and ref_raw.endswith(")"):
+            cleaned_refs = ref_raw[1:-1].split(",")
+            for r in cleaned_refs:
+                r_strip = r.strip()
+                if "HEAD" in r_strip:
+                    is_head = True
+                refs.append(r_strip)
+
+        lane = 0
+        star_idx = graph_prefix.find("*")
+        if star_idx >= 0:
+            lane = star_idx // 2
+
+        commits.append(
+            GitCommitNode(
+                hash=c_hash,
+                parents=parents,
+                refs=refs,
+                isHead=is_head,
+                message=message,
+                author=author,
+                date=date_str,
+                graphPrefix=graph_prefix,
+                lane=lane,
+            )
+        )
+
+    return GitLogResponse(commits=commits)
+
 
 if __name__ == "__main__":
     import uvicorn

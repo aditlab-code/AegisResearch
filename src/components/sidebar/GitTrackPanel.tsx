@@ -13,8 +13,12 @@ import {
   Check,
   AlertCircle,
   X,
+  GitCommit,
 } from 'lucide-react'
 import { apiClient } from '../../services/api'
+import { GitCommitNode, GitLogResponse } from '../../types'
+
+const LANE_COLORS = ['#4078f2', '#98c379', '#e5c07b', '#c678dd', '#e06c75', '#56b6c2']
 
 interface GitFileChange {
   status: string
@@ -68,6 +72,12 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
   // Section collapse state
   const [isStagedOpen, setIsStagedOpen] = useState(true)
   const [isChangesOpen, setIsChangesOpen] = useState(true)
+  const [isGraphOpen, setIsGraphOpen] = useState(true)
+
+  // Commit Graph state
+  const [commits, setCommits] = useState<GitCommitNode[]>([])
+  const [graphLoading, setGraphLoading] = useState(false)
+  const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(null)
 
   // Fetch status
   const fetchStatus = useCallback(async () => {
@@ -103,9 +113,30 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
     }
   }, [projectName])
 
+  // Fetch git log
+  const fetchGitLog = useCallback(async () => {
+    setGraphLoading(true)
+    try {
+      const res = await apiClient.get<GitLogResponse>(
+        `/api/projects/${encodeURIComponent(projectName)}/git/log`,
+      )
+      setCommits(res.commits || [])
+    } catch {
+      setCommits([])
+    } finally {
+      setGraphLoading(false)
+    }
+  }, [projectName])
+
   useEffect(() => {
     fetchStatus()
   }, [fetchStatus])
+
+  useEffect(() => {
+    if (data?.isGitRepo) {
+      fetchGitLog()
+    }
+  }, [data?.isGitRepo, fetchGitLog])
 
   // Close branch dropdown on outside click
   useEffect(() => {
@@ -131,8 +162,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
         `/api/projects/${encodeURIComponent(projectName)}/git/init`,
       )
       await fetchStatus()
+      await fetchGitLog()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal menginisialisasi Git repository.'
+      const msg = err instanceof Error ? err.message : 'Failed to initialize Git repository.'
       alert(msg)
     } finally {
       setIsInitializing(false)
@@ -164,8 +196,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       setIsBranchMenuOpen(false)
       await fetchStatus()
       await fetchBranches()
+      await fetchGitLog()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal beralih branch.'
+      const msg = err instanceof Error ? err.message : 'Failed to switch branch.'
       setBranchError(msg)
     } finally {
       setBranchActionLoading(false)
@@ -189,8 +222,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       setIsBranchMenuOpen(false)
       await fetchStatus()
       await fetchBranches()
+      await fetchGitLog()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal membuat branch baru.'
+      const msg = err instanceof Error ? err.message : 'Failed to create new branch.'
       setBranchError(msg)
     } finally {
       setIsCreatingBranch(false)
@@ -201,7 +235,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
   const handleCommit = async () => {
     const trimmed = commitMessage.trim()
     if (!trimmed) {
-      setCommitError('Tuliskan pesan commit terlebih dahulu.')
+      setCommitError('Please enter a commit message.')
       return
     }
 
@@ -216,8 +250,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       setActiveDiffFile(null)
       setSelectedFileDiff(null)
       await fetchStatus()
+      await fetchGitLog()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal mengeksekusi commit.'
+      const msg = err instanceof Error ? err.message : 'Failed to execute commit.'
       setCommitError(msg)
     } finally {
       setIsCommitting(false)
@@ -233,7 +268,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       })
       await fetchStatus()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal men-stage file.'
+      const msg = err instanceof Error ? err.message : 'Failed to stage file.'
       alert(msg)
     }
   }
@@ -247,7 +282,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       })
       await fetchStatus()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal men-stage semua file.'
+      const msg = err instanceof Error ? err.message : 'Failed to stage all files.'
       alert(msg)
     }
   }
@@ -261,7 +296,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       })
       await fetchStatus()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal unstage file.'
+      const msg = err instanceof Error ? err.message : 'Failed to unstage file.'
       alert(msg)
     }
   }
@@ -275,7 +310,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       })
       await fetchStatus()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal unstage semua file.'
+      const msg = err instanceof Error ? err.message : 'Failed to unstage all files.'
       alert(msg)
     }
   }
@@ -283,7 +318,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
   // Discard file changes
   const handleDiscardFile = async (path: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    const ok = window.confirm(`Batalkan semua perubahan pada "${path}"? Perubahan lokal akan dihapus.`)
+    const ok = window.confirm(`Discard all changes in "${path}"? Local changes will be lost.`)
     if (!ok) return
 
     try {
@@ -296,7 +331,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       }
       await fetchStatus()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Gagal membatalkan perubahan file.'
+      const msg = err instanceof Error ? err.message : 'Failed to discard file changes.'
       alert(msg)
     }
   }
@@ -316,9 +351,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
       const res = await apiClient.get<{ diff: string }>(
         `/api/projects/${encodeURIComponent(projectName)}/git/diff?file=${encodeURIComponent(path)}&staged=${staged}`,
       )
-      setSelectedFileDiff(res.diff || 'Tidak ada perbedaan teks.')
+      setSelectedFileDiff(res.diff || 'No text differences.')
     } catch {
-      setSelectedFileDiff('Gagal memuat diff.')
+      setSelectedFileDiff('Failed to load diff.')
     } finally {
       setDiffLoading(false)
     }
@@ -332,10 +367,10 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           <FolderGit2 className="size-6 text-[#4078f2] dark:text-[#61afef]" />
         </div>
         <h4 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 mb-1">
-          Repositori Git Belum Aktif
+          Git Repository Not Initialized
         </h4>
         <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-4 leading-relaxed">
-          Workspace "{projectName}" belum dilacak dengan Git. Inisialisasi sekarang untuk melacak revisi dan riwayat dokumen.
+          Workspace "{projectName}" is not tracked with Git yet. Initialize now to track document revisions and history.
         </p>
 
         <button
@@ -347,12 +382,12 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           {isInitializing ? (
             <>
               <RefreshCw className="size-3.5 animate-spin" />
-              Menginisialisasi...
+              Initializing...
             </>
           ) : (
             <>
               <PlusCircle className="size-3.5" />
-              Inisialisasi Repositori Git
+              Initialize Git Repository
             </>
           )}
         </button>
@@ -373,7 +408,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             type="button"
             onClick={handleToggleBranchMenu}
             className="flex items-center gap-1.5 px-2 py-1 -ml-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800/80 font-semibold text-zinc-800 dark:text-zinc-200 transition-colors max-w-[200px]"
-            title="Klik untuk beralih atau buat branch baru"
+            title="Click to switch or create branch"
           >
             <GitBranch className="size-3.5 text-[#4078f2] dark:text-[#61afef] shrink-0" />
             <span className="font-mono text-xs truncate">{data?.branch || 'main'}</span>
@@ -384,7 +419,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             type="button"
             onClick={fetchStatus}
             disabled={loading}
-            title="Perbarui Status Git"
+            title="Refresh Git Status"
             className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <RefreshCw className={`size-3 ${loading ? 'animate-spin text-[#4078f2] dark:text-[#61afef]' : ''}`} />
@@ -438,7 +473,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             <form onSubmit={handleCreateBranch} className="pt-1.5 border-t border-zinc-100 dark:border-zinc-700/60 flex gap-1">
               <input
                 type="text"
-                placeholder="Buat branch baru..."
+                placeholder="Create new branch..."
                 value={newBranchName}
                 onChange={(e) => setNewBranchName(e.target.value)}
                 disabled={isCreatingBranch}
@@ -449,7 +484,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                 disabled={isCreatingBranch || !newBranchName.trim()}
                 className="px-2 py-1 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] disabled:opacity-50 text-white dark:text-zinc-950 rounded text-[11px] font-semibold transition-colors shrink-0"
               >
-                {isCreatingBranch ? '...' : '+ Buat'}
+                {isCreatingBranch ? '...' : '+ Create'}
               </button>
             </form>
           </div>
@@ -468,7 +503,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
               handleCommit()
             }
           }}
-          placeholder="Tulis pesan commit (Ctrl+Enter)..."
+          placeholder="Write commit message (Ctrl+Enter)..."
           disabled={isCommitting}
           className="w-full resize-none p-1.5 text-xs bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-700/70 rounded text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef] transition-colors"
         />
@@ -486,15 +521,15 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           disabled={isCommitting || !hasAnyChanges}
           title={
             stagedFiles.length === 0 && unstagedFiles.length > 0
-              ? 'Smart Commit: Otomatis stage semua perubahan lalu commit'
-              : 'Commit file yang di-stage'
+              ? 'Smart Commit: Automatically stage all changes then commit'
+              : 'Commit staged files'
           }
           className="w-full py-1.5 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] disabled:opacity-40 disabled:hover:bg-[#4078f2] dark:disabled:hover:bg-[#61afef] text-white dark:text-zinc-950 rounded text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors"
         >
           {isCommitting ? (
             <>
               <RefreshCw className="size-3 animate-spin" />
-              Menyimpan Commit...
+              Committing...
             </>
           ) : (
             <>
@@ -561,7 +596,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                         <button
                           type="button"
                           onClick={(e) => handleToggleDiff(f.path, true, e)}
-                          title="Lihat Perbedaan (Diff)"
+                          title="View Differences (Diff)"
                           className={`p-0.5 rounded transition-colors ${
                             isExpanded
                               ? 'text-[#4078f2] dark:text-[#61afef]'
@@ -586,7 +621,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                     {isExpanded && (
                       <div className="p-2 bg-zinc-50 dark:bg-zinc-950 font-mono text-[10px] overflow-x-auto max-h-48 border-t border-zinc-200 dark:border-zinc-800">
                         {diffLoading ? (
-                          <div className="text-zinc-400 animate-pulse">Memuat diff...</div>
+                          <div className="text-zinc-400 animate-pulse">Loading diff...</div>
                         ) : selectedFileDiff ? (
                           <div className="space-y-0.5 whitespace-pre">
                             {selectedFileDiff.split('\n').map((line, idx) => {
@@ -612,7 +647,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                             })}
                           </div>
                         ) : (
-                          <div className="text-zinc-400">Tidak ada perubahan teks.</div>
+                          <div className="text-zinc-400">No text changes.</div>
                         )}
                       </div>
                     )}
@@ -690,7 +725,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                         <button
                           type="button"
                           onClick={(e) => handleToggleDiff(f.path, false, e)}
-                          title="Lihat Perbedaan (Diff)"
+                          title="View Differences (Diff)"
                           className={`p-0.5 rounded transition-colors ${
                             isExpanded
                               ? 'text-[#4078f2] dark:text-[#61afef]'
@@ -703,7 +738,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                         <button
                           type="button"
                           onClick={(e) => handleDiscardFile(f.path, e)}
-                          title="Batalkan Perubahan (Discard)"
+                          title="Discard Changes"
                           className="p-0.5 rounded text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
                           <RotateCcw className="size-3.5" />
@@ -724,7 +759,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                     {isExpanded && (
                       <div className="p-2 bg-zinc-50 dark:bg-zinc-950 font-mono text-[10px] overflow-x-auto max-h-48 border-t border-zinc-200 dark:border-zinc-800">
                         {diffLoading ? (
-                          <div className="text-zinc-400 animate-pulse">Memuat diff...</div>
+                          <div className="text-zinc-400 animate-pulse">Loading diff...</div>
                         ) : selectedFileDiff ? (
                           <div className="space-y-0.5 whitespace-pre">
                             {selectedFileDiff.split('\n').map((line, idx) => {
@@ -750,7 +785,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                             })}
                           </div>
                         ) : (
-                          <div className="text-zinc-400">Tidak ada perubahan teks.</div>
+                          <div className="text-zinc-400">No text changes.</div>
                         )}
                       </div>
                     )}
@@ -759,7 +794,171 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
               })
             ) : (
               <div className="text-center py-6 text-zinc-400 dark:text-zinc-500 text-xs italic">
-                Tidak ada perubahan baru di workspace.
+                No new changes in workspace.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 5. COMMITS & GRAPH Section */}
+      <div className="flex flex-col gap-1 mt-2 border-t border-zinc-200 dark:border-zinc-800 pt-2">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 px-1">
+          <button
+            type="button"
+            onClick={() => setIsGraphOpen((prev) => !prev)}
+            className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-200"
+          >
+            {isGraphOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            <GitCommit className="size-3 text-[#4078f2] dark:text-[#61afef]" />
+            <span>COMMITS & GRAPH</span>
+            <span className="font-mono bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-1.5 py-0.2 rounded-full text-[10px] ml-1">
+              {commits.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={fetchGitLog}
+            title="Refresh Commit Graph"
+            className="p-0.5 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <RefreshCw className={`size-3.5 ${graphLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        {isGraphOpen && (
+          <div className="space-y-0.5 mt-1">
+            {graphLoading && commits.length === 0 ? (
+              <div className="text-[11px] text-zinc-400 animate-pulse px-2 py-3 text-center">
+                Loading commits & graph...
+              </div>
+            ) : commits.length > 0 ? (
+              <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/60 max-h-72 overflow-y-auto">
+                {commits.map((c, idx) => {
+                  const isSelected = selectedCommitHash === c.hash
+                  const color = LANE_COLORS[c.lane % LANE_COLORS.length]
+                  const maxLane = Math.max(...commits.slice(0, 15).map((x) => x.lane), 0)
+                  const svgWidth = Math.max((maxLane + 1) * 12 + 10, 24)
+                  const cx = 8 + c.lane * 12
+
+                  return (
+                    <div
+                      key={c.hash}
+                      onClick={() => setSelectedCommitHash(isSelected ? null : c.hash)}
+                      className={`flex items-start gap-1.5 py-1 px-1 rounded transition-colors cursor-pointer select-none ${
+                        isSelected
+                          ? 'bg-blue-50/80 dark:bg-zinc-800/90'
+                          : 'hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50'
+                      }`}
+                    >
+                      {/* SVG Lane & Node Graph */}
+                      <svg
+                        width={svgWidth}
+                        height={34}
+                        className="shrink-0 overflow-visible"
+                      >
+                        {/* Top connection line */}
+                        {idx > 0 && (
+                          <line
+                            x1={cx}
+                            y1={0}
+                            x2={cx}
+                            y2={17}
+                            stroke={color}
+                            strokeWidth={2}
+                          />
+                        )}
+                        {/* Bottom connection line */}
+                        {idx < commits.length - 1 && (
+                          <line
+                            x1={cx}
+                            y1={17}
+                            x2={cx}
+                            y2={34}
+                            stroke={color}
+                            strokeWidth={2}
+                          />
+                        )}
+                        {/* Branch fork/merge curve if parents > 1 */}
+                        {c.parents.length > 1 && (
+                          <path
+                            d={`M ${cx} 17 Q ${cx + 10} 25 ${cx + 12} 34`}
+                            fill="none"
+                            stroke={LANE_COLORS[(c.lane + 1) % LANE_COLORS.length]}
+                            strokeWidth={1.5}
+                            strokeDasharray="2 2"
+                          />
+                        )}
+                        {/* Commit dot */}
+                        {c.isHead && (
+                          <circle
+                            cx={cx}
+                            cy={17}
+                            r={6.5}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth={1.5}
+                          />
+                        )}
+                        <circle
+                          cx={cx}
+                          cy={17}
+                          r={c.isHead ? 3.5 : 3}
+                          fill={color}
+                          stroke="#ffffff"
+                          strokeWidth={1}
+                        />
+                      </svg>
+
+                      {/* Commit Details */}
+                      <div className="flex-1 min-w-0 pr-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {c.refs.map((ref) => (
+                            <span
+                              key={ref}
+                              className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${
+                                ref.includes('HEAD')
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+                                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                              }`}
+                            >
+                              {ref}
+                            </span>
+                          ))}
+                          <span
+                            className="text-xs text-zinc-800 dark:text-zinc-200 truncate font-medium flex-1"
+                            title={c.message}
+                          >
+                            {c.message}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[10px] text-zinc-400 dark:text-zinc-500 font-mono mt-0.5">
+                          <span className="text-[#4078f2] dark:text-[#61afef] font-semibold">{c.hash}</span>
+                          <span className="truncate">{c.author}</span>
+                          <span className="ml-auto">{c.date}</span>
+                        </div>
+
+                        {isSelected && (
+                          <div className="mt-1.5 p-1.5 bg-zinc-50 dark:bg-zinc-950 rounded border border-zinc-200 dark:border-zinc-800 text-[10px] space-y-0.5 font-mono">
+                            <div><strong className="text-zinc-500">Hash:</strong> {c.hash}</div>
+                            {c.parents.length > 0 && (
+                              <div><strong className="text-zinc-500">Parents:</strong> {c.parents.join(', ')}</div>
+                            )}
+                            <div><strong className="text-zinc-500">Author:</strong> {c.author}</div>
+                            <div><strong className="text-zinc-500">Date:</strong> {c.date}</div>
+                            <div className="pt-0.5 text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-sans">{c.message}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-zinc-400 dark:text-zinc-500 text-xs italic">
+                No commits found in repository.
               </div>
             )}
           </div>

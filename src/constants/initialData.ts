@@ -40,7 +40,7 @@ Meeting with **Prof. Sari** about the *methods* chapter.
 export const DEFAULT_CHAT_MESSAGES: ChatMessage[] = [
   {
     role: 'ai',
-    text: 'Halo! Saya asisten akademik Anda. Saya bisa merangkum, memperbaiki tata bahasa, membuat rumus, atau menyarankan sitasi.',
+    text: 'Hello! I am your academic research assistant. I can summarize documents, improve grammar, formulate equations, or suggest citations.',
   },
 ]
 

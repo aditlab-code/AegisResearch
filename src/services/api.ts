@@ -78,6 +78,22 @@ export class ApiClient {
     return res.json()
   }
 
+  async delete<T>(path: string, options?: RequestOptions): Promise<T> {
+    const url = this.buildUrl(path, options?.params)
+    const res = await fetch(url, {
+      ...options,
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    })
+    if (!res.ok) {
+      throw new Error(`API DELETE request failed with status ${res.status}: ${res.statusText}`)
+    }
+    return res.json()
+  }
+
   async checkHealth(): Promise<HealthResponse> {
     return this.get<HealthResponse>('/api/health')
   }

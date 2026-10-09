@@ -80,10 +80,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           <div className="size-14 rounded-full bg-blue-50 dark:bg-zinc-800 flex items-center justify-center text-[#4078f2] dark:text-[#61afef] mb-4 border border-zinc-200 dark:border-zinc-700">
             <FileCode className="size-7" />
           </div>
-          <h3 className="text-zinc-900 dark:text-white font-medium text-sm mb-1">PDF Belum Terkompilasi</h3>
+          <h3 className="text-zinc-900 dark:text-white font-medium text-sm mb-1">PDF Not Compiled Yet</h3>
           <p className="text-zinc-500 dark:text-zinc-400 text-xs mb-6 leading-relaxed">
-            Dokumen LaTeX <span className="font-mono text-zinc-700 dark:text-zinc-300">"{doc.name}"</span> belum
-            memiliki file PDF di disk. Klik tombol di bawah untuk mengompilasi dengan pdflatex.
+            LaTeX document <span className="font-mono text-zinc-700 dark:text-zinc-300">"{doc.name}"</span> does not
+            have a compiled PDF file on disk yet. Click the button below to compile with pdflatex.
           </p>
           {onCompile && (
             <button
@@ -92,7 +92,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 text-xs font-semibold rounded-lg shadow-sm transition-colors"
             >
               <Play className="size-3.5 fill-current" />
-              Kompilasi PDF Sekarang
+              Compile PDF Now
             </button>
           )}
         </div>

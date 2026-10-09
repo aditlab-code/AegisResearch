@@ -152,7 +152,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
           onMount={handleEditorDidMount}
           loading={
             <div className="flex items-center justify-center h-full text-zinc-400 text-xs font-mono animate-pulse">
-              Memuat editor Aegis Research...
+              Loading Aegis Research editor...
             </div>
           }
           options={{

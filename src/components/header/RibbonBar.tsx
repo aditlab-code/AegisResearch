@@ -122,26 +122,33 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
           />
         )}
 
-        {/* Compiler Action Group on Right */}
-        <div className="ml-auto flex items-center gap-2 pl-4 border-l border-zinc-200 dark:border-zinc-800 h-full shrink-0">
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">Compiler</span>
-          <select
-            value={engine}
-            onChange={(e) => onChangeEngine?.(e.target.value as EngineType)}
-            className="text-xs border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef] cursor-pointer"
-          >
-            <option value="pdfLaTeX">pdfLaTeX</option>
-            <option value="XeLaTeX">XeLaTeX</option>
-            <option value="Pandoc">Pandoc</option>
-          </select>
-          <button
-            type="button"
-            onClick={onCompile}
-            className="bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 text-xs px-3.5 py-1.5 rounded font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
-          >
-            <Play className="size-3.5 fill-current" />
-            Compile
-          </button>
+        {/* Standardized Compiler Action Group on Right */}
+        <div className="ml-auto h-full flex flex-col items-center justify-between py-1 px-3 border-l border-zinc-200 dark:border-zinc-800 shrink-0">
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <select
+              value={engine}
+              onChange={(e) => onChangeEngine?.(e.target.value as EngineType)}
+              title="LaTeX / Markdown Compiler Engine"
+              aria-label="Compiler Engine"
+              className="text-xs border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef] cursor-pointer"
+            >
+              <option value="pdfLaTeX">pdfLaTeX</option>
+              <option value="XeLaTeX">XeLaTeX</option>
+              <option value="Pandoc">Pandoc</option>
+            </select>
+            <button
+              type="button"
+              onClick={onCompile}
+              title="Compile document (Ctrl+Enter)"
+              className="bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 text-xs px-3 py-1 rounded font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+            >
+              <Play className="size-3.5 fill-current" />
+              <span>Compile</span>
+            </button>
+          </div>
+          <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
+            Compiler
+          </span>
         </div>
       </div>
     </div>

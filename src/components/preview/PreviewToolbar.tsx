@@ -49,7 +49,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
           type="button"
           onClick={() => onChangePage?.(Math.max(1, currentPage - 1))}
           disabled={currentPage <= 1}
-          title="Halaman Sebelumnya"
+          title="Previous Page"
           className="p-1 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         >
           <ChevronLeft className="size-4" />
@@ -65,7 +65,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
           type="button"
           onClick={() => onChangePage?.(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage >= totalPages}
-          title="Halaman Selanjutnya"
+          title="Next Page"
           className="p-1 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         >
           <ChevronRight className="size-4" />
@@ -77,7 +77,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
         <button
           type="button"
           onClick={onZoomOut}
-          title="Perkecil (Zoom Out)"
+          title="Zoom Out"
           className="p-1 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
         >
           <ZoomOut className="size-4" />
@@ -86,7 +86,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
         <select
           value={zoomPercent}
           onChange={(e) => onSetZoom(Number(e.target.value) / 100)}
-          aria-label="Persentase Zoom"
+          aria-label="Zoom Percentage"
           className="bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 py-0.5 text-[11px] font-mono focus:outline-none focus:border-blue-500 cursor-pointer"
         >
           {ZOOM_OPTIONS.map((val) => {
@@ -105,7 +105,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
         <button
           type="button"
           onClick={onZoomIn}
-          title="Perbesar (Zoom In)"
+          title="Zoom In"
           className="p-1 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors"
         >
           <ZoomIn className="size-4" />
@@ -116,21 +116,21 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
         <button
           type="button"
           onClick={onFitWidth}
-          title="Sesuaikan Lebar (Fit to Width)"
+          title="Fit to Width"
           className="p-1 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors flex items-center gap-1 text-[11px]"
         >
           <Maximize2 className="size-3.5" />
-          <span className="hidden sm:inline">Fit Lebar</span>
+          <span className="hidden sm:inline">Fit Width</span>
         </button>
 
         <button
           type="button"
           onClick={onFitPage}
-          title="Sesuaikan Halaman (Fit to Page)"
+          title="Fit to Page"
           className="p-1 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors flex items-center gap-1 text-[11px]"
         >
           <Minimize2 className="size-3.5" />
-          <span className="hidden sm:inline">Fit Halaman</span>
+          <span className="hidden sm:inline">Fit Page</span>
         </button>
       </div>
 
@@ -140,7 +140,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
         <select
           value={paperSize}
           onChange={(e) => onChangePaperSize(e.target.value as PaperSize)}
-          aria-label="Pilih Ukuran Kertas"
+          aria-label="Paper Size"
           className="bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[11px] focus:outline-none focus:border-blue-500 cursor-pointer"
         >
           <option value="a4">A4 (210×297)</option>

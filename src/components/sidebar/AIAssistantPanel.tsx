@@ -8,7 +8,7 @@ export interface AIAssistantPanelProps {
   onInsertCodeSnippet: (code: string) => void
 }
 
-const QUICK_ACTIONS = ['Ringkas dokumen', 'Buat rumus', 'Cari sitasi', 'Perbaiki kalimat']
+const QUICK_ACTIONS = ['Summarize document', 'Insert equation', 'Find citation', 'Improve wording']
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   chat,
@@ -64,7 +64,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                   className="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1"
                 >
                   <Plus className="size-3" />
-                  Sisipkan ke dokumen
+                  Insert into document
                 </button>
               </>
             )}
@@ -75,7 +75,7 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Tanya Aegis AI…"
+          placeholder="Ask Aegis AI…"
           className="flex-1 min-w-0 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 text-xs outline-none focus:border-blue-500"
         />
         <button

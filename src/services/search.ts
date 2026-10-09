@@ -1,5 +1,5 @@
 import { apiClient } from './api'
-import { SearchResponse } from '../types'
+import { SearchResponse, SearchReplaceRequest, SearchReplaceResponse } from '../types'
 
 export const searchService = {
   async searchProject(
@@ -21,6 +21,16 @@ export const searchService = {
       `/api/projects/${encodeURIComponent(projectName)}/search?q=${encodeURIComponent(
         stripped,
       )}&case_sensitive=${caseSensitive}`,
+    )
+  },
+
+  async replaceMatches(
+    projectName: string,
+    req: SearchReplaceRequest,
+  ): Promise<SearchReplaceResponse> {
+    return apiClient.post<SearchReplaceResponse>(
+      `/api/projects/${encodeURIComponent(projectName)}/search/replace`,
+      req,
     )
   },
 }

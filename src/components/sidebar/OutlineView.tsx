@@ -6,9 +6,14 @@ import { OutlineTreeItem } from './OutlineTreeItem'
 export interface OutlineViewProps {
   outlineTree: OutlineNode[]
   onNavigate?: (lineNumber: number) => void
+  activeDocName?: string
 }
 
-export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigate }) => {
+export const OutlineView: React.FC<OutlineViewProps> = ({
+  outlineTree,
+  onNavigate,
+  activeDocName,
+}) => {
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
 
   // Collect all expandable IDs recursively
@@ -53,9 +58,11 @@ export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigat
     <div className="flex flex-col gap-2">
       {/* Header toolbar */}
       <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
           <ListTree className="size-3.5 text-zinc-400 shrink-0" />
-          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">Hierarki Dokumen</span>
+          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate" title={activeDocName || 'Outline'}>
+            {activeDocName || 'Outline'}
+          </span>
         </div>
 
         {outlineTree.length > 0 && (
@@ -63,7 +70,7 @@ export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigat
             <button
               type="button"
               onClick={expandAll}
-              title="Expand Semua"
+              title="Expand All"
               className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
             >
               <ChevronsUpDown className="size-3" />
@@ -71,7 +78,7 @@ export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigat
             <button
               type="button"
               onClick={collapseAll}
-              title="Collapse Semua"
+              title="Collapse All"
               className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
             >
               <ChevronsDownUp className="size-3" />
@@ -96,7 +103,7 @@ export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigat
         </div>
       ) : (
         <div className="text-center py-6 px-2 text-zinc-400 text-xs italic">
-          Belum ada struktur bab atau heading pada dokumen ini.
+          No outline or headings found in this document.
         </div>
       )}
     </div>
