@@ -1,0 +1,45 @@
+{
+  "olympus-lifecycle": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "command": ".agents/hooks/session-start.sh",
+        "timeout": 15
+      }
+    ],
+    "PreInvocation": [
+      {
+        "command": ".agents/hooks/pre-invocation.sh",
+        "timeout": 15
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "command": ".agents/hooks/pre-tool-use.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "command": ".agents/hooks/post-tool-use.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "command": ".agents/hooks/stop-guard.sh",
+        "timeout": 15
+      }
+    ]
+  }
+}

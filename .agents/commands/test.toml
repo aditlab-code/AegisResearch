@@ -1,0 +1,10 @@
+description = "Prove code works via test-driven development and independent verification"
+
+prompt = """
+Invoke the test-driven-development skill and delegate to heracles-tester (or test-engineer).
+
+1. Execute the repository's test runner independently (zero self-grading).
+2. For bug reports, run the Prove-It pattern: write a failing test first to reproduce before fixing.
+3. Validate coverage across 4 scenarios: happy path, empty input, boundary values, error paths.
+4. Report test results and enforce a strict 100% green stop-gate.
+"""

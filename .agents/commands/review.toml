@@ -1,0 +1,14 @@
+description = "Perform comprehensive five-axis code review and zero-orphan audit before merge"
+
+prompt = """
+Invoke the code-review-and-quality skill and delegate to themis-reviewer (or code-reviewer).
+
+Evaluate the proposed change across five dimensions:
+1. Correctness (spec compliance, edge cases, error handling)
+2. Readability & Simplicity (clarity, naming, control flow)
+3. Architecture (boundary integrity, circular dependency, and zero-orphan check via codegraph_find_orphans)
+4. Security (input sanitization, secrets hygiene, auth checks)
+5. Performance (unbounded queries, algorithmic complexity)
+
+Provide structured findings ([BLOCKER], [WARNING], [SUGGESTION], [PRAISE]) and an overall verdict (APPROVE, REQUEST_CHANGES, COMMENT).
+"""

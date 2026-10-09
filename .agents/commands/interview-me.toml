@@ -1,0 +1,19 @@
+description = "Start requirement interrogation — extract user intent one question at a time before any plan, spec, or code exists"
+
+prompt = """
+Invoke the interview-me skill.
+
+Begin by writing down your initial hypothesis in one sentence, followed by an honest confidence number (0–100%) and unresolved gaps:
+```
+HYPOTHESIS: [Your best read of what the user wants]
+CONFIDENCE: [0-100%] — missing: [What's still unresolved]
+```
+
+Then ask exactly one question at a time, each with your guess attached:
+```
+Q: [One focused question]
+GUESS: [Your hypothesis with reasoning]
+```
+
+Wait for the user's response after each question until confidence reaches >=95%, then restate intent and stop.
+"""

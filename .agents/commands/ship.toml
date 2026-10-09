@@ -1,0 +1,12 @@
+description = "Execute production release gate with parallel fan-out synthesis"
+
+prompt = """
+Invoke the shipping-and-launch skill under zeus-orchestrator.
+
+Orchestrate a parallel fan-out verification:
+1. heracles-tester: verify full test suite passes 100% green.
+2. themis-reviewer: verify 5-axis quality and zero-orphan compliance.
+3. security-auditor: check for secret leaks and dependency hygiene.
+
+Synthesize results into a single Go/No-Go Release Report with rollback instructions.
+"""

@@ -1,0 +1,9 @@
+description = "Establish and enforce the project quality bar in CONSTRAINTS.md replacing legacy bibles"
+
+prompt = """
+Invoke the constraint-driven-development skill.
+
+1. Check if CONSTRAINTS.md exists in the project root.
+2. If missing, define non-negotiables: zero-orphan policy, tests-as-proof, strict 100% green stop-gate, token budget constraints (< 4000 tokens), and protected files (.aegis/, data/aegis.db).
+3. Record the explicit rules into CONSTRAINTS.md and enforce across all workflows.
+"""

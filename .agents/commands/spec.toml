@@ -1,0 +1,14 @@
+description = "Start spec-driven development — write a structured specification before writing code"
+
+prompt = """
+Invoke the spec-driven-development skill and coordinate with athena-planner.
+
+Begin by understanding what the user wants to build:
+1. The objective and target users
+2. Core features and acceptance criteria
+3. Tech stack preferences and constraints
+4. Known boundaries (always do, ask first about, never do)
+
+Then generate a structured spec covering all six core areas (objective, commands, project structure, code style, testing strategy, boundaries) and save it to the project.
+Ask the user to approve the spec or request changes. Then STOP your turn immediately.
+"""

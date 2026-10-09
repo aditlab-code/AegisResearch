@@ -1,0 +1,10 @@
+description = "Simplify code for clarity while preserving exact behavior"
+
+prompt = """
+Invoke the code-simplification skill.
+
+1. Review target files for unnecessary complexity, deep nesting, or dead code.
+2. Refactor for clarity without altering any external behavior, contracts, or side effects.
+3. Verify that all existing unit and regression tests pass without modification.
+4. Ensure zero orphan symbols remain via codegraph_find_orphans.
+"""

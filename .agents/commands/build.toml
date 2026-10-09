@@ -1,0 +1,11 @@
+description = "Execute incremental implementation — build one thin vertical slice at a time with tests"
+
+prompt = """
+Invoke the incremental-implementation skill with hephaestus-coder.
+
+1. Pick the next uncompleted task from tasks/todo.md.
+2. Implement the smallest complete piece of functionality using surgical edits.
+3. Run the targeted test suite to verify the slice works.
+4. Keep all existing tests passing.
+5. Record completion and move to the next slice sequentially.
+"""
