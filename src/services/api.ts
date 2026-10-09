@@ -4,6 +4,13 @@ export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number>
 }
 
+export interface HealthResponse {
+  status: string
+  cors: boolean
+  workspace_dir: string
+  allowed_origins?: string[]
+}
+
 export class ApiClient {
   private baseUrl: string
 
@@ -69,6 +76,10 @@ export class ApiClient {
       throw new Error(`API PUT request failed with status ${res.status}: ${res.statusText}`)
     }
     return res.json()
+  }
+
+  async checkHealth(): Promise<HealthResponse> {
+    return this.get<HealthResponse>('/api/health')
   }
 }
 

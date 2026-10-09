@@ -1,40 +1,68 @@
-import React from 'react'
+import React, { useRef } from 'react'
+import Editor, { OnMount, OnChange } from '@monaco-editor/react'
 import { Doc } from '../../types'
-import { highlightCodeLine } from '../../utils'
 
 export interface CodeEditorProps {
   doc: Doc
   onChangeContent: (content: string) => void
+  onSave?: () => void
 }
 
-export const CodeEditor: React.FC<CodeEditorProps> = ({ doc, onChangeContent }) => {
-  const lines = doc.content.split('\n')
+export const CodeEditor: React.FC<CodeEditorProps> = ({ doc, onChangeContent, onSave }) => {
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null)
+
+  const language = doc.kind === 'tex' ? 'latex' : doc.kind === 'md' ? 'markdown' : 'plaintext'
+
+  const handleEditorDidMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor
+
+    // Add Ctrl/Cmd + S shortcut command inside Monaco
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      onSave?.()
+    })
+
+    // Safe layout on next frame
+    requestAnimationFrame(() => {
+      editor.layout()
+    })
+  }
+
+  const handleEditorChange: OnChange = (value) => {
+    onChangeContent(value ?? '')
+  }
 
   return (
-    <div className="flex-1 relative overflow-auto font-mono text-[13px] leading-6">
-      <div className="absolute inset-0 flex">
-        <div className="text-right pr-3 pl-3 text-stone-600 select-none py-3">
-          {lines.map((_, i) => (
-            <div key={i}>{i + 1}</div>
-          ))}
-        </div>
-        <div className="relative flex-1 py-3">
-          <pre className="text-stone-200 whitespace-pre-wrap pointer-events-none">
-            {lines.map((l, i) => (
-              <div key={i}>
-                {highlightCodeLine(l, doc.kind)}
-                {'\u200b'}
-              </div>
-            ))}
-          </pre>
-          <textarea
-            value={doc.content}
-            onChange={(e) => onChangeContent(e.target.value)}
-            spellCheck={false}
-            className="absolute inset-0 py-3 bg-transparent text-transparent caret-amber-300 resize-none outline-none whitespace-pre-wrap font-mono text-[13px] leading-6"
-          />
-        </div>
-      </div>
+    <div className="flex-1 w-full h-full min-h-0 relative bg-[#1e1e2e]">
+      <Editor
+        height="100%"
+        width="100%"
+        language={language}
+        theme="vs-dark"
+        value={doc.content}
+        onChange={handleEditorChange}
+        onMount={handleEditorDidMount}
+        loading={
+          <div className="flex items-center justify-center h-full text-stone-400 text-xs font-mono animate-pulse">
+            Memuat editor Monaco...
+          </div>
+        }
+        options={{
+          fontSize: 13,
+          fontFamily: "'Fira Code', Menlo, Monaco, 'Courier New', monospace",
+          lineNumbers: 'on',
+          scrollBeyondLastLine: false,
+          automaticLayout: true,
+          wordWrap: 'on',
+          minimap: { enabled: false },
+          tabSize: 2,
+          padding: { top: 12, bottom: 12 },
+          suggestOnTriggerCharacters: true,
+          renderLineHighlight: 'all',
+          cursorBlinking: 'smooth',
+          smoothScrolling: true,
+          folding: true,
+        }}
+      />
     </div>
   )
 }

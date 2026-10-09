@@ -1,10 +1,12 @@
 import React from 'react'
+import { Circle, X } from 'lucide-react'
 import { Doc } from '../../types'
 
 export interface EditorTabsProps {
   docs: Doc[]
   openDocIndices: number[]
   activeDocIndex: number
+  isDirty?: boolean
   onSelectTab: (index: number) => void
   onCloseTab: (index: number) => void
 }
@@ -13,6 +15,7 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
   docs,
   openDocIndices,
   activeDocIndex,
+  isDirty = false,
   onSelectTab,
   onCloseTab,
 }) => {
@@ -33,15 +36,18 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            {doc.name}
+            <span>{doc.name}</span>
+            {isActive && isDirty && (
+              <Circle className="size-2 fill-amber-400 text-amber-400 shrink-0" />
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 onCloseTab(docIdx)
               }}
-              className="text-stone-500 hover:text-white"
+              className="text-stone-500 hover:text-white flex items-center justify-center p-0.5 rounded hover:bg-white/10"
             >
-              ×
+              <X className="size-3" />
             </button>
           </div>
         )

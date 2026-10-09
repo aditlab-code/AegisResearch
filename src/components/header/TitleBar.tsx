@@ -1,4 +1,5 @@
 import React from 'react'
+import { Search } from 'lucide-react'
 
 export interface TitleBarProps {
   appName?: string
@@ -29,8 +30,9 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         ))}
       </nav>
       <div className="flex-1 flex justify-center">
-        <div className="bg-indigo-900/70 rounded-md px-4 py-1 text-xs text-indigo-300 w-80 text-center">
-          ⌕ Search commands — Ctrl+Shift+P
+        <div className="bg-indigo-900/70 rounded-md px-4 py-1 text-xs text-indigo-300 w-80 text-center flex items-center justify-center gap-1.5">
+          <Search className="size-3.5 text-indigo-400" />
+          <span>Search commands — Ctrl+Shift+P</span>
         </div>
       </div>
       <span className="text-xs text-indigo-300">{statusText}</span>

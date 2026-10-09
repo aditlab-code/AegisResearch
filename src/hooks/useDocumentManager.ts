@@ -38,6 +38,39 @@ export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
     }
   }
 
+  const setDocContent = (fileName: string, content: string) => {
+    setDocs((prev) =>
+      prev.map((d) => (d.name === fileName ? { ...d, content } : d)),
+    )
+  }
+
+  const openOrCreateDoc = (fileName: string, kind: 'tex' | 'md' = 'tex', initialContent?: string) => {
+    const existingIndex = docs.findIndex((d) => d.name === fileName)
+    if (existingIndex !== -1) {
+      if (initialContent !== undefined) {
+        setDocs((prev) =>
+          prev.map((d, i) => (i === existingIndex ? { ...d, content: initialContent } : d)),
+        )
+      }
+      openDoc(existingIndex)
+      return existingIndex
+    }
+    const newDoc: Doc = {
+      name: fileName,
+      kind,
+      content: initialContent !== undefined
+        ? initialContent
+        : kind === 'tex'
+        ? `\\documentclass{article}\n\\title{${fileName.replace(/\\.tex$/, '')}}\n\\begin{document}\n\\section{Introduction}\n\\end{document}\n`
+        : `# ${fileName}\n`,
+    }
+    const newDocs = [...docs, newDoc]
+    const newIndex = newDocs.length - 1
+    setDocs(newDocs)
+    setActiveDocIndex(newIndex)
+    setOpenDocIndices((prev) => (prev.includes(newIndex) ? prev : [...prev, newIndex]))
+    return newIndex
+  }
   return {
     docs,
     activeDoc,
@@ -45,6 +78,8 @@ export function useDocumentManager(initialDocs: Doc[] = INITIAL_DOCS) {
     openDocIndices,
     setDocs,
     openDoc,
+    openOrCreateDoc,
+    setDocContent,
     closeDoc,
     updateContent,
     insertSnippet,

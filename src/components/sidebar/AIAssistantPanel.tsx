@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Sparkles, Plus, Send } from 'lucide-react'
 import { ChatMessage } from '../../types'
 
 export interface AIAssistantPanelProps {
@@ -47,7 +48,10 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
             }`}
           >
             {msg.role === 'ai' && (
-              <div className="text-[10px] font-semibold text-amber-600 mb-0.5">✦ Scholar AI</div>
+              <div className="text-[10px] font-semibold text-amber-600 mb-0.5 flex items-center gap-1">
+                <Sparkles className="size-3 text-amber-500" />
+                <span>Scholar AI</span>
+              </div>
             )}
             {msg.text}
             {msg.code && (
@@ -57,9 +61,10 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
                 </pre>
                 <button
                   onClick={() => onInsertCodeSnippet(msg.code!)}
-                  className="mt-1 text-[11px] text-indigo-700 font-medium hover:underline"
+                  className="mt-1 text-[11px] text-indigo-700 font-medium hover:underline flex items-center gap-1"
                 >
-                  + Sisipkan ke dokumen
+                  <Plus className="size-3" />
+                  Sisipkan ke dokumen
                 </button>
               </>
             )}
@@ -75,9 +80,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
         />
         <button
           type="submit"
-          className="bg-indigo-600 text-white rounded px-2 text-xs hover:bg-indigo-700"
+          className="bg-indigo-600 text-white rounded px-2.5 py-1 text-xs hover:bg-indigo-700 flex items-center justify-center transition-colors"
         >
-          ↑
+          <Send className="size-3.5" />
         </button>
       </form>
     </div>

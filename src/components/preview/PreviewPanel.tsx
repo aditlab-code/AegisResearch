@@ -15,7 +15,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   usePdfViewer = false,
 }) => {
   return (
-    <section className="w-[44%] bg-stone-200 overflow-auto p-8 shrink-0">
+    <section className="w-full h-full bg-stone-200 overflow-auto p-8">
       <div className="flex justify-between text-xs text-stone-500 mb-3 max-w-[640px] mx-auto">
         <span>Preview · {doc.kind === 'tex' ? 'PDF' : 'HTML'}</span>
         <span>Page 1 of 1 · 100%</span>

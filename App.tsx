@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { RibbonTab, PanelType, ChatMessage } from './src/types'
+import { useState, useEffect } from 'react'
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
+import { RibbonTab, PanelType, ChatMessage, FileNode } from './src/types'
 import { DEFAULT_CHAT_MESSAGES } from './src/constants'
 import { countWords, extractOutline } from './src/utils'
+import { projectService } from './src/services/projects'
 import { useDocumentManager, useCompiler, useKeyboardShortcuts } from './src/hooks'
 import {
   TitleBar,
@@ -22,18 +24,106 @@ export default function App() {
     openDoc,
     closeDoc,
     updateContent,
+    setDocContent,
     insertSnippet,
+    openOrCreateDoc,
   } = useDocumentManager()
-
-  const { engine, setEngine, compile, pdfBlobUrl } = useCompiler('quantum-thesis')
+  const [projectName, setProjectName] = useState('quantum-thesis')
+  const { engine, setEngine, compile, pdfBlobUrl } = useCompiler(projectName)
 
   const [ribbonTab, setRibbonTab] = useState<RibbonTab>('Home')
   const [panel, setPanel] = useState<PanelType>('files')
   const [chat, setChat] = useState<ChatMessage[]>(DEFAULT_CHAT_MESSAGES)
   const [searchQuery, setSearchQuery] = useState('')
-
+  const [isDirty, setIsDirty] = useState(false)
+  const [saveStatus, setSaveStatus] = useState('✓ Ready')
   const outline = extractOutline(activeDoc.content)
   const words = countWords(activeDoc.content)
+  // Sync initial file content on project load / switch
+  useEffect(() => {
+    let isMounted = true
+    const loadInitialFile = async () => {
+      if (!activeDoc) return
+      try {
+        const content = await projectService.readFile(projectName, activeDoc.name)
+        if (isMounted) {
+          setDocContent(activeDoc.name, content)
+          setSaveStatus(`✓ Loaded ${activeDoc.name}`)
+          setIsDirty(false)
+        }
+      } catch {
+        // Fallback to local cache
+      }
+    }
+    loadInitialFile()
+    return () => {
+      isMounted = false
+    }
+  }, [projectName])
+
+  const handleSelectFile = async (file: FileNode) => {
+    const kind = file.kind === 'md' ? 'md' : 'tex'
+    openOrCreateDoc(file.name, kind)
+    setSaveStatus(`Loading ${file.name}...`)
+    try {
+      const content = await projectService.readFile(projectName, file.path)
+      setDocContent(file.name, content)
+      setSaveStatus(`✓ Loaded ${file.name}`)
+      setIsDirty(false)
+    } catch (err) {
+      console.warn(`Could not fetch ${file.name} from backend, keeping local version:`, err)
+      setSaveStatus(`⚠️ Offline mode: ${file.name}`)
+    }
+  }
+
+  const handleContentChange = (content: string) => {
+    updateContent(content)
+    setIsDirty(true)
+    setSaveStatus('● Unsaved changes (Ctrl+S to save)')
+  }
+
+  const handleSave = async () => {
+    if (!activeDoc) return
+    setSaveStatus(`Saving ${activeDoc.name}...`)
+    try {
+      await projectService.saveFile(projectName, activeDoc.name, activeDoc.content)
+      setIsDirty(false)
+      setSaveStatus(`✓ Saved ${activeDoc.name}`)
+      setTimeout(() => {
+        setSaveStatus('✓ All files saved')
+      }, 3000)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error'
+      setSaveStatus(`✗ Save failed: ${msg}`)
+    }
+  }
+
+  const handleRibbonSnippet = async (label: string) => {
+    if (label === 'Save') {
+      await handleSave()
+      return
+    }
+    if (label === 'Copy') {
+      if (activeDoc?.content) {
+        await navigator.clipboard.writeText(activeDoc.content)
+        setSaveStatus('✓ Copied document to clipboard')
+      }
+      return
+    }
+    if (label === 'Paste') {
+      try {
+        const text = await navigator.clipboard.readText()
+        if (text) {
+          handleContentChange(`${activeDoc.content}\n${text}`)
+          setSaveStatus('✓ Pasted from clipboard')
+        }
+      } catch {
+        // Fallback if clipboard permission denied
+      }
+      return
+    }
+    insertSnippet(label)
+  }
 
   const handleAskAI = (text: string) => {
     if (!text.trim()) return
@@ -65,9 +155,7 @@ export default function App() {
   }
 
   useKeyboardShortcuts({
-    onSave: () => {
-      // Auto-save stub for Tahap 3
-    },
+    onSave: handleSave,
     onCompile: () => {
       compile()
     },
@@ -82,7 +170,7 @@ export default function App() {
       <RibbonBar
         currentTab={ribbonTab}
         onSelectTab={setRibbonTab}
-        onInsertSnippet={insertSnippet}
+        onInsertSnippet={handleRibbonSnippet}
         engine={engine}
         onChangeEngine={setEngine}
         onCompile={() => compile()}
@@ -92,36 +180,54 @@ export default function App() {
         {/* Activity bar */}
         <ActivityBar activePanel={panel} onSelectPanel={setPanel} />
 
-        {/* Sidebar */}
-        <Sidebar
-          panel={panel}
-          docs={docs}
-          activeDocIndex={activeDocIndex}
-          outlineItems={outline}
-          chat={chat}
-          searchQuery={searchQuery}
-          onSelectDoc={openDoc}
-          onSendMessage={handleAskAI}
-          onInsertCodeSnippet={(code) => updateContent(`${activeDoc.content}\n${code}`)}
-          onChangeSearch={setSearchQuery}
-        />
+        {/* Resizable 3-panel layout */}
+        <PanelGroup direction="horizontal" className="flex-1 h-full min-h-0">
+          {/* Column 1: Sidebar */}
+          <Panel id="sidebar-panel" defaultSize={20} minSize={15} maxSize={40} className="min-w-0 h-full">
+            <Sidebar
+              panel={panel}
+              docs={docs}
+              activeDocIndex={activeDocIndex}
+              outlineItems={outline}
+              chat={chat}
+              searchQuery={searchQuery}
+              projectName={projectName}
+              onSelectProject={setProjectName}
+              onSelectFile={handleSelectFile}
+              onSelectDoc={openDoc}
+              onSendMessage={handleAskAI}
+              onInsertCodeSnippet={(code) => updateContent(`${activeDoc.content}\n${code}`)}
+              onChangeSearch={setSearchQuery}
+            />
+          </Panel>
 
-        {/* Editor */}
-        <Editor
-          docs={docs}
-          openDocIndices={openDocIndices}
-          activeDocIndex={activeDocIndex}
-          onSelectTab={openDoc}
-          onCloseTab={closeDoc}
-          onChangeContent={updateContent}
-        />
+          <PanelResizeHandle className="w-1 bg-stone-200 hover:bg-indigo-500 transition-colors cursor-col-resize active:bg-indigo-600 focus:outline-none" />
 
-        {/* Preview page */}
-        <PreviewPanel doc={activeDoc} pdfBlobUrl={pdfBlobUrl} />
+          {/* Column 2: Editor Teks */}
+          <Panel id="editor-panel" defaultSize={48} minSize={30} className="min-w-0 h-full">
+            <Editor
+              docs={docs}
+              openDocIndices={openDocIndices}
+              activeDocIndex={activeDocIndex}
+              onSelectTab={openDoc}
+              onCloseTab={closeDoc}
+              isDirty={isDirty}
+              onSave={handleSave}
+              onChangeContent={handleContentChange}
+            />
+          </Panel>
+
+          <PanelResizeHandle className="w-1 bg-stone-200 hover:bg-indigo-500 transition-colors cursor-col-resize active:bg-indigo-600 focus:outline-none" />
+
+          {/* Column 3: Preview PDF */}
+          <Panel id="preview-panel" defaultSize={32} minSize={20} className="min-w-0 h-full">
+            <PreviewPanel doc={activeDoc} pdfBlobUrl={pdfBlobUrl} />
+          </Panel>
+        </PanelGroup>
       </div>
 
       {/* Status bar */}
-      <StatusBar wordCount={words} docKind={activeDoc.kind} />
+      <StatusBar wordCount={words} docKind={activeDoc.kind} statusMessage={saveStatus} />
     </div>
   )
 }

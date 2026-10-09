@@ -1,5 +1,5 @@
 import React from 'react'
-import { Doc, PanelType, ChatMessage } from '../../types'
+import { Doc, PanelType, ChatMessage, FileNode } from '../../types'
 import { FileTree } from './FileTree'
 import { OutlineView } from './OutlineView'
 import { AIAssistantPanel } from './AIAssistantPanel'
@@ -14,6 +14,9 @@ export interface SidebarProps {
   projectName?: string
   searchQuery?: string
   onSelectDoc: (index: number) => void
+  onSelectFile?: (file: FileNode) => void
+  onSelectProject?: (project: string) => void
+  onCreateProject?: (name: string) => Promise<void>
   onSendMessage: (text: string) => void
   onInsertCodeSnippet: (code: string) => void
   onChangeSearch?: (val: string) => void
@@ -28,12 +31,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   projectName,
   searchQuery,
   onSelectDoc,
+  onSelectFile,
+  onSelectProject,
+  onCreateProject,
   onSendMessage,
   onInsertCodeSnippet,
   onChangeSearch,
 }) => {
   return (
-    <aside className="w-72 bg-stone-50 border-r border-stone-200 p-3 text-sm shrink-0 overflow-auto">
+    <aside className="w-full h-full bg-stone-50 border-r border-stone-200 p-3 text-sm overflow-auto">
       <div className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold mb-2">
         {panel === 'ai' ? 'AI Assistant' : panel}
       </div>
@@ -43,6 +49,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           activeDocIndex={activeDocIndex}
           projectName={projectName}
           onSelectDoc={onSelectDoc}
+          onSelectFile={onSelectFile}
+          onSelectProject={onSelectProject}
+          onCreateProject={onCreateProject}
         />
       )}
       {panel === 'outline' && <OutlineView outlineItems={outlineItems} />}

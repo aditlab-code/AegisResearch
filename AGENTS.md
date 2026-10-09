@@ -4,7 +4,7 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, Copilot, A
 
 > **Scope:** This file configures AI coding agents working on the **AegisCode** repository (`apps/frontend/`, `apps/django_app/`, `src/agent_ai/`).
 
-
+> Runner Python 'backend/.venv'
 
 ## Rust Token Killer (`rtk`) Integration Guidelines
 

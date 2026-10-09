@@ -4,6 +4,8 @@ export interface KeyboardShortcutHandlers {
   onSave?: () => void
   onCompile?: () => void
   onCommandPalette?: () => void
+  onCopy?: () => void
+  onPaste?: () => void
 }
 
 export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {

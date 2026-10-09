@@ -1,30 +1,55 @@
 import { RibbonTab } from '../types'
+import {
+  Save,
+  Copy,
+  ClipboardPaste,
+  Bold,
+  Italic,
+  Heading,
+  List,
+  Quote,
+  Sigma,
+  Image,
+  Table,
+  BookOpen,
+  Superscript,
+  Library,
+  ExternalLink,
+  ListTree,
+  CheckCheck,
+  MessageSquare,
+  GitCompare,
+  type LucideIcon,
+} from 'lucide-react'
 
-export type RibbonItem = [label: string, icon: string]
+export type RibbonItem = [label: string, icon: LucideIcon]
 
 export const RIBBONS: Record<RibbonTab, RibbonItem[]> = {
   Home: [
-    ['Bold', 'B'],
-    ['Italic', 'I'],
-    ['Heading', 'H'],
-    ['List', '•'],
-    ['Quote', '❝'],
+    ['Save', Save],
+    ['Copy', Copy],
+    ['Paste', ClipboardPaste],
+    ['Bold', Bold],
+    ['Italic', Italic],
+    ['Heading', Heading],
+    ['List', List],
+    ['Quote', Quote],
   ],
   Insert: [
-    ['Equation', '∑'],
-    ['Figure', '▣'],
-    ['Table', '▦'],
-    ['Citation', '[1]'],
-    ['Footnote', '¹'],
+    ['Equation', Sigma],
+    ['Figure', Image],
+    ['Table', Table],
+    ['Citation', BookOpen],
+    ['Footnote', Superscript],
   ],
   References: [
-    ['Bibliography', '📚'],
-    ['Cross-ref', '↗'],
-    ['TOC', '≡'],
+    ['Bibliography', Library],
+    ['Cross-ref', ExternalLink],
+    ['TOC', ListTree],
   ],
   Review: [
-    ['Spell', 'Aa'],
-    ['Comments', '✎'],
-    ['Track', '⇄'],
+    ['Spell', CheckCheck],
+    ['Comments', MessageSquare],
+    ['Track', GitCompare],
   ],
 }

@@ -1,4 +1,5 @@
 import React from 'react'
+import { Play } from 'lucide-react'
 import { RibbonTab, EngineType } from '../../types'
 import { RIBBONS } from '../../constants'
 
@@ -39,14 +40,14 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
         ))}
       </div>
       <div className="flex items-center gap-1 px-4 py-2 bg-stone-50 border-t border-stone-100">
-        {RIBBONS[currentTab].map(([label, icon]) => (
+        {RIBBONS[currentTab].map(([label, Icon]) => (
           <button
             key={label}
             onClick={() => onInsertSnippet(label)}
-            className="flex flex-col items-center w-16 py-1 rounded hover:bg-indigo-50 text-stone-700"
+            className="flex flex-col items-center justify-center w-16 h-12 py-1 rounded hover:bg-indigo-50 text-stone-700 transition-colors"
           >
-            <span className="font-serif text-lg leading-6">{icon}</span>
-            <span className="text-[10px] text-stone-500">{label}</span>
+            <Icon className="size-4 text-stone-700" />
+            <span className="text-[10px] text-stone-500 mt-1">{label}</span>
           </button>
         ))}
         <div className="ml-auto flex items-center gap-2">
@@ -62,9 +63,10 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
           </select>
           <button
             onClick={onCompile}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-1.5 rounded-md font-medium"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3.5 py-1.5 rounded-md font-medium flex items-center gap-1.5 shadow-sm"
           >
-            ▶ Compile
+            <Play className="size-3.5 fill-current" />
+            Compile
           </button>
         </div>
       </div>

@@ -1,5 +1,9 @@
-import React from 'react'
-import { Doc } from '../../types'
+import React, { useEffect, useState, useCallback } from 'react'
+import { Folder, RefreshCw, Plus, FolderPlus, FilePlus, X } from 'lucide-react'
+import { Doc, FileNode, FileTreeNode } from '../../types'
+import { projectService } from '../../services/projects'
+import { TreeItem } from './TreeItem'
+import { useWorkspaceSync } from '../../hooks'
 import { Badge } from '../ui'
 
 export interface FileTreeProps {
@@ -7,6 +11,9 @@ export interface FileTreeProps {
   activeDocIndex: number
   projectName?: string
   onSelectDoc: (index: number) => void
+  onSelectFile?: (file: FileNode) => void
+  onSelectProject?: (project: string) => void
+  onCreateProject?: (name: string) => Promise<void>
 }
 
 export const FileTree: React.FC<FileTreeProps> = ({
@@ -14,26 +21,292 @@ export const FileTree: React.FC<FileTreeProps> = ({
   activeDocIndex,
   projectName = 'quantum-thesis',
   onSelectDoc,
+  onSelectFile,
+  onSelectProject,
+  onCreateProject,
 }) => {
+  const [tree, setTree] = useState<FileTreeNode[]>([])
+  const [projects, setProjects] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
+
+  // Creation dialog modes
+  const [modalMode, setModalMode] = useState<'project' | 'file' | 'folder' | null>(null)
+  const [inputValue, setInputValue] = useState('')
+
+  const activeDoc = docs[activeDocIndex]
+
+  const loadTree = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await projectService.getProjectTree(projectName)
+      setTree(data)
+      // Auto-expand root folders if empty set initially
+      setExpandedKeys((prev) => {
+        if (prev.size === 0) {
+          const initialFolders = new Set<string>()
+          data.forEach((node) => {
+            if (node.type === 'folder') {
+              initialFolders.add(node.path)
+            }
+          })
+          return initialFolders
+        }
+        return prev
+      })
+    } catch (err) {
+      console.warn('Backend tree scan failed, using fallback:', err)
+      setError('Backend offline · Menggunakan cache lokal')
+      setTree([])
+    } finally {
+      setLoading(false)
+    }
+  }, [projectName])
+
+  const loadProjects = useCallback(async () => {
+    try {
+      const list = await projectService.listProjects()
+      if (list && list.length > 0) {
+        setProjects(list)
+      }
+    } catch {
+      // Silent fallback
+    }
+  }, [])
+
+  // Hook for real-time WebSocket sync
+  useWorkspaceSync(projectName, useCallback(() => {
+    loadTree()
+  }, [loadTree]))
+
+  useEffect(() => {
+    loadTree()
+  }, [loadTree])
+
+  useEffect(() => {
+    loadProjects()
+  }, [loadProjects])
+
+  const toggleFolder = (path: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(path)) {
+        next.delete(path)
+      } else {
+        next.add(path)
+      }
+      return next
+    })
+  }
+
+  const handleSelectFile = (node: FileTreeNode) => {
+    const fileNode: FileNode = {
+      name: node.name,
+      path: node.path,
+      kind: (node.kind as any) || 'other',
+      size: node.size,
+      updatedAt: node.updatedAt,
+    }
+    if (onSelectFile) {
+      onSelectFile(fileNode)
+    }
+    const existingIndex = docs.findIndex((d) => d.name === node.name)
+    if (existingIndex !== -1) {
+      onSelectDoc(existingIndex)
+    }
+  }
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimmed = inputValue.trim()
+    if (!trimmed) return
+
+    try {
+      setLoading(true)
+      if (modalMode === 'project') {
+        if (onCreateProject) {
+          await onCreateProject(trimmed)
+        } else {
+          await projectService.createProject(trimmed)
+        }
+        await loadProjects()
+        onSelectProject?.(trimmed)
+      } else if (modalMode === 'folder') {
+        await projectService.createFolder(projectName, trimmed)
+        await loadTree()
+      } else if (modalMode === 'file') {
+        await projectService.createFile(projectName, trimmed, '')
+        await loadTree()
+      }
+      setInputValue('')
+      setModalMode(null)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error'
+      alert(`Gagal membuat item: ${message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <>
-      <div className="text-xs text-stone-500 mb-1">▾ {projectName}</div>
-      {docs.map((doc, index) => {
-        const ext = doc.name.split('.').pop()?.toUpperCase() || ''
-        const isActive = index === activeDocIndex
-        return (
+    <div className="flex flex-col gap-2">
+      {/* Project Header / Actions */}
+      <div className="flex items-center justify-between pb-1 border-b border-stone-200">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Folder className="size-3.5 text-stone-500 shrink-0" />
+          {projects.length > 1 ? (
+            <select
+              value={projectName}
+              onChange={(e) => onSelectProject?.(e.target.value)}
+              aria-label="Pilih Proyek"
+              className="text-xs font-semibold text-stone-700 bg-transparent border-0 py-0.5 pr-4 pl-0 focus:ring-0 cursor-pointer truncate max-w-[120px]"
+            >
+              {projects.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-xs font-semibold text-stone-700 truncate" title={projectName}>
+              {projectName}
+            </span>
+          )}
+        </div>
+
+        {/* Action icons like VS Code */}
+        <div className="flex items-center gap-0.5 shrink-0">
           <button
-            key={doc.name}
-            onClick={() => onSelectDoc(index)}
-            className={`w-full flex items-center gap-2 px-2 py-1 rounded text-left ${
-              isActive ? 'bg-indigo-100 text-indigo-800' : 'hover:bg-stone-200'
-            }`}
+            type="button"
+            onClick={() => {
+              setModalMode(modalMode === 'file' ? null : 'file')
+              setInputValue('')
+            }}
+            title="File Baru (contoh: chapters/intro.tex)"
+            className="p-1 text-stone-500 hover:text-stone-800 rounded hover:bg-stone-200 text-xs transition-colors"
           >
-            <Badge kind={doc.kind}>{ext}</Badge>
-            {doc.name}
+            <FilePlus className="size-3.5" />
           </button>
-        )
-      })}
-    </>
+          <button
+            type="button"
+            onClick={() => {
+              setModalMode(modalMode === 'folder' ? null : 'folder')
+              setInputValue('')
+            }}
+            title="Folder Baru (contoh: chapters)"
+            className="p-1 text-stone-500 hover:text-stone-800 rounded hover:bg-stone-200 text-xs transition-colors"
+          >
+            <FolderPlus className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setModalMode(modalMode === 'project' ? null : 'project')
+              setInputValue('')
+            }}
+            title="Proyek Baru"
+            className="p-1 text-stone-500 hover:text-stone-800 rounded hover:bg-stone-200 text-xs transition-colors"
+          >
+            <Plus className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={loadTree}
+            title="Refresh Explorer"
+            disabled={loading}
+            className="p-1 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-200 text-xs transition-colors"
+          >
+            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Creation Modal / Inline Form */}
+      {modalMode && (
+        <form onSubmit={handleCreateSubmit} className="flex items-center gap-1 py-1 px-1 bg-stone-50 border border-stone-200 rounded">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={
+              modalMode === 'project'
+                ? 'Nama proyek baru...'
+                : modalMode === 'folder'
+                ? 'Nama folder (misal: images)...'
+                : 'Nama file (misal: intro.tex)...'
+            }
+            autoFocus
+            className="flex-1 text-xs px-2 py-1 bg-white border border-stone-300 rounded focus:outline-none focus:border-indigo-500"
+          />
+          <button
+            type="submit"
+            disabled={!inputValue.trim()}
+            className="px-2 py-1 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 disabled:opacity-50"
+          >
+            Buat
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalMode(null)}
+            className="p-1 text-stone-400 hover:text-stone-600"
+          >
+            <X className="size-3.5" />
+          </button>
+        </form>
+      )}
+
+      {/* Loading & Error Indicators */}
+      {loading && !modalMode && (
+        <div className="text-[11px] text-stone-400 animate-pulse px-1">
+          Menyinkronkan file...
+        </div>
+      )}
+      {error && (
+        <div className="text-[10px] text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+          {error}
+        </div>
+      )}
+
+      {/* Hierarchical Tree View */}
+      {tree.length > 0 ? (
+        <div className="flex flex-col">
+          {tree.map((node) => (
+            <TreeItem
+              key={node.id || node.path}
+              node={node}
+              level={0}
+              activePath={activeDoc?.name}
+              expandedKeys={expandedKeys}
+              onToggleFolder={toggleFolder}
+              onSelectFile={handleSelectFile}
+            />
+          ))}
+        </div>
+      ) : (
+        /* Fallback if tree is empty or offline */
+        <div className="flex flex-col gap-0.5">
+          {docs.map((doc, index) => {
+            const ext = doc.name.split('.').pop()?.toUpperCase() || ''
+            const isActive = index === activeDocIndex
+            return (
+              <button
+                key={doc.name}
+                onClick={() => onSelectDoc(index)}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
+                  isActive
+                    ? 'bg-indigo-100 text-indigo-900 font-medium'
+                    : 'hover:bg-stone-200 text-stone-700'
+                }`}
+              >
+                <Badge kind={doc.kind}>{ext}</Badge>
+                <span className="truncate text-xs">{doc.name}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
