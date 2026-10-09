@@ -1,16 +1,18 @@
-import React, { useRef, useImperativeHandle, forwardRef } from 'react'
+import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
 import Editor, { OnMount, OnChange } from '@monaco-editor/react'
 import { Doc } from '../../types'
 import {
   LATEX_LANGUAGE_ID,
   latexMonarchTokens,
   LATEX_THEME_RULES,
+  LATEX_DARK_THEME_RULES,
 } from '../../utils'
 
 export interface CodeEditorProps {
   doc: Doc
   onChangeContent: (content: string) => void
   onSave?: () => void
+  theme?: 'dark' | 'light'
 }
 
 export interface CodeEditorHandle {
@@ -20,8 +22,9 @@ export interface CodeEditorHandle {
 }
 
 export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
-  ({ doc, onChangeContent, onSave }, ref) => {
+  ({ doc, onChangeContent, onSave, theme = 'dark' }, ref) => {
     const editorRef = useRef<Parameters<OnMount>[0] | null>(null)
+    const monacoRef = useRef<Parameters<OnMount>[1] | null>(null)
 
     useImperativeHandle(ref, () => ({
       jumpToLine: (lineNumber: number) => {
@@ -65,8 +68,16 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
 
     const language = doc.kind === 'tex' ? 'latex' : doc.kind === 'md' ? 'markdown' : 'plaintext'
 
+    // Update Monaco theme whenever theme prop changes
+    useEffect(() => {
+      if (monacoRef.current) {
+        monacoRef.current.editor.setTheme(theme === 'dark' ? 'aegis-dark' : 'aegis-light')
+      }
+    }, [theme])
+
     const handleEditorDidMount: OnMount = (editor, monaco) => {
       editorRef.current = editor
+      monacoRef.current = monaco
 
       // Register / update LaTeX language tokenizer & theme once
       if (!monaco.languages.getLanguages().some((l: { id: string }) => l.id === LATEX_LANGUAGE_ID)) {
@@ -74,25 +85,43 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
       }
       monaco.languages.setMonarchTokensProvider(LATEX_LANGUAGE_ID, latexMonarchTokens as any)
 
-      // Define Scholarly Light Theme
-      monaco.editor.defineTheme('scholarly-light', {
+      // Define Aegis Light Theme
+      monaco.editor.defineTheme('aegis-light', {
         base: 'vs',
         inherit: true,
         rules: LATEX_THEME_RULES as any,
         colors: {
           'editor.background': '#ffffff',
-          'editor.foreground': '#1f2937',
-          'editorLineNumber.foreground': '#9ca3af',
-          'editorLineNumber.activeForeground': '#4f46e5',
-          'editor.lineHighlightBackground': '#f8fafc',
-          'editorCursor.foreground': '#4f46e5',
-          'editorWhitespace.foreground': '#e2e8f0',
-          'editorIndentGuide.background': '#f1f5f9',
-          'editorIndentGuide.activeBackground': '#cbd5e1',
+          'editor.foreground': '#18181b',
+          'editorLineNumber.foreground': '#a1a1aa',
+          'editorLineNumber.activeForeground': '#2563eb',
+          'editor.lineHighlightBackground': '#f4f4f580',
+          'editorCursor.foreground': '#2563eb',
+          'editorWhitespace.foreground': '#e4e4e7',
+          'editorIndentGuide.background': '#f4f4f5',
+          'editorIndentGuide.activeBackground': '#d4d4d8',
         },
       })
 
-      monaco.editor.setTheme('scholarly-light')
+      // Define Aegis Dark Theme (eye-friendly Zinc charcoal)
+      monaco.editor.defineTheme('aegis-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: LATEX_DARK_THEME_RULES as any,
+        colors: {
+          'editor.background': '#18181b',
+          'editor.foreground': '#f4f4f5',
+          'editorLineNumber.foreground': '#52525b',
+          'editorLineNumber.activeForeground': '#3b82f6',
+          'editor.lineHighlightBackground': '#27272a50',
+          'editorCursor.foreground': '#3b82f6',
+          'editorWhitespace.foreground': '#3f3f46',
+          'editorIndentGuide.background': '#27272a',
+          'editorIndentGuide.activeBackground': '#3f3f46',
+        },
+      })
+
+      monaco.editor.setTheme(theme === 'dark' ? 'aegis-dark' : 'aegis-light')
 
       // Add Ctrl/Cmd + S shortcut command inside Monaco
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -110,18 +139,18 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
     }
 
     return (
-      <div className="flex-1 w-full h-full min-h-0 relative bg-white">
+      <div className="flex-1 w-full h-full min-h-0 relative bg-white dark:bg-zinc-900">
         <Editor
           height="100%"
           width="100%"
           language={language}
-          theme="vs"
+          theme={theme === 'dark' ? 'aegis-dark' : 'aegis-light'}
           value={doc.content}
           onChange={handleEditorChange}
           onMount={handleEditorDidMount}
           loading={
-            <div className="flex items-center justify-center h-full text-stone-400 text-xs font-mono animate-pulse">
-              Memuat editor Monaco...
+            <div className="flex items-center justify-center h-full text-zinc-400 text-xs font-mono animate-pulse">
+              Memuat editor Aegis Research...
             </div>
           }
           options={{

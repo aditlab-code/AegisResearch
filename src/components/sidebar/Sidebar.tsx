@@ -49,8 +49,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onJumpToNoteLine = () => {},
 }) => {
   return (
-    <aside className="w-full h-full bg-stone-50 border-r border-stone-200 p-3 text-sm overflow-auto">
-      <div className="text-[11px] uppercase tracking-wider text-stone-400 font-semibold mb-2">
+    <aside className="w-full h-full bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-3 text-sm overflow-auto text-zinc-800 dark:text-zinc-200">
+      <div className="text-[11px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-semibold mb-2">
         {panel === 'ai'
           ? 'AI Assistant'
           : panel === 'git'

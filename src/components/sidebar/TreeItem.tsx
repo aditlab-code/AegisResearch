@@ -48,9 +48,9 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           type="button"
           onClick={() => onToggleFolder(node.path)}
           style={{ paddingLeft }}
-          className="group w-full flex items-center gap-1.5 py-1 pr-2 rounded text-left transition-colors hover:bg-stone-200/70 text-stone-700"
+          className="group w-full flex items-center gap-1.5 py-1 pr-2 rounded text-left transition-colors hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
         >
-          <span className="text-stone-400 group-hover:text-stone-600 shrink-0">
+          <span className="text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 shrink-0">
             {isExpanded ? (
               <ChevronDown className="size-3.5" />
             ) : (
@@ -58,11 +58,11 @@ export const TreeItem: React.FC<TreeItemProps> = ({
             )}
           </span>
           {isExpanded ? (
-            <FolderOpen className="size-3.5 text-amber-600 shrink-0" />
+            <FolderOpen className="size-3.5 text-amber-500 shrink-0" />
           ) : (
             <Folder className="size-3.5 text-amber-500 shrink-0" />
           )}
-          <span className="truncate text-xs font-medium text-stone-800">{node.name}</span>
+          <span className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-100">{node.name}</span>
         </button>
 
         {isExpanded && node.children && node.children.length > 0 && (
@@ -84,7 +84,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         {isExpanded && (!node.children || node.children.length === 0) && (
           <div
             style={{ paddingLeft: `${(level + 1) * 14 + 18}px` }}
-            className="py-1 text-[11px] text-stone-400 italic"
+            className="py-1 text-[11px] text-zinc-400 dark:text-zinc-500 italic"
           >
             Kosong
           </div>
@@ -95,14 +95,14 @@ export const TreeItem: React.FC<TreeItemProps> = ({
 
   // File rendering
   const ext = node.name.split('.').pop()?.toLowerCase() || ''
-  let fileIcon = <File className="size-3.5 text-stone-400 shrink-0" />
+  let fileIcon = <File className="size-3.5 text-zinc-400 shrink-0" />
 
   if (ext === 'tex' || node.kind === 'tex') {
-    fileIcon = <FileCode className="size-3.5 text-indigo-500 shrink-0" />
+    fileIcon = <FileCode className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
   } else if (ext === 'md' || node.kind === 'md') {
-    fileIcon = <FileText className="size-3.5 text-emerald-600 shrink-0" />
+    fileIcon = <FileText className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
   } else if (ext === 'pdf' || node.kind === 'pdf') {
-    fileIcon = <FileText className="size-3.5 text-rose-600 shrink-0" />
+    fileIcon = <FileText className="size-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
   }
 
   return (
@@ -112,8 +112,8 @@ export const TreeItem: React.FC<TreeItemProps> = ({
       style={{ paddingLeft }}
       className={`group w-full flex items-center justify-between py-1 pr-2 rounded text-left transition-colors ${
         isActive
-          ? 'bg-indigo-100 text-indigo-900 font-medium'
-          : 'hover:bg-stone-200/70 text-stone-700'
+          ? 'bg-blue-50 dark:bg-zinc-800 text-blue-700 dark:text-blue-400 font-medium'
+          : 'hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
       }`}
     >
       <div className="flex items-center gap-1.5 min-w-0">
@@ -121,7 +121,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         <span className="truncate text-xs">{node.name}</span>
       </div>
       {node.size !== undefined && node.size > 0 && (
-        <span className="text-[10px] text-stone-400 font-mono ml-2 shrink-0">
+        <span className="text-[10px] text-zinc-400 font-mono ml-2 shrink-0">
           {formatBytes(node.size)}
         </span>
       )}

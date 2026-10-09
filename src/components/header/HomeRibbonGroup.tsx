@@ -64,18 +64,18 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
   return (
     <div
       ref={containerRef}
-      className="h-full flex items-stretch gap-2 select-none overflow-visible relative"
+      className="h-full flex items-stretch gap-2 select-none overflow-visible relative text-zinc-700 dark:text-zinc-200"
     >
       {/* 1. Sub-panel Clipboard */}
-      <div className="h-full flex flex-col items-center justify-between py-1 px-2 border-r border-stone-200">
+      <div className="h-full flex flex-col items-center justify-between py-1 px-2 border-r border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => onClipboardAction('paste')}
             title="Paste (Ctrl+V)"
-            className="flex flex-col items-center justify-center px-2 py-1 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="flex flex-col items-center justify-center px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
-            <ClipboardPaste className="size-4 text-indigo-600" />
+            <ClipboardPaste className="size-4 text-blue-600 dark:text-blue-400" />
             <span className="text-[10px] mt-0.5">Paste</span>
           </button>
 
@@ -84,35 +84,35 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
               type="button"
               onClick={() => onClipboardAction('copy')}
               title="Copy (Ctrl+C)"
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-stone-200/70 text-stone-700 text-[11px]"
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] transition-colors"
             >
-              <Copy className="size-3 text-stone-500" />
+              <Copy className="size-3 text-zinc-400" />
               <span>Copy</span>
             </button>
             <button
               type="button"
               onClick={() => onClipboardAction('cut')}
               title="Cut (Ctrl+X)"
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-stone-200/70 text-stone-700 text-[11px]"
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] transition-colors"
             >
-              <Scissors className="size-3 text-stone-500" />
+              <Scissors className="size-3 text-zinc-400" />
               <span>Cut</span>
             </button>
           </div>
         </div>
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Clipboard
         </span>
       </div>
 
       {/* 2. Sub-panel Text Formatting */}
-      <div className="h-full flex flex-col items-center justify-between py-1 px-2 border-r border-stone-200">
+      <div className="h-full flex flex-col items-center justify-between py-1 px-2 border-r border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-0.5 pt-0.5">
           <button
             type="button"
             onClick={() => onFormatAction('bold')}
             title={isLatex ? 'Bold (\\textbf{...})' : 'Bold (**...**)'}
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 font-bold transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold transition-colors"
           >
             <Bold className="size-4" />
           </button>
@@ -120,7 +120,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onFormatAction('italic')}
             title={isLatex ? 'Italic (\\textit{...})' : 'Italic (*...*)'}
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 italic transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 italic transition-colors"
           >
             <Italic className="size-4" />
           </button>
@@ -128,7 +128,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onFormatAction('quote')}
             title="Quote"
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <Quote className="size-4" />
           </button>
@@ -136,7 +136,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onFormatAction('superscript')}
             title={isLatex ? 'Superscript (^{...})' : 'Superscript (^...^)'}
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <Superscript className="size-4" />
           </button>
@@ -144,24 +144,24 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onFormatAction('subscript')}
             title={isLatex ? 'Subscript (_{...})' : 'Subscript (~...~)'}
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <Subscript className="size-4" />
           </button>
         </div>
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Font
         </span>
       </div>
 
       {/* 3. Sub-panel Paragraph Alignment */}
-      <div className="h-full flex flex-col items-center justify-between py-1 px-2 border-r border-stone-200">
+      <div className="h-full flex flex-col items-center justify-between py-1 px-2 border-r border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-0.5 pt-0.5">
           <button
             type="button"
             onClick={() => onAlignAction('left')}
             title="Align Left"
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <AlignLeft className="size-4" />
           </button>
@@ -169,7 +169,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onAlignAction('center')}
             title="Center"
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <AlignCenter className="size-4" />
           </button>
@@ -177,7 +177,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onAlignAction('right')}
             title="Align Right"
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <AlignRight className="size-4" />
           </button>
@@ -185,43 +185,42 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onAlignAction('justify')}
             title="Justify"
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <AlignJustify className="size-4" />
           </button>
         </div>
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Paragraph
         </span>
       </div>
 
       {/* 4. Sub-panel Headings & Styles Gallery */}
-      <div className="relative h-full flex flex-col items-center justify-between py-1 px-2 border-r border-stone-200">
+      <div className="relative h-full flex flex-col items-center justify-between py-1 px-2 border-r border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-1 pt-0.5">
-          {/* Word-like Styles Dropdown */}
           <button
             type="button"
             onClick={() => setShowHeadingPopover(!showHeadingPopover)}
             title="Heading & Document Styles Gallery"
             className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
               showHeadingPopover
-                ? 'bg-indigo-100 text-indigo-700 font-medium'
-                : 'hover:bg-stone-200/70 text-stone-700'
+                ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
+                : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
             }`}
           >
-            <Heading className="size-4 text-indigo-600" />
+            <Heading className="size-4 text-blue-600 dark:text-blue-400" />
             <span className="text-xs font-medium">Styles</span>
-            <ChevronDown className="size-3 text-stone-400" />
+            <ChevronDown className="size-3 text-zinc-400" />
           </button>
 
-          <div className="w-[1px] h-4 bg-stone-300 mx-0.5" />
+          <div className="w-[1px] h-4 bg-zinc-200 dark:bg-zinc-700 mx-0.5" />
 
           {/* Quick List & Line buttons */}
           <button
             type="button"
             onClick={() => onStructureAction('numbering')}
             title="Numbered List"
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <ListOrdered className="size-4" />
           </button>
@@ -229,7 +228,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onStructureAction('bullet')}
             title="Bulleted List"
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <List className="size-4" />
           </button>
@@ -237,13 +236,13 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onStructureAction('line')}
             title="Horizontal Divider"
-            className="p-1.5 rounded hover:bg-stone-200/70 text-stone-700 transition-colors"
+            className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <Minus className="size-4" />
           </button>
         </div>
 
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Styles
         </span>
 
@@ -265,31 +264,31 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             type="button"
             onClick={() => onPageAction('break')}
             title="Page Break (\\newpage)"
-            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-stone-200/70 text-stone-700 text-xs transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs transition-colors"
           >
-            <FileBreakIcon className="size-3.5 text-indigo-500" />
+            <FileBreakIcon className="size-3.5 text-blue-600 dark:text-blue-400" />
             <span className="text-[11px]">Break</span>
           </button>
           <button
             type="button"
             onClick={() => onPageAction('next')}
             title="Clear Page (\\clearpage)"
-            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-stone-200/70 text-stone-700 text-xs transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs transition-colors"
           >
-            <FileMinus className="size-3.5 text-stone-500" />
+            <FileMinus className="size-3.5 text-zinc-400" />
             <span className="text-[11px]">Next</span>
           </button>
           <button
             type="button"
             onClick={() => onPageAction('preview')}
             title="Refresh Preview"
-            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-stone-200/70 text-stone-700 text-xs transition-colors"
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs transition-colors"
           >
-            <Eye className="size-3.5 text-stone-500" />
+            <Eye className="size-3.5 text-zinc-400" />
             <span className="text-[11px]">Preview</span>
           </button>
         </div>
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Page
         </span>
       </div>

@@ -114,3 +114,18 @@ export const LATEX_THEME_RULES = [
   { token: 'keyword', foreground: '1d4ed8' }, // blue-700
   { token: 'number', foreground: 'd97706' },
 ]
+
+export const LATEX_DARK_THEME_RULES = [
+  { token: 'comment', foreground: '34d399', fontStyle: 'italic' }, // emerald-400
+  { token: 'string.math', foreground: 'f87171', fontStyle: 'bold' }, // red-400
+  { token: 'string.math.display', foreground: 'fb7185', fontStyle: 'bold' }, // rose-400
+  { token: 'keyword.section', foreground: 'a5b4fc', fontStyle: 'bold' }, // indigo-300
+  { token: 'type.format', foreground: 'fbbf24', fontStyle: 'bold' }, // amber-400
+  { token: 'keyword.core', foreground: '2dd4bf', fontStyle: 'bold' }, // teal-400
+  { token: 'constant.spacing', foreground: '71717a' }, // zinc-500
+  { token: 'delimiter.curly', foreground: 'e4e4e7', fontStyle: 'bold' }, // zinc-200
+  { token: 'delimiter.square', foreground: 'd4d4d8' },
+  { token: 'keyword', foreground: '60a5fa' }, // blue-400
+  { token: 'number', foreground: 'fbbf24' },
+]
+

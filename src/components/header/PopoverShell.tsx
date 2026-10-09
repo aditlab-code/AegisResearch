@@ -18,18 +18,18 @@ export const PopoverShell: React.FC<PopoverShellProps> = ({
 }) => {
   return (
     <div
-      className={`${widthClass} bg-white border border-stone-300 rounded-lg shadow-2xl text-stone-800 select-none p-3.5`}
+      className={`${widthClass} bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl text-zinc-800 dark:text-zinc-200 select-none p-3.5`}
     >
-      {/* Standardized Table Builder Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-stone-200 mb-2.5">
+      {/* Standardized Popover Header */}
+      <div className="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800 mb-2.5">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Icon className="size-4 text-indigo-600 shrink-0" />
-          <span className="text-xs font-semibold text-stone-700 truncate">{title}</span>
+          <Icon className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-100 truncate">{title}</span>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="p-1 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-100 transition-colors shrink-0"
+          className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
         >
           <X className="size-3.5" />
         </button>

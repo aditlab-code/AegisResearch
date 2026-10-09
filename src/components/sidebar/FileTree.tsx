@@ -175,15 +175,15 @@ export const FileTree: React.FC<FileTreeProps> = ({
   return (
     <div className="flex flex-col gap-2">
       {/* Project Header / Actions */}
-      <div className="flex items-center justify-between pb-1 border-b border-stone-200">
+      <div className="flex items-center justify-between pb-1 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Folder className="size-3.5 text-stone-500 shrink-0" />
+          <Folder className="size-3.5 text-zinc-500 shrink-0" />
           {projects.length > 1 ? (
             <select
               value={projectName}
               onChange={(e) => onSelectProject?.(e.target.value)}
               aria-label="Pilih Proyek"
-              className="text-xs font-semibold text-stone-700 bg-transparent border-0 py-0.5 pr-4 pl-0 focus:ring-0 cursor-pointer truncate max-w-[120px]"
+              className="text-xs font-semibold text-zinc-800 dark:text-zinc-100 bg-transparent border-0 py-0.5 pr-4 pl-0 focus:ring-0 cursor-pointer truncate max-w-[120px]"
             >
               {projects.map((p) => (
                 <option key={p} value={p}>
@@ -192,7 +192,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               ))}
             </select>
           ) : (
-            <span className="text-xs font-semibold text-stone-700 truncate" title={projectName}>
+            <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-100 truncate" title={projectName}>
               {projectName}
             </span>
           )}
@@ -207,7 +207,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               setInputValue('')
             }}
             title="File Baru (contoh: chapters/intro.tex)"
-            className="p-1 text-stone-500 hover:text-stone-800 rounded hover:bg-stone-200 text-xs transition-colors"
+            className="p-1 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-xs transition-colors"
           >
             <FilePlus className="size-3.5" />
           </button>
@@ -218,7 +218,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               setInputValue('')
             }}
             title="Folder Baru (contoh: chapters)"
-            className="p-1 text-stone-500 hover:text-stone-800 rounded hover:bg-stone-200 text-xs transition-colors"
+            className="p-1 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-xs transition-colors"
           >
             <FolderPlus className="size-3.5" />
           </button>
@@ -229,7 +229,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               setInputValue('')
             }}
             title="Proyek Baru"
-            className="p-1 text-stone-500 hover:text-stone-800 rounded hover:bg-stone-200 text-xs transition-colors"
+            className="p-1 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-xs transition-colors"
           >
             <Plus className="size-3.5" />
           </button>
@@ -238,16 +238,16 @@ export const FileTree: React.FC<FileTreeProps> = ({
             onClick={loadTree}
             title="Refresh Explorer"
             disabled={loading}
-            className="p-1 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-200 text-xs transition-colors"
+            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-xs transition-colors"
           >
-            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
+            <RefreshCw className={`size-3.5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Creation Modal / Inline Form */}
       {modalMode && (
-        <form onSubmit={handleCreateSubmit} className="flex items-center gap-1 py-1 px-1 bg-stone-50 border border-stone-200 rounded">
+        <form onSubmit={handleCreateSubmit} className="flex items-center gap-1 py-1 px-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded">
           <input
             type="text"
             value={inputValue}
@@ -260,19 +260,19 @@ export const FileTree: React.FC<FileTreeProps> = ({
                 : 'Nama file (misal: intro.tex)...'
             }
             autoFocus
-            className="flex-1 text-xs px-2 py-1 bg-white border border-stone-300 rounded focus:outline-none focus:border-indigo-500"
+            className="flex-1 text-xs px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500"
           />
           <button
             type="submit"
             disabled={!inputValue.trim()}
-            className="px-2 py-1 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 disabled:opacity-50"
+            className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             Buat
           </button>
           <button
             type="button"
             onClick={() => setModalMode(null)}
-            className="p-1 text-stone-400 hover:text-stone-600"
+            className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
           >
             <X className="size-3.5" />
           </button>
@@ -281,12 +281,12 @@ export const FileTree: React.FC<FileTreeProps> = ({
 
       {/* Loading & Error Indicators */}
       {loading && !modalMode && (
-        <div className="text-[11px] text-stone-400 animate-pulse px-1">
+        <div className="text-[11px] text-zinc-400 animate-pulse px-1">
           Menyinkronkan file...
         </div>
       )}
       {error && (
-        <div className="text-[10px] text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+        <div className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">
           {error}
         </div>
       )}
@@ -318,8 +318,8 @@ export const FileTree: React.FC<FileTreeProps> = ({
                 onClick={() => onSelectDoc(index)}
                 className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
                   isActive
-                    ? 'bg-indigo-100 text-indigo-900 font-medium'
-                    : 'hover:bg-stone-200 text-stone-700'
+                    ? 'bg-blue-50 dark:bg-zinc-800 text-blue-700 dark:text-blue-400 font-medium'
+                    : 'hover:bg-zinc-200/60 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                 }`}
               >
                 <Badge kind={doc.kind}>{ext}</Badge>

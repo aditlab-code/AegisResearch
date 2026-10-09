@@ -13,6 +13,7 @@ export interface EditorProps {
   onChangeContent: (content: string) => void
   isDirty?: boolean
   onSave?: () => void
+  theme?: 'dark' | 'light'
 }
 
 export const Editor = forwardRef<CodeEditorHandle, EditorProps>(
@@ -26,13 +27,14 @@ export const Editor = forwardRef<CodeEditorHandle, EditorProps>(
       onChangeContent,
       isDirty = false,
       onSave,
+      theme = 'light',
     },
     ref,
   ) => {
     const activeDoc = activeDocIndex >= 0 && activeDocIndex < docs.length ? docs[activeDocIndex] : undefined
 
     return (
-      <main className="w-full h-full flex flex-col min-w-0 bg-white">
+      <main className="w-full h-full flex flex-col min-w-0 bg-white dark:bg-zinc-900">
         <EditorTabs
           docs={docs}
           openDocIndices={openDocIndices}
@@ -42,14 +44,20 @@ export const Editor = forwardRef<CodeEditorHandle, EditorProps>(
           isDirty={isDirty}
         />
         {activeDoc ? (
-          <CodeEditor ref={ref} doc={activeDoc} onChangeContent={onChangeContent} onSave={onSave} />
+          <CodeEditor
+            ref={ref}
+            doc={activeDoc}
+            onChangeContent={onChangeContent}
+            onSave={onSave}
+            theme={theme}
+          />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-stone-400 p-6 select-none bg-stone-50">
-            <div className="size-12 rounded-full bg-stone-200/60 flex items-center justify-center text-stone-400 mb-3">
+          <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 p-6 select-none bg-zinc-50 dark:bg-zinc-950">
+            <div className="size-12 rounded-full bg-zinc-200/60 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 mb-3">
               <FileEdit className="size-6" />
             </div>
-            <p className="text-sm font-medium text-stone-600 mb-1">Tidak ada dokumen yang terbuka</p>
-            <p className="text-xs text-stone-400">Pilih file dari sidebar di sebelah kiri untuk mulai mengedit.</p>
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-1">Tidak ada dokumen yang terbuka</p>
+            <p className="text-xs text-zinc-400">Pilih file dari sidebar di sebelah kiri untuk mulai mengedit.</p>
           </div>
         )}
       </main>

@@ -97,7 +97,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Cari kata (min. 5 huruf)..."
-            className="w-full border border-stone-300 rounded pl-8 pr-14 py-1.5 bg-white text-xs text-stone-800 placeholder-stone-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-mono"
+            className="w-full border border-zinc-300 dark:border-zinc-700 rounded pl-8 pr-14 py-1.5 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 outline-none focus:border-blue-500 transition-all font-mono"
           />
 
           <div className="absolute right-1.5 flex items-center gap-0.5">
@@ -107,8 +107,8 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               title={caseSensitive ? 'Match Case (Aktif)' : 'Match Case (Nonaktif)'}
               className={`p-1 rounded text-xs transition-colors ${
                 caseSensitive
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'text-stone-400 hover:text-stone-700 hover:bg-stone-100'
+                  ? 'bg-blue-50 dark:bg-zinc-700 text-blue-600 dark:text-blue-400'
+                  : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700'
               }`}
             >
               <CaseSensitive className="size-3.5" />
@@ -119,7 +119,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                 type="button"
                 onClick={() => handleInputChange('')}
                 title="Hapus pencarian"
-                className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded"
+                className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
               >
                 <X className="size-3.5" />
               </button>
@@ -129,7 +129,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
 
         {/* Validation hint if query < 5 chars */}
         {query.trim().length > 0 && query.trim().length < 5 && (
-          <div className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded">
+          <div className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2 py-1 rounded">
             Ketik minimal {5 - query.trim().length} karakter lagi untuk mencari...
           </div>
         )}
@@ -137,11 +137,11 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
 
       {/* Results Header Toolbar */}
       {query.trim().length >= 5 && (
-        <div className="flex items-center justify-between text-xs pb-1 border-b border-stone-200 text-stone-500">
+        <div className="flex items-center justify-between text-xs pb-1 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400">
           <span>
             {loading ? (
               <span className="flex items-center gap-1.5">
-                <Loader2 className="size-3 animate-spin text-indigo-600" />
+                <Loader2 className="size-3 animate-spin text-blue-600 dark:text-blue-400" />
                 Mencari...
               </span>
             ) : (
@@ -157,7 +157,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                 type="button"
                 onClick={expandAll}
                 title="Expand Semua"
-                className="p-0.5 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-200"
+                className="p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800"
               >
                 <ChevronsUpDown className="size-3" />
               </button>
@@ -165,7 +165,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
                 type="button"
                 onClick={collapseAll}
                 title="Collapse Semua"
-                className="p-0.5 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-200"
+                className="p-0.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/70 dark:hover:bg-zinc-800"
               >
                 <ChevronsDownUp className="size-3" />
               </button>

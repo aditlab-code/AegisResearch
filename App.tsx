@@ -5,7 +5,7 @@ import { DEFAULT_CHAT_MESSAGES } from './src/constants'
 import { countWords, parseDocumentOutline, parseBibtex, serializeBibtex, scanDocumentLabels, BibEntry } from './src/utils'
 import { projectService } from './src/services/projects'
 import { compilerService } from './src/services/compiler'
-import { useDocumentManager, useCompiler, useKeyboardShortcuts } from './src/hooks'
+import { useDocumentManager, useCompiler, useKeyboardShortcuts, useTheme } from './src/hooks'
 import {
   TitleBar,
   RibbonBar,
@@ -33,6 +33,8 @@ export default function App() {
   const [projectName, setProjectName] = useState('quantum-thesis')
   const { engine, setEngine, compile, pdfBlobUrl, setPdfBlobUrl, isCompiling, compileResult } =
     useCompiler(projectName)
+  const { theme, toggleTheme } = useTheme()
+
 
   const [ribbonTab, setRibbonTab] = useState<RibbonTab>('Home')
   const [panel, setPanel] = useState<PanelType>('files')
@@ -397,9 +399,9 @@ export default function App() {
   })
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-zinc-100 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100">
       {/* Title bar */}
-      <TitleBar />
+      <TitleBar appName="Aegis Research" theme={theme} onToggleTheme={toggleTheme} />
 
       {/* Ribbon */}
       <RibbonBar
@@ -458,7 +460,7 @@ export default function App() {
             />
           </Panel>
 
-          <PanelResizeHandle className="w-1 bg-stone-200 hover:bg-indigo-500 transition-colors cursor-col-resize active:bg-indigo-600 focus:outline-none" />
+          <PanelResizeHandle className="w-1 bg-zinc-200 dark:bg-zinc-800 hover:bg-blue-500 transition-colors cursor-col-resize active:bg-blue-600 focus:outline-none" />
 
           {/* Column 2: Editor Teks */}
           <Panel id="editor-panel" defaultSize={48} minSize={30} className="min-w-0 h-full">
@@ -472,10 +474,11 @@ export default function App() {
               isDirty={isDirty}
               onSave={handleSave}
               onChangeContent={handleContentChange}
+              theme={theme}
             />
           </Panel>
 
-          <PanelResizeHandle className="w-1 bg-stone-200 hover:bg-indigo-500 transition-colors cursor-col-resize active:bg-indigo-600 focus:outline-none" />
+          <PanelResizeHandle className="w-1 bg-zinc-200 dark:bg-zinc-800 hover:bg-blue-500 transition-colors cursor-col-resize active:bg-blue-600 focus:outline-none" />
 
           {/* Column 3: Preview PDF */}
           <Panel id="preview-panel" defaultSize={32} minSize={20} className="min-w-0 h-full">
@@ -487,7 +490,7 @@ export default function App() {
                 onCompile={handleCompile}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-[#525659] text-stone-300 text-xs font-mono">
+              <div className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 text-zinc-400 text-xs font-mono">
                 Tidak ada dokumen aktif
               </div>
             )}

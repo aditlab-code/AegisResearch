@@ -63,10 +63,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     setZoom(+newZoom.toFixed(2))
   }, [paperSize])
 
-  // CASE 1: LATEX WITH READY PDF -> 100% FULL-PANEL NATIVE BROWSER VIEWER (LIGHTWEIGHT & FAST)
+  // CASE 1: LATEX WITH READY PDF -> 100% FULL-PANEL NATIVE BROWSER VIEWER
   if (isLatex && pdfBlobUrl) {
     return (
-      <section className="w-full h-full bg-[#525659] overflow-hidden">
+      <section className="w-full h-full bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
         <PDFViewer pdfUrl={pdfBlobUrl} />
       </section>
     )
@@ -75,21 +75,21 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   // CASE 2: LATEX WITHOUT COMPILED PDF -> CLEAN EMPTY STATE WITH COMPILE BUTTON
   if (isLatex && !pdfBlobUrl) {
     return (
-      <section className="w-full h-full flex items-center justify-center bg-[#525659] p-6 select-none">
-        <div className="max-w-sm w-full bg-[#323639] border border-[#5f6368] rounded-xl p-8 flex flex-col items-center text-center shadow-2xl">
-          <div className="size-14 rounded-full bg-[#202124] flex items-center justify-center text-indigo-400 mb-4 border border-[#5f6368]">
+      <section className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 p-6 select-none">
+        <div className="max-w-sm w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-8 flex flex-col items-center text-center shadow-lg">
+          <div className="size-14 rounded-full bg-blue-50 dark:bg-zinc-800 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 border border-zinc-200 dark:border-zinc-700">
             <FileCode className="size-7" />
           </div>
-          <h3 className="text-white font-medium text-sm mb-1">PDF Belum Terkompilasi</h3>
-          <p className="text-stone-400 text-xs mb-6 leading-relaxed">
-            Dokumen LaTeX <span className="font-mono text-stone-300">"{doc.name}"</span> belum
+          <h3 className="text-zinc-900 dark:text-white font-medium text-sm mb-1">PDF Belum Terkompilasi</h3>
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs mb-6 leading-relaxed">
+            Dokumen LaTeX <span className="font-mono text-zinc-700 dark:text-zinc-300">"{doc.name}"</span> belum
             memiliki file PDF di disk. Klik tombol di bawah untuk mengompilasi dengan pdflatex.
           </p>
           {onCompile && (
             <button
               type="button"
               onClick={onCompile}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shadow transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
             >
               <Play className="size-3.5 fill-current" />
               Kompilasi PDF Sekarang
@@ -102,7 +102,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
   // CASE 3: MARKDOWN MODE -> TRUE PRINT SHEET WITH CUSTOM TOOLBAR
   return (
-    <section className="w-full h-full flex flex-col bg-[#525659] overflow-hidden select-none">
+    <section className="w-full h-full flex flex-col bg-zinc-200 dark:bg-zinc-950 overflow-hidden select-none">
       <PreviewToolbar
         currentPage={currentPage}
         totalPages={totalPages}

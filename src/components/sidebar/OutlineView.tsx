@@ -52,10 +52,10 @@ export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigat
   return (
     <div className="flex flex-col gap-2">
       {/* Header toolbar */}
-      <div className="flex items-center justify-between pb-1.5 border-b border-stone-200">
+      <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-1.5">
-          <ListTree className="size-3.5 text-stone-500 shrink-0" />
-          <span className="text-xs font-semibold text-stone-700">Hierarki Dokumen</span>
+          <ListTree className="size-3.5 text-zinc-400 shrink-0" />
+          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">Hierarki Dokumen</span>
         </div>
 
         {outlineTree.length > 0 && (
@@ -64,7 +64,7 @@ export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigat
               type="button"
               onClick={expandAll}
               title="Expand Semua"
-              className="p-1 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-200 transition-colors"
+              className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
             >
               <ChevronsUpDown className="size-3" />
             </button>
@@ -72,7 +72,7 @@ export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigat
               type="button"
               onClick={collapseAll}
               title="Collapse Semua"
-              className="p-1 text-stone-400 hover:text-stone-700 rounded hover:bg-stone-200 transition-colors"
+              className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
             >
               <ChevronsDownUp className="size-3" />
             </button>
@@ -95,7 +95,7 @@ export const OutlineView: React.FC<OutlineViewProps> = ({ outlineTree, onNavigat
           ))}
         </div>
       ) : (
-        <div className="text-center py-6 px-2 text-stone-400 text-xs italic">
+        <div className="text-center py-6 px-2 text-zinc-400 text-xs italic">
           Belum ada struktur bab atau heading pada dokumen ini.
         </div>
       )}

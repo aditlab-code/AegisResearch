@@ -6,5 +6,23 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  @apply bg-stone-100 text-stone-800;
+  @apply bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100;
+}
+
+/* Subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 dark:bg-zinc-700 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-zinc-400 dark:bg-zinc-600;
 }

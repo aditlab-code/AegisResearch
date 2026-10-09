@@ -21,17 +21,17 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
 }) => {
   if (openDocIndices.length === 0) {
     return (
-      <div className="flex items-center h-9 bg-stone-100 border-b border-stone-200 text-xs px-3 text-stone-400 select-none">
+      <div className="flex items-center h-9 bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-xs px-3 text-zinc-400 select-none">
         Belum ada tab terbuka
       </div>
     )
   }
 
-  // Defense-in-depth: deduplicate unique open document indices
+  // Deduplicate unique open document indices
   const uniqueOpenIndices = Array.from(new Set(openDocIndices))
 
   return (
-    <div className="flex bg-stone-100 border-b border-stone-200 text-xs select-none overflow-x-auto">
+    <div className="flex bg-zinc-100 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 text-xs select-none overflow-x-auto">
       {uniqueOpenIndices.map((docIdx) => {
         const isActive = docIdx === activeDocIndex
         const doc = docs[docIdx]
@@ -43,16 +43,16 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
           <div
             key={docIdx}
             onClick={() => onSelectTab(docIdx)}
-            className={`group px-3 py-2 cursor-pointer flex gap-2 border-r border-stone-200 items-center transition-colors min-w-0 max-w-[180px] ${
+            className={`group px-3 py-2 cursor-pointer flex gap-2 border-r border-zinc-200 dark:border-zinc-800 items-center transition-colors min-w-0 max-w-[180px] ${
               isActive
-                ? 'bg-white text-stone-900 font-medium border-t-2 border-t-indigo-600 shadow-sm'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+                ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium border-t-2 border-t-blue-600 dark:border-t-blue-500 shadow-xs'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-900/60'
             }`}
           >
             {isTex ? (
-              <FileCode className="size-3.5 text-indigo-500 shrink-0" />
+              <FileCode className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
             ) : (
-              <FileText className="size-3.5 text-emerald-600 shrink-0" />
+              <FileText className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             )}
 
             <span className="truncate flex-1 text-xs">{doc.name}</span>
@@ -68,7 +68,7 @@ export const EditorTabs: React.FC<EditorTabsProps> = ({
                 onCloseTab(docIdx)
               }}
               title="Tutup tab"
-              className="text-stone-400 hover:text-stone-700 hover:bg-stone-200 rounded p-0.5 transition-colors shrink-0"
+              className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded p-0.5 transition-colors shrink-0"
             >
               <X className="size-3" />
             </button>

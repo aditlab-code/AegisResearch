@@ -68,26 +68,29 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
   const tabs = Object.keys(RIBBONS) as RibbonTab[]
 
   return (
-    <div className="bg-white border-b border-stone-200 shrink-0 relative z-30">
+    <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shrink-0 relative z-30">
       {/* Ribbon Tabs Header */}
-      <div className="flex gap-1 px-4 pt-1 text-sm bg-stone-50/50">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => onSelectTab(tab)}
-            className={`px-3 py-1.5 border-b-2 text-xs transition-colors ${
-              currentTab === tab
-                ? 'border-indigo-600 text-indigo-700 font-semibold bg-white'
-                : 'border-transparent text-stone-500 hover:text-stone-800'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="flex gap-1 px-4 pt-1 text-sm bg-zinc-100/70 dark:bg-zinc-950/60 border-b border-zinc-200 dark:border-zinc-800">
+        {tabs.map((tab) => {
+          const isActive = currentTab === tab
+          return (
+            <button
+              key={tab}
+              onClick={() => onSelectTab(tab)}
+              className={`px-3 py-1.5 border-b-2 text-xs transition-colors ${
+                isActive
+                  ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 font-semibold bg-white dark:bg-zinc-900'
+                  : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              }`}
+            >
+              {tab}
+            </button>
+          )
+        })}
       </div>
 
       {/* Ribbon Tab Content Toolbar */}
-      <div className="flex items-center gap-1 px-4 bg-white border-t border-stone-100 overflow-visible h-[68px] shrink-0">
+      <div className="flex items-center gap-1 px-4 bg-white dark:bg-zinc-900 overflow-visible h-[68px] shrink-0 text-zinc-700 dark:text-zinc-200">
         {currentTab === 'Home' ? (
           <HomeRibbonGroup
             isLatex={isLatex}
@@ -110,13 +113,6 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
             onInsertRef={onInsertRef}
             onInsertTocCode={onInsertTocCode}
           />
-        ) : currentTab === 'Review' ? (
-          <ReviewRibbonGroup
-            isLatex={isLatex}
-            onInsertComment={onInsertComment}
-            onOpenReviewPanel={onOpenReviewPanel}
-            onOpenGitPanel={onOpenGitPanel}
-          />
         ) : (
           <ReviewRibbonGroup
             isLatex={isLatex}
@@ -127,12 +123,12 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
         )}
 
         {/* Compiler Action Group on Right */}
-        <div className="ml-auto flex items-center gap-2 pl-4 border-l border-stone-200 h-full shrink-0">
-          <span className="text-xs text-stone-500">Compiler</span>
+        <div className="ml-auto flex items-center gap-2 pl-4 border-l border-zinc-200 dark:border-zinc-800 h-full shrink-0">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">Compiler</span>
           <select
             value={engine}
             onChange={(e) => onChangeEngine?.(e.target.value as EngineType)}
-            className="text-xs border border-stone-300 rounded px-2 py-1 bg-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+            className="text-xs border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="pdfLaTeX">pdfLaTeX</option>
             <option value="XeLaTeX">XeLaTeX</option>
@@ -141,7 +137,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
           <button
             type="button"
             onClick={onCompile}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3.5 py-1.5 rounded-md font-medium flex items-center gap-1.5 shadow-sm transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3.5 py-1.5 rounded font-medium flex items-center gap-1.5 shadow-sm transition-colors"
           >
             <Play className="size-3.5 fill-current" />
             Compile
