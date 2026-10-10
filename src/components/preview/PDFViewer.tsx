@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { Loader2 } from 'lucide-react'
-
+import 'pdfjs-dist/web/pdf_viewer.css'
 // Initialize PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker
 
@@ -19,6 +19,7 @@ export interface PDFViewerProps {
   pdfUrl?: string
   zoom?: number
   onInverseSearch?: (query: { page: number; x: number; y: number }) => void
+  syncEnabled?: boolean
   forwardTarget?: SyncTeXForwardTarget | null
   onPageChange?: (currentPage: number, totalPages: number) => void
   onFitWidthCalculated?: (scale: number) => void
@@ -29,7 +30,8 @@ interface SinglePageProps {
   pdfDoc: pdfjsLib.PDFDocumentProxy
   pageNumber: number
   scale: number
-  onDoubleClickHandler: (page: number, clientX: number, clientY: number, rect: DOMRect) => void
+  onDoubleClickHandler?: (page: number, clientX: number, clientY: number, rect: DOMRect) => void
+  syncEnabled?: boolean
   isForwardTarget: boolean
   forwardTarget: SyncTeXForwardTarget | null
 }
@@ -39,12 +41,15 @@ const SinglePDFPage: React.FC<SinglePageProps> = ({
   pageNumber,
   scale,
   onDoubleClickHandler,
+  syncEnabled = true,
   isForwardTarget,
   forwardTarget,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const renderTaskRef = useRef<any>(null)
+  const textLayerRef = useRef<HTMLDivElement>(null)
+  const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null)
+  const textLayerTaskRef = useRef<pdfjsLib.TextLayer | null>(null)
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
 
   useEffect(() => {
@@ -63,7 +68,7 @@ const SinglePDFPage: React.FC<SinglePageProps> = ({
         const context = canvas.getContext('2d')
         if (!context) return
 
-        // Cancel previous rendering if any
+        // Cancel previous rendering tasks if any
         if (renderTaskRef.current) {
           try {
             renderTaskRef.current.cancel()
@@ -71,7 +76,13 @@ const SinglePDFPage: React.FC<SinglePageProps> = ({
             // expected on rapid zoom
           }
         }
-
+        if (textLayerTaskRef.current) {
+          try {
+            textLayerTaskRef.current.cancel()
+          } catch {
+            // expected on rapid zoom
+          }
+        }
         // Support High-DPI screens by configuring transform and buffer
         const dpr = window.devicePixelRatio || 1
         canvas.width = Math.floor(viewport.width * dpr)
@@ -90,8 +101,25 @@ const SinglePDFPage: React.FC<SinglePageProps> = ({
         const task = page.render(renderContext)
         renderTaskRef.current = task
         await task.promise
-      } catch (err: any) {
-        if (err?.name !== 'RenderingCancelledException') {
+
+        // Render Text Layer for text selection and copying
+        if (textLayerRef.current) {
+          textLayerRef.current.innerHTML = ''
+          const textContent = await page.getTextContent()
+          if (isCancelled) return
+
+          const textLayer = new pdfjsLib.TextLayer({
+            textContentSource: textContent,
+            container: textLayerRef.current,
+            viewport,
+          })
+          textLayerTaskRef.current = textLayer
+          await textLayer.render()
+        }
+      } catch (err: unknown) {
+        const isCancel =
+          Boolean(err && typeof err === 'object' && 'name' in err && err.name === 'RenderingCancelledException')
+        if (!isCancel) {
           console.warn(`Error rendering page ${pageNumber}:`, err)
         }
       }
@@ -108,6 +136,13 @@ const SinglePDFPage: React.FC<SinglePageProps> = ({
           // ignore
         }
       }
+      if (textLayerTaskRef.current) {
+        try {
+          textLayerTaskRef.current.cancel()
+        } catch {
+          // ignore
+        }
+      }
     }
   }, [pdfDoc, pageNumber, scale])
 
@@ -119,7 +154,11 @@ const SinglePDFPage: React.FC<SinglePageProps> = ({
   }, [isForwardTarget, forwardTarget?.timestamp])
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return
+    // If user has selected text, do not trigger SyncTeX
+    const selection = window.getSelection()?.toString().trim()
+    if (selection) return
+
+    if (!syncEnabled || !onDoubleClickHandler || !containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     onDoubleClickHandler(pageNumber, e.clientX, e.clientY, rect)
   }
@@ -137,7 +176,9 @@ const SinglePDFPage: React.FC<SinglePageProps> = ({
       ref={containerRef}
       id={`pdf-page-${pageNumber}`}
       onDoubleClick={handleDoubleClick}
-      className="relative mb-6 bg-white shadow-md border border-zinc-300 dark:border-zinc-800 transition-all select-none group cursor-crosshair shrink-0"
+      className={`relative mb-6 bg-white shadow-md border border-zinc-300 dark:border-zinc-800 transition-all group shrink-0 ${
+        syncEnabled ? 'cursor-crosshair' : 'cursor-text'
+      }`}
       style={{
         width: dimensions.width ? `${dimensions.width}px` : undefined,
         height: dimensions.height ? `${dimensions.height}px` : undefined,
@@ -149,6 +190,15 @@ const SinglePDFPage: React.FC<SinglePageProps> = ({
         style={{ display: 'block' }}
       />
 
+      {/* PDF.js Text Layer overlay for selecting and copying text */}
+      <div
+        ref={textLayerRef}
+        className="textLayer absolute inset-0 overflow-hidden leading-none select-text"
+        style={{
+          width: dimensions.width ? `${dimensions.width}px` : undefined,
+          height: dimensions.height ? `${dimensions.height}px` : undefined,
+        }}
+      />
       {/* Forward Search Animated Highlight Box */}
       {highlightBox && (
         <div
@@ -176,6 +226,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   pdfUrl,
   zoom = 1.0,
   onInverseSearch,
+  syncEnabled = true,
   forwardTarget = null,
   onPageChange,
   onFitWidthCalculated,
@@ -232,7 +283,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
             }
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!isCancelled) {
           console.error('Failed to load PDF via pdfjs-dist:', err)
           setErrorMsg('Failed to render PDF preview. Please recompile.')
@@ -273,11 +324,14 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   // Double click handler for SyncTeX inverse search
   const handlePageDoubleClick = useCallback(
     (page: number, clientX: number, clientY: number, rect: DOMRect) => {
-      if (!onInverseSearch) return
+      // Guard against selected text during double click
+      const selection = window.getSelection()?.toString().trim()
+      if (selection) return
+
+      if (!syncEnabled || !onInverseSearch) return
 
       const clickX = clientX - rect.left
       const clickY = clientY - rect.top
-
       // Convert from screen CSS pixels to 72-DPI big points
       const pdfX = +(clickX / zoom).toFixed(2)
       const pdfY = +(clickY / zoom).toFixed(2)
@@ -288,7 +342,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
         y: pdfY,
       })
     },
-    [onInverseSearch, zoom],
+    [syncEnabled, onInverseSearch, zoom],
   )
 
   if (!pdfUrl) {
@@ -331,6 +385,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
             pageNumber={pageNum}
             scale={zoom}
             onDoubleClickHandler={handlePageDoubleClick}
+            syncEnabled={syncEnabled}
             isForwardTarget={forwardTarget?.page === pageNum}
             forwardTarget={forwardTarget}
           />

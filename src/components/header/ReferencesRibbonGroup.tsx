@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Library, ExternalLink, ListTree, ChevronDown } from 'lucide-react'
 import { BibEntry, ScannedLabel } from '../../utils'
+import { OutlineNode } from '../../types'
 import { BibliographyPopover } from './BibliographyPopover'
 import { CrossRefPopover } from './CrossRefPopover'
 import { TocPopover } from './TocPopover'
 
 export interface ReferencesRibbonGroupProps {
+  isLatex?: boolean
+  outline?: OutlineNode[]
   entries: BibEntry[]
   scannedLabels: ScannedLabel[]
   onInsertCite: (key: string) => void
@@ -14,8 +17,9 @@ export interface ReferencesRibbonGroupProps {
   onInsertRef: (refCode: string) => void
   onInsertTocCode: (code: string) => void
 }
-
 export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
+  isLatex = true,
+  outline = [],
   entries,
   scannedLabels,
   onInsertCite,
@@ -76,6 +80,7 @@ export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
         {activePopover === 'bib' && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <BibliographyPopover
+              isLatex={isLatex}
               entries={entries}
               onInsertCite={onInsertCite}
               onInsertStyle={onInsertStyle}
@@ -109,6 +114,7 @@ export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
         {activePopover === 'crossref' && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <CrossRefPopover
+              isLatex={isLatex}
               scannedLabels={scannedLabels}
               onInsertRef={onInsertRef}
               onClose={() => setActivePopover(null)}
@@ -140,6 +146,8 @@ export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
         {activePopover === 'toc' && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <TocPopover
+              isLatex={isLatex}
+              outline={outline}
               onInsertCode={onInsertTocCode}
               onClose={() => setActivePopover(null)}
             />

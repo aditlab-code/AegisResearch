@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileSpreadsheet,
+  RefreshCw,
 } from 'lucide-react'
 import { PaperSize } from '../../types'
 
@@ -22,6 +23,8 @@ export interface PreviewToolbarProps {
   onFitWidth: () => void
   onFitPage: () => void
   onChangePaperSize: (size: PaperSize) => void
+  syncEnabled?: boolean
+  onToggleSync?: () => void
 }
 
 const ZOOM_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
@@ -38,6 +41,8 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
   onFitWidth,
   onFitPage,
   onChangePaperSize,
+  syncEnabled = true,
+  onToggleSync,
 }) => {
   const zoomPercent = Math.round(zoom * 100)
 
@@ -132,6 +137,25 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
           <Minimize2 className="size-3.5" />
           <span className="hidden sm:inline">Fit Page</span>
         </button>
+
+        {onToggleSync && (
+          <>
+            <div className="w-[1px] h-4 bg-zinc-200 dark:bg-zinc-700 mx-1" />
+            <button
+              type="button"
+              onClick={onToggleSync}
+              title={syncEnabled ? 'Sync PDF → Code aktif (Klik untuk matikan)' : 'Sync PDF → Code nonaktif (Klik untuk nyalakan)'}
+              className={`px-1.5 py-1 rounded transition-colors flex items-center gap-1 text-[11px] font-medium ${
+                syncEnabled
+                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20'
+                  : 'text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800'
+              }`}
+            >
+              <RefreshCw className={`size-3.5 ${syncEnabled ? 'text-blue-500 dark:text-blue-400' : 'text-zinc-400'}`} />
+              <span>Sync</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Right: Paper Layout Preset Selector */}

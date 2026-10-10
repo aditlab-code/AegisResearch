@@ -1,6 +1,7 @@
 import React from 'react'
-import { Play, Target } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { RibbonTab, EngineType } from '../../types'
+import type { OutlineNode } from '../../types'
 import { RIBBONS } from '../../constants'
 import { HomeRibbonGroup } from './HomeRibbonGroup'
 import { InsertRibbonGroup } from './InsertRibbonGroup'
@@ -29,6 +30,7 @@ export interface RibbonBarProps {
 
   // References Ribbon props
   bibEntries?: BibEntry[]
+  outline?: OutlineNode[]
   scannedLabels?: ScannedLabel[]
   onInsertCite?: (key: string) => void
   onInsertStyle?: (style: 'apa' | 'ieee') => void
@@ -39,7 +41,6 @@ export interface RibbonBarProps {
   onOpenReviewPanel?: () => void
   onOpenGitPanel?: () => void
 }
-
 export const RibbonBar: React.FC<RibbonBarProps> = ({
   currentTab,
   isLatex = true,
@@ -58,6 +59,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
   onPageAction = () => {},
   bibEntries = [],
   scannedLabels = [],
+  outline = [],
   onInsertCite = () => {},
   onInsertStyle = () => {},
   onSaveBibEntries = () => {},
@@ -107,6 +109,8 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
           <InsertRibbonGroup isLatex={isLatex} onInsertCodeSnippet={onInsertCodeSnippet} />
         ) : currentTab === 'References' ? (
           <ReferencesRibbonGroup
+            isLatex={isLatex}
+            outline={outline}
             entries={bibEntries}
             scannedLabels={scannedLabels}
             onInsertCite={onInsertCite}
@@ -117,7 +121,6 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
           />
         ) : (
           <ReviewRibbonGroup
-            isLatex={isLatex}
             onInsertComment={onInsertComment}
             onOpenReviewPanel={onOpenReviewPanel}
             onOpenGitPanel={onOpenGitPanel}
@@ -138,17 +141,6 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
               <option value="XeLaTeX">XeLaTeX</option>
               <option value="Pandoc">Pandoc</option>
             </select>
-            {isLatex && (
-              <button
-                type="button"
-                onClick={onSyncToPdf}
-                title="Sync cursor position to PDF preview (Cmd/Ctrl + Alt + J)"
-                className="border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs px-2.5 py-1 rounded font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Target className="size-3.5 text-blue-500 dark:text-blue-400" />
-                <span>Sync to PDF</span>
-              </button>
-            )}
             <button
               type="button"
               onClick={onCompile}

@@ -94,17 +94,24 @@ export default function App() {
   }
 
   const handleInsertCite = (citationKey: string) => {
-    editorRef.current?.wrapSelection(`\\cite{${citationKey}}`, '', '')
-  }
-
-  const handleInsertStyle = (style: 'apa' | 'ieee') => {
-    const code =
-      style === 'apa'
-        ? '\n\\bibliographystyle{apalike}\n\\bibliography{references}\n'
-        : '\n\\bibliographystyle{ieeetr}\n\\bibliography{references}\n'
+    const isLatex = activeDoc?.kind === 'tex'
+    const code = isLatex ? `\\cite{${citationKey}}` : `[@${citationKey}]`
     editorRef.current?.wrapSelection(code, '', '')
   }
 
+  const handleInsertStyle = (style: 'apa' | 'ieee') => {
+    const isLatex = activeDoc?.kind === 'tex'
+    if (isLatex) {
+      const code =
+        style === 'apa'
+          ? '\n\\bibliographystyle{apalike}\n\\bibliography{references}\n'
+          : '\n\\bibliographystyle{ieeetr}\n\\bibliography{references}\n'
+      editorRef.current?.wrapSelection(code, '', '')
+    } else {
+      const code = `\n---\nbibliography: references.bib\ncsl: ${style === 'apa' ? 'apa.csl' : 'ieee.csl'}\n---\n\n## References\n\n<div id="refs"></div>\n`
+      editorRef.current?.wrapSelection(code, '', '')
+    }
+  }
   const handleInsertRef = (refCode: string) => {
     editorRef.current?.wrapSelection(refCode, '', '')
   }
@@ -535,6 +542,7 @@ export default function App() {
         onStructureAction={handleStructureAction}
         onSelectHeadingStyle={(styleCode) => editorRef.current?.wrapSelection(styleCode, '', '')}
         onPageAction={handlePageAction}
+        outline={outlineTree}
         bibEntries={bibEntries}
         scannedLabels={scannedLabels}
         onInsertCite={handleInsertCite}

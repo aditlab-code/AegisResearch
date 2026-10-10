@@ -73,9 +73,6 @@ async def compile_latex(
             "errors": [f"File {main_file} not found."],
         }
 
-    pdflatex_bin = find_tex_bin("pdflatex")
-    bibtex_bin = find_tex_bin("bibtex")
-    
     stem = target_tex.stem
     pdf_name = stem + ".pdf"
     log_name = stem + ".log"
@@ -84,14 +81,63 @@ async def compile_latex(
     log_path = project_dir / log_name
     aux_path = project_dir / aux_name
 
+    # Pandoc Engine execution path for Markdown or Pandoc selection
+    if engine.lower() == "pandoc" or target_tex.suffix.lower() == ".md":
+        pandoc_bin = find_tex_bin("pandoc")
+        is_pandoc_available = shutil.which(pandoc_bin) is not None or (
+            os.path.exists(pandoc_bin) and os.access(pandoc_bin, os.X_OK)
+        )
+        if not is_pandoc_available:
+            return {
+                "success": False,
+                "message": (
+                    "Pandoc CLI not found on system PATH. Please install pandoc "
+                    "(e.g. 'brew install pandoc') to compile Markdown files into PDF."
+                ),
+                "pdfName": None,
+                "errors": [
+                    "Pandoc executable not found. Install pandoc or use the live preview."
+                ],
+                "logOutput": "Pandoc CLI is not available in the current environment.",
+            }
+
+        cmd_pandoc = [pandoc_bin, target_tex.name, "-o", pdf_name]
+        bib_files = list(project_dir.glob("*.bib"))
+        if bib_files:
+            cmd_pandoc.extend(["--citeproc", f"--bibliography={bib_files[0].name}"])
+        cmd_pandoc.extend(["--toc", "-N"])
+
+        code_p, out_p, err_p = await run_cmd(cmd_pandoc, project_dir, timeout=timeout_sec)
+        log_p = (out_p + b"\n" + err_p).decode("utf-8", errors="replace")
+
+        if code_p == 0 and pdf_path.exists():
+            return {
+                "success": True,
+                "message": f"Compilation successful. Generated '{pdf_name}'.",
+                "pdfName": pdf_name,
+                "errors": [],
+                "logOutput": log_p[:2000],
+            }
+        else:
+            err_msg = err_p.decode("utf-8", errors="replace").strip()
+            return {
+                "success": False,
+                "message": f"Pandoc compilation failed with exit code {code_p}.",
+                "pdfName": None,
+                "errors": [err_msg] if err_msg else ["Pandoc compilation failed. Check markdown syntax."],
+                "logOutput": log_p[-3000:],
+            }
+
+    tex_bin = find_tex_bin("xelatex" if engine.lower() == "xelatex" else "pdflatex")
+    bibtex_bin = find_tex_bin("bibtex")
+
     cmd_pdf = [
-        pdflatex_bin,
+        tex_bin,
         "-interaction=nonstopmode",
         "-synctex=1",
         "-output-directory=.",
         target_tex.name,
     ]
-
     try:
         # Pass 1: Initial pdflatex run (writes .aux and .toc)
         code1, out1, _ = await run_cmd(cmd_pdf, project_dir, timeout=20)

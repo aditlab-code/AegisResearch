@@ -3,11 +3,12 @@ import { Table as TableIcon } from 'lucide-react'
 import { PopoverShell } from './PopoverShell'
 
 export interface TableCreatorPopoverProps {
+  isLatex?: boolean
   onInsert: (code: string) => void
   onClose: () => void
 }
 
-export const TableCreatorPopover: React.FC<TableCreatorPopoverProps> = ({ onInsert, onClose }) => {
+export const TableCreatorPopover: React.FC<TableCreatorPopoverProps> = ({ isLatex = true, onInsert, onClose }) => {
   const [rows, setRows] = useState(3)
   const [cols, setCols] = useState(3)
   const [caption, setCaption] = useState('Experiment Results')
@@ -16,6 +17,23 @@ export const TableCreatorPopover: React.FC<TableCreatorPopoverProps> = ({ onInse
   const maxGrid = 6
 
   const handleGenerateTable = (targetRows = rows, targetCols = cols) => {
+    const cleanCaption = caption?.trim() || 'Table Caption'
+    const labelKey = cleanCaption.toLowerCase().replace(/[^a-z0-9]/g, '-')
+
+    if (!isLatex) {
+      const mdHeader = '| ' + Array.from({ length: targetCols }, (_, i) => `Col ${i + 1}`).join(' | ') + ' |'
+      const mdSeparator = '| ' + Array.from({ length: targetCols }, () => '---').join(' | ') + ' |'
+      const mdRows: string[] = []
+      for (let r = 1; r < targetRows; r++) {
+        const rowData = Array.from({ length: targetCols }, (_, c) => `Val ${r},${c + 1}`).join(' | ')
+        mdRows.push(`| ${rowData} |`)
+      }
+      const mdTableCode = `\n${mdHeader}\n${mdSeparator}\n${mdRows.join('\n')}\n: ${cleanCaption} {#tbl:${labelKey}}\n\n`
+      onInsert(mdTableCode)
+      onClose()
+      return
+    }
+
     const colAlign = Array(targetCols).fill('c').join('|')
     const headerRow = Array.from({ length: targetCols }, (_, i) => `Col ${i + 1}`).join(' & ')
 
@@ -27,8 +45,8 @@ export const TableCreatorPopover: React.FC<TableCreatorPopoverProps> = ({ onInse
 
     const latexCode = `\\begin{table}[htbp]
   \\centering
-  \\caption{${caption || 'Table Caption'}}
-  \\label{tab:${(caption || 'table').toLowerCase().replace(/[^a-z0-9]/g, '-')}}
+  \\caption{${cleanCaption}}
+  \\label{tab:${labelKey}}
   \\begin{tabular}{|${colAlign}|}
     \\hline
     ${headerRow} \\\\

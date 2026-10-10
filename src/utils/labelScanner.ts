@@ -11,12 +11,12 @@ export function scanDocumentLabels(content: string): ScannedLabel[] {
   const lines = content.split('\n')
 
   lines.forEach((line, index) => {
-    const labelMatch = line.match(/\\label\{([^}]+)\}/)
+    const labelMatch = line.match(/\\label\{([^}]+)\}/) || line.match(/\{#([^}]+)\}/)
     if (labelMatch) {
       const key = labelMatch[1].trim()
       let category: ScannedLabel['category'] = 'custom'
 
-      if (key.startsWith('tab:') || key.startsWith('table:')) {
+      if (key.startsWith('tab:') || key.startsWith('table:') || key.startsWith('tbl:')) {
         category = 'table'
       } else if (key.startsWith('fig:') || key.startsWith('figure:')) {
         category = 'figure'

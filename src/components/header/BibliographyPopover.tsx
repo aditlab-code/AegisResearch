@@ -4,6 +4,7 @@ import { BibEntry, parseBibtex } from '../../utils'
 import { PopoverShell } from './PopoverShell'
 
 export interface BibliographyPopoverProps {
+  isLatex?: boolean
   entries: BibEntry[]
   onInsertCite: (key: string) => void
   onInsertStyle: (style: 'apa' | 'ieee') => void
@@ -12,6 +13,7 @@ export interface BibliographyPopoverProps {
 }
 
 export const BibliographyPopover: React.FC<BibliographyPopoverProps> = ({
+  isLatex = true,
   entries,
   onInsertCite,
   onInsertStyle,
@@ -137,11 +139,11 @@ export const BibliographyPopover: React.FC<BibliographyPopoverProps> = ({
                     <button
                       type="button"
                       onClick={() => onInsertCite(entry.key)}
-                      title={`Insert \\cite{${entry.key}}`}
+                      title={isLatex ? `Insert \\cite{${entry.key}}` : `Insert [@${entry.key}]`}
                       className="px-2 py-0.5 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 rounded text-[10px] font-semibold flex items-center gap-1 shadow-sm transition-colors"
                     >
                       <Quote className="size-2.5" />
-                      Insert \cite
+                      Insert {isLatex ? '\\cite' : '[@key]'}
                     </button>
                     <button
                       type="button"

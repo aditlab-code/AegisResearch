@@ -3,11 +3,12 @@ import { Image as ImageIcon } from 'lucide-react'
 import { PopoverShell } from './PopoverShell'
 
 export interface FigureModalPopoverProps {
+  isLatex?: boolean
   onInsert: (code: string) => void
   onClose: () => void
 }
 
-export const FigureModalPopover: React.FC<FigureModalPopoverProps> = ({ onInsert, onClose }) => {
+export const FigureModalPopover: React.FC<FigureModalPopoverProps> = ({ isLatex = true, onInsert, onClose }) => {
   const [filePath, setFilePath] = useState('figures/diagram.png')
   const [caption, setCaption] = useState('System Architecture')
   const [width, setWidth] = useState('0.8\\textwidth')
@@ -17,6 +18,14 @@ export const FigureModalPopover: React.FC<FigureModalPopoverProps> = ({ onInsert
     const safeCaption = caption.trim() || 'Figure Caption'
     const safePath = filePath.trim() || 'figures/image.png'
     const labelKey = safeCaption.toLowerCase().replace(/[^a-z0-9]/g, '-')
+
+    if (!isLatex) {
+      const mdWidth = width.includes('0.5') ? ' width=50%' : width.includes('0.8') ? ' width=80%' : width.includes('1.0') ? ' width=100%' : ''
+      const mdCode = `\n![${safeCaption}](${safePath}){#fig:${labelKey}${mdWidth}}\n\n`
+      onInsert(mdCode)
+      onClose()
+      return
+    }
 
     const latexCode = `\\begin{figure}[htbp]
   \\centering

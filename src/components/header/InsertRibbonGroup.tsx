@@ -93,6 +93,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
         {activePopover === 'table' && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <TableCreatorPopover
+              isLatex={isLatex}
               onInsert={onInsertCodeSnippet}
               onClose={() => setActivePopover(null)}
             />
@@ -123,6 +124,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
         {activePopover === 'figure' && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <FigureModalPopover
+              isLatex={isLatex}
               onInsert={onInsertCodeSnippet}
               onClose={() => setActivePopover(null)}
             />

@@ -4,12 +4,14 @@ import { ScannedLabel } from '../../utils'
 import { PopoverShell } from './PopoverShell'
 
 export interface CrossRefPopoverProps {
+  isLatex?: boolean
   scannedLabels: ScannedLabel[]
   onInsertRef: (refCode: string) => void
   onClose: () => void
 }
 
 export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
+  isLatex = true,
   scannedLabels,
   onInsertRef,
   onClose,
@@ -28,11 +30,11 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
     const clean = customKey.trim()
     if (!clean) return
 
-    let code = `\\ref{${clean}}`
+    let code = isLatex ? `\\ref{${clean}}` : `[@${clean}]`
     if (refType === 'eqref') {
-      code = `\\eqref{${clean}}`
+      code = isLatex ? `\\eqref{${clean}}` : `(@${clean})`
     } else if (refType === 'label') {
-      code = `\\label{${clean}}`
+      code = isLatex ? `\\label{${clean}}` : `{#${clean}}`
     }
 
     onInsertRef(code)
@@ -90,10 +92,9 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
                         key={l.key}
                         type="button"
                         onClick={() => {
-                          onInsertRef(`Table~\\ref{${l.key}}`)
+                          onInsertRef(isLatex ? `Table~\\ref{${l.key}}` : `Table @${l.key}`)
                           onClose()
                         }}
-                        className="w-full flex items-center justify-between p-1.5 rounded hover:bg-blue-50/70 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 text-left group transition-colors"
                       >
                         <span className="font-mono text-zinc-700 dark:text-zinc-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">
                           {l.key}
@@ -120,10 +121,9 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
                         key={l.key}
                         type="button"
                         onClick={() => {
-                          onInsertRef(`Figure~\\ref{${l.key}}`)
+                          onInsertRef(isLatex ? `Figure~\\ref{${l.key}}` : `Figure @${l.key}`)
                           onClose()
                         }}
-                        className="w-full flex items-center justify-between p-1.5 rounded hover:bg-blue-50/70 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 text-left group transition-colors"
                       >
                         <span className="font-mono text-zinc-700 dark:text-zinc-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">
                           {l.key}
@@ -150,10 +150,9 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
                         key={l.key}
                         type="button"
                         onClick={() => {
-                          onInsertRef(`\\eqref{${l.key}}`)
+                          onInsertRef(isLatex ? `\\eqref{${l.key}}` : `(@${l.key})`)
                           onClose()
                         }}
-                        className="w-full flex items-center justify-between p-1.5 rounded hover:bg-blue-50/70 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 text-left group transition-colors"
                       >
                         <span className="font-mono text-zinc-700 dark:text-zinc-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">
                           {l.key}
@@ -180,10 +179,9 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
                         key={l.key}
                         type="button"
                         onClick={() => {
-                          onInsertRef(`\\ref{${l.key}}`)
+                          onInsertRef(isLatex ? `\\ref{${l.key}}` : `[@${l.key}]`)
                           onClose()
                         }}
-                        className="w-full flex items-center justify-between p-1.5 rounded hover:bg-blue-50/70 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 text-left group transition-colors"
                       >
                         <span className="font-mono text-zinc-700 dark:text-zinc-300 group-hover:text-blue-700 dark:group-hover:text-blue-400">{l.key}</span>
                         <span className="text-[10px] text-zinc-400 dark:text-zinc-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 font-mono">
@@ -197,7 +195,7 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
             </>
           ) : (
             <div className="text-center py-6 text-zinc-400 dark:text-zinc-500 text-xs italic">
-              No \label&#123;...&#125; detected in active document
+              {isLatex ? 'No \\label{...} detected in active document' : 'No {#label} detected in active document'}
             </div>
           )}
         </div>
@@ -217,7 +215,7 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
                     : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 }`}
               >
-                \ref&#123;&#125;
+                {isLatex ? '\\ref{}' : '[@ref]'}
               </button>
               <button
                 type="button"
@@ -228,7 +226,7 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
                     : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 }`}
               >
-                \eqref&#123;&#125;
+                {isLatex ? '\\eqref{}' : '(@eqref)'}
               </button>
               <button
                 type="button"
@@ -239,7 +237,7 @@ export const CrossRefPopover: React.FC<CrossRefPopoverProps> = ({
                     : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 }`}
               >
-                \label&#123;&#125;
+                {isLatex ? '\\label{}' : '{#label}'}
               </button>
             </div>
 

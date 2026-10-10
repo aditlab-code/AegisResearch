@@ -5,12 +5,13 @@ import { DocPreview } from './DocPreview'
 import { PDFViewer } from './PDFViewer'
 import { PreviewToolbar } from './PreviewToolbar'
 import { PaperSheet } from './PaperSheet'
-import { detectLatexPaperSize } from '../../utils'
+import { detectLatexPaperSize, BibEntry } from '../../utils'
 
 import { SyncTeXForwardTarget } from './PDFViewer'
 
 export interface PreviewPanelProps {
   doc: Doc
+  bibEntries?: BibEntry[]
   pdfBlobUrl?: string
   usePdfViewer?: boolean
   onCompile?: () => void
@@ -20,6 +21,7 @@ export interface PreviewPanelProps {
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   doc,
+  bibEntries = [],
   pdfBlobUrl,
   usePdfViewer = false,
   onCompile,
@@ -27,13 +29,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   forwardTarget,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-
   const [paperSize, setPaperSize] = useState<PaperSize>('a4')
   const [zoom, setZoom] = useState<number>(1.0)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [totalPages, setTotalPages] = useState<number>(1)
   const [pdfPageSize, setPdfPageSize] = useState<{ width: number; height: number } | null>(null)
-
+  const [syncEnabled, setSyncEnabled] = useState<boolean>(true)
   const isLatex = doc.kind === 'tex'
 
   // Auto-detect paper size from doc content if kind is tex
@@ -102,12 +103,15 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           onFitWidth={handleFitWidth}
           onFitPage={handleFitPage}
           onChangePaperSize={setPaperSize}
+          syncEnabled={syncEnabled}
+          onToggleSync={() => setSyncEnabled((prev) => !prev)}
         />
         <div ref={containerRef} className="flex-1 min-h-0 w-full overflow-hidden">
           <PDFViewer
             pdfUrl={pdfBlobUrl}
             zoom={zoom}
             onInverseSearch={onInverseSearch}
+            syncEnabled={syncEnabled}
             forwardTarget={forwardTarget}
             onPageChange={(page, total) => {
               setCurrentPage(page)
@@ -178,7 +182,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
         style={{ scrollBehavior: 'smooth' }}
       >
         <PaperSheet paperSize={paperSize} zoom={zoom} pageNumber={currentPage}>
-          <DocPreview doc={doc} />
+          <DocPreview doc={doc} bibEntries={bibEntries} />
         </PaperSheet>
       </div>
     </section>

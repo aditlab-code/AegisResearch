@@ -1,13 +1,36 @@
 import React, { useState } from 'react'
 import { ListTree, FileText, Table, Image, PlusCircle, Bookmark } from 'lucide-react'
+import { OutlineNode } from '../../types'
 import { PopoverShell } from './PopoverShell'
 
 export interface TocPopoverProps {
+  isLatex?: boolean
+  outline?: OutlineNode[]
   onInsertCode: (code: string) => void
   onClose: () => void
 }
 
-export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose }) => {
+function generateMarkdownToc(nodes: OutlineNode[], baseLevel?: number): string {
+  if (!nodes || nodes.length === 0) return ''
+  const minLevel = baseLevel ?? Math.min(...nodes.map((n) => n.level))
+  let result = ''
+  for (const node of nodes) {
+    const indent = '  '.repeat(Math.max(0, node.level - minLevel))
+    const slug = node.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    result += `${indent}- [${node.label}](#${slug})\n`
+    if (node.children?.length) {
+      result += generateMarkdownToc(node.children, minLevel)
+    }
+  }
+  return result
+}
+
+export const TocPopover: React.FC<TocPopoverProps> = ({
+  isLatex = true,
+  outline = [],
+  onInsertCode,
+  onClose,
+}) => {
   const [customTitle, setCustomTitle] = useState('')
   const [level, setLevel] = useState<'section' | 'chapter'>('section')
 
@@ -21,11 +44,18 @@ export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose })
     const clean = customTitle.trim()
     if (!clean) return
 
+    if (!isLatex) {
+      const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      const code = `${level === 'chapter' ? '- ' : '  - '}[${clean}](#${slug})\n`
+      onInsertCode(code)
+      onClose()
+      return
+    }
+
     const code = `\\addcontentsline{toc}{${level}}{${clean}}\n`
     onInsertCode(code)
     onClose()
   }
-
   return (
     <PopoverShell
       title="Table of Contents & Lists"
@@ -42,21 +72,33 @@ export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose })
           <div className="space-y-1">
             <button
               type="button"
-              onClick={() => handleInsert('\n\\tableofcontents\n\\newpage\n')}
+              onClick={() => {
+                if (isLatex) {
+                  handleInsert('\n\\tableofcontents\n\\newpage\n')
+                } else {
+                  const generatedList = generateMarkdownToc(outline)
+                  const tocMd = generatedList
+                    ? `\n## Table of Contents\n\n${generatedList}\n`
+                    : '\n## Table of Contents\n\n- [Section 1](#section-1)\n- [Section 2](#section-2)\n\n'
+                  handleInsert(tocMd)
+                }
+              }}
               className="w-full p-2 border border-zinc-200 dark:border-zinc-800 rounded-md hover:bg-blue-50/70 dark:hover:bg-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors text-left flex items-center gap-2 group"
             >
               <FileText className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">
-                  Table of Contents
+                  {isLatex ? 'Table of Contents' : 'TOC from Document Headings'}
                 </span>
-                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">\tableofcontents</span>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
+                  {isLatex ? '\\tableofcontents' : '- [Title](#slug) links'}
+                </span>
               </div>
             </button>
 
             <button
               type="button"
-              onClick={() => handleInsert('\n\\listoffigures\n\\newpage\n')}
+              onClick={() => handleInsert(isLatex ? '\n\\listoffigures\n\\newpage\n' : '\n## List of Figures\n\n')}
               className="w-full p-2 border border-zinc-200 dark:border-zinc-800 rounded-md hover:bg-blue-50/70 dark:hover:bg-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors text-left flex items-center gap-2 group"
             >
               <Image className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
@@ -64,13 +106,15 @@ export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose })
                 <span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">
                   List of Figures
                 </span>
-                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">\listoffigures</span>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
+                  {isLatex ? '\\listoffigures' : '## List of Figures'}
+                </span>
               </div>
             </button>
 
             <button
               type="button"
-              onClick={() => handleInsert('\n\\listoftables\n\\newpage\n')}
+              onClick={() => handleInsert(isLatex ? '\n\\listoftables\n\\newpage\n' : '\n## List of Tables\n\n')}
               className="w-full p-2 border border-zinc-200 dark:border-zinc-800 rounded-md hover:bg-blue-50/70 dark:hover:bg-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors text-left flex items-center gap-2 group"
             >
               <Table className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
@@ -78,12 +122,31 @@ export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose })
                 <span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">
                   List of Tables
                 </span>
-                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">\listoftables</span>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
+                  {isLatex ? '\\listoftables' : '## List of Tables'}
+                </span>
               </div>
             </button>
+
+            {!isLatex && (
+              <button
+                type="button"
+                onClick={() => handleInsert('\n[TOC]\n\n')}
+                className="w-full p-2 border border-zinc-200 dark:border-zinc-800 rounded-md hover:bg-blue-50/70 dark:hover:bg-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors text-left flex items-center gap-2 group"
+              >
+                <Bookmark className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">
+                    Pandoc [TOC] Directive
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
+                    [TOC] tag
+                  </span>
+                </div>
+              </button>
+            )}
           </div>
         </div>
-
         {/* 2. Register Custom Section / Appendix to TOC */}
         <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2.5">
           <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-1.5">
