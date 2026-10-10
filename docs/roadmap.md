@@ -87,3 +87,14 @@ Fokus: Menghadirkan sinkronisasi presisi tinggi antara teks editor LaTeX dan dok
     * Inverse Search: Double-click pada teks di halaman PDF memicu lompatan instan ke baris kode di Monaco Editor, dengan efek visual animasi pulse line highlight (1.5s), serta otomatis membuka tab file baru jika target berada di subfile terpisah.
     * Forward Search: Shortcut keyboard `Cmd/Ctrl + Alt + J` atau tombol "Sync to PDF" di Ribbon Bar melompatkan viewport preview ke halaman dan posisi paragraf yang bersangkutan dengan overlay highlight box.
 
+
+📌 TAHAP 7: Manajemen Bibliografi, Style Switcher & Preamble Guard (Selesai)
+Fokus: Integrasi sitasi dan bibliografi multi-format (APA, IEEE, Custom) dengan pengaman preamble otomatis dan resolusi multi-pass.
+
+* Integrasi Style Switcher UI (Frontend):
+    * Menu References Ribbon > Citations & Bibliography menyediakan tab Style untuk memilih APA Style (Author, Year), IEEE Style (Numeric [1]), atau Custom Style (.bst bebas).
+    * Fitur pengaman dokumen (`styleGuardHelper.ts`) menyuntikkan paket `\usepackage{apalike}` ke preamble secara otomatis jika memilih APA, dan membersihkan paket yang berkonflik jika beralih ke IEEE.
+    * Penempatan otomatis perintah `\bibliographystyle{...}` dan `\bibliography{...}` sebelum `\end{document}` tanpa merusak isi naskah.
+* Kompilasi Multi-Pass Bebas Tanda Tanya [?]:
+    * Engine kompilasi backend mendeteksi pemanggilan sitasi dan bibliografi dari file `.aux` lalu mengeksekusi urutan `pdflatex` -> `bibtex` -> `pdflatex` -> `pdflatex`.
+    * Resolusi referensi silang tuntas hingga tanda tanya `[?]` terisi dengan nama penulis & tahun (APA) atau nomor referensi (IEEE).

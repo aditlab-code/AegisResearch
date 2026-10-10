@@ -35,18 +35,26 @@
   3. *Pass 3*: Final `pdflatex` run resolving cross-references, tables of contents, and bibliography citations.
 - **Intelligent Error Log Parser**: Filters verbose TeX log files to extract exact compiler errors (line numbers and syntax errors) directly into the UI.
 
-### 4. Native High-Performance PDF.js Preview
+### 4. Bibliography & Citation Style Engine (APA, IEEE, & Custom)
+- **Automated Preamble Guarding**: Dynamically injects or cleans up required LaTeX packages (`\usepackage{apalike}`) based on chosen citation style to eliminate unresolved citation errors (`?` marks).
+- **Preset & Custom Citation Formats**:
+  - **APA Style (Author, Year)**: Sets `\usepackage{apalike}` in preamble and `\bibliographystyle{apalike}` with `\bibliography{references}`.
+  - **IEEE Style (Numeric [1])**: Automatically cleans conflicting packages and sets `\bibliographystyle{ieeetr}`.
+  - **Custom Style**: Supports arbitrary `.bst` styles (e.g., `plain`, `acm`, `nature`) with non-destructive code injection.
+- **Multi-Pass Resolution**: Tight integration with the compiler's multi-pass loop (`pdflatex` &rarr; `bibtex` &rarr; `pdflatex`), ensuring `.aux` and `.bbl` files resolve citations into clean formatted text.
+
+### 5. Native High-Performance PDF.js Preview
 - **Native Multi-Page Canvas Rendering**: Direct continuous-scroll multi-page renderer powered by `pdfjs-dist` 4.10, completely eliminating third-party DOM wrapper bloat and preserving 1:1 paper geometry (A4, Letter, Beamer slides).
 - **Retina & High-DPI Support**: Device pixel ratio (DPR) viewport scaling with explicit canvas matrix transformations, rendering crisp vector typography without clipping on Mac and 4K displays.
 - **Smart Viewport Controls**: Zoom controls (25%–300%), Fit Width, and Fit Page with responsive recalculation on pane resizing.
 - **Reactive Cache-Busting**: Automatically refreshes the PDF canvas upon successful compilation using timestamp tokens.
 
-### 5. Bidirectional SyncTeX Navigation (Inverse & Forward Search)
+### 6. Bidirectional SyncTeX Navigation (Inverse & Forward Search)
 - **Inverse Search (PDF &rarr; TeX Source)**: Double-click anywhere on the rendered PDF preview to navigate directly to the matching LaTeX source line in Monaco Editor. If the target line is located in an included subfile (e.g., `sections/abstract.tex`), the IDE automatically switches tabs, scrolls to the line, and triggers a 1.5-second pulse highlight.
 - **Forward Search (TeX Source &rarr; PDF)**: Press `Cmd/Ctrl + Alt + J` or click the "Sync to PDF" ribbon button from any line in your `.tex` document to locate and scroll to the exact page and paragraph in the PDF preview, highlighting the target sentence with a pulsing focus indicator.
 - **High-Performance Async CLI Service**: Backed by `backend/services/synctex.py`, executing non-blocking `synctex edit` and `synctex view` commands with accurate 72-DPI coordinate conversions.
 
-### 6. Git Track Changes & Visual Commit Graph
+### 7. Git Track Changes & Visual Commit Graph
 - **Visual Commit & Branch Graph**: VS Code-style SVG graph rendering commit nodes, branch lanes, merge topologies, commit messages, short hashes, authors, and timestamps.
 - **Branch Management**: Switch branches seamlessly or create new branches directly from the IDE.
 - **File Staging & Diff Inspection**: Inspect modified, added, and untracked files; stage individual files or all changes; discard modifications safely.
