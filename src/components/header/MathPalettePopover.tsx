@@ -100,16 +100,16 @@ export const MathPalettePopover: React.FC<MathPalettePopoverProps> = ({
   return (
     <PopoverShell title="Equation Builder" icon={Sigma} onClose={onClose} widthClass="w-96">
       {/* Mode Toggle Controls */}
-      <div className="flex items-center justify-between bg-stone-100 p-1 rounded mb-2 text-[11px]">
-        <span className="font-semibold text-stone-600 px-1">Mode:</span>
+      <div className="flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 p-1 rounded mb-2 text-[11px]">
+        <span className="font-semibold text-zinc-600 dark:text-zinc-300 px-1">Mode:</span>
         <div className="flex gap-1">
           <button
             type="button"
             onClick={() => setMode('inline')}
             className={`px-2.5 py-0.5 rounded font-medium transition-colors ${
               mode === 'inline'
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'bg-white dark:bg-zinc-900 text-[#4078f2] dark:text-[#61afef] shadow-sm font-semibold'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
             Inline {isLatex ? '\\(..\\)' : '$..$'}
@@ -119,8 +119,8 @@ export const MathPalettePopover: React.FC<MathPalettePopoverProps> = ({
             onClick={() => setMode('display')}
             className={`px-2.5 py-0.5 rounded font-medium transition-colors ${
               mode === 'display'
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-stone-600 hover:text-stone-900'
+                ? 'bg-white dark:bg-zinc-900 text-[#4078f2] dark:text-[#61afef] shadow-sm font-semibold'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
             Display {isLatex ? '\\[..\\]' : '$$..$$'}
@@ -129,7 +129,7 @@ export const MathPalettePopover: React.FC<MathPalettePopoverProps> = ({
       </div>
 
       {/* Category Tabs */}
-      <div className="flex border-b border-stone-200 mb-2 gap-1 text-xs">
+      <div className="flex border-b border-zinc-200 dark:border-zinc-800 mb-2 gap-1 text-xs">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -137,8 +137,8 @@ export const MathPalettePopover: React.FC<MathPalettePopoverProps> = ({
             onClick={() => setActiveCategory(cat)}
             className={`px-2 py-1 border-b-2 font-medium transition-colors ${
               activeCategory === cat
-                ? 'border-indigo-600 text-indigo-600 font-semibold'
-                : 'border-transparent text-stone-500 hover:text-stone-800'
+                ? 'border-[#4078f2] dark:border-[#61afef] text-[#4078f2] dark:text-[#61afef] font-semibold'
+                : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
             {cat}
@@ -153,17 +153,17 @@ export const MathPalettePopover: React.FC<MathPalettePopoverProps> = ({
             key={idx}
             type="button"
             onClick={() => handleSelectFormula(item.code)}
-            className="w-full flex items-center justify-between p-2 rounded hover:bg-indigo-50/70 border border-stone-200/70 hover:border-indigo-300 transition-colors text-left group"
+            className="w-full flex items-center justify-between p-2 rounded hover:bg-blue-50/70 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 hover:border-blue-300 dark:hover:border-blue-500 transition-colors text-left group"
           >
             <div className="flex items-center gap-2 min-w-0 pr-2">
-              <span className="text-xs font-semibold text-stone-800 group-hover:text-indigo-900 shrink-0">
+              <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 shrink-0">
                 {item.label}
               </span>
-              <span className="text-[11px] font-mono text-stone-500 group-hover:text-indigo-600 truncate">
+              <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 group-hover:text-blue-600 dark:group-hover:text-blue-300 truncate">
                 {item.preview}
               </span>
             </div>
-            <code className="text-[10px] bg-stone-100 group-hover:bg-indigo-100 text-stone-600 group-hover:text-indigo-700 px-1.5 py-0.5 rounded font-mono shrink-0">
+            <code className="text-[10px] bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-100 dark:group-hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 group-hover:text-blue-700 dark:group-hover:text-blue-300 px-1.5 py-0.5 rounded font-mono shrink-0">
               {item.code.slice(0, 16)}...
             </code>
           </button>

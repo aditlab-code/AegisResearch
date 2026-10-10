@@ -36,57 +36,57 @@ export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose })
       <div className="space-y-3 text-xs">
         {/* 1. Standard Document Lists */}
         <div>
-          <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider block mb-1.5">
+          <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-1.5">
             Standard Document Lists
           </span>
           <div className="space-y-1">
             <button
               type="button"
               onClick={() => handleInsert('\n\\tableofcontents\n\\newpage\n')}
-              className="w-full p-2 border border-stone-200 rounded-md hover:bg-indigo-50/70 hover:border-indigo-300 transition-colors text-left flex items-center gap-2 group"
+              className="w-full p-2 border border-zinc-200 dark:border-zinc-800 rounded-md hover:bg-blue-50/70 dark:hover:bg-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors text-left flex items-center gap-2 group"
             >
-              <FileText className="size-4 text-indigo-600 shrink-0" />
+              <FileText className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <div className="flex flex-col min-w-0">
-                <span className="font-semibold text-stone-800 group-hover:text-indigo-900 truncate">
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">
                   Table of Contents
                 </span>
-                <span className="text-[10px] font-mono text-stone-400">\tableofcontents</span>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">\tableofcontents</span>
               </div>
             </button>
 
             <button
               type="button"
               onClick={() => handleInsert('\n\\listoffigures\n\\newpage\n')}
-              className="w-full p-2 border border-stone-200 rounded-md hover:bg-emerald-50/70 hover:border-emerald-300 transition-colors text-left flex items-center gap-2 group"
+              className="w-full p-2 border border-zinc-200 dark:border-zinc-800 rounded-md hover:bg-blue-50/70 dark:hover:bg-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors text-left flex items-center gap-2 group"
             >
-              <Image className="size-4 text-emerald-600 shrink-0" />
+              <Image className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <div className="flex flex-col min-w-0">
-                <span className="font-semibold text-stone-800 group-hover:text-emerald-900 truncate">
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">
                   List of Figures
                 </span>
-                <span className="text-[10px] font-mono text-stone-400">\listoffigures</span>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">\listoffigures</span>
               </div>
             </button>
 
             <button
               type="button"
               onClick={() => handleInsert('\n\\listoftables\n\\newpage\n')}
-              className="w-full p-2 border border-stone-200 rounded-md hover:bg-amber-50/70 hover:border-amber-300 transition-colors text-left flex items-center gap-2 group"
+              className="w-full p-2 border border-zinc-200 dark:border-zinc-800 rounded-md hover:bg-blue-50/70 dark:hover:bg-zinc-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors text-left flex items-center gap-2 group"
             >
-              <Table className="size-4 text-amber-600 shrink-0" />
+              <Table className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <div className="flex flex-col min-w-0">
-                <span className="font-semibold text-stone-800 group-hover:text-amber-900 truncate">
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">
                   List of Tables
                 </span>
-                <span className="text-[10px] font-mono text-stone-400">\listoftables</span>
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">\listoftables</span>
               </div>
             </button>
           </div>
         </div>
 
         {/* 2. Register Custom Section / Appendix to TOC */}
-        <div className="border-t border-stone-200 pt-2.5">
-          <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider block mb-1.5">
+        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2.5">
+          <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider block mb-1.5">
             Add Custom Entry to TOC (e.g. Appendix)
           </span>
 
@@ -97,8 +97,8 @@ export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose })
                 onClick={() => setLevel('section')}
                 className={`flex-1 py-1 rounded border text-[11px] font-medium transition-colors ${
                   level === 'section'
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                    ? 'border-[#4078f2] dark:border-[#61afef] bg-blue-50 dark:bg-zinc-800 text-[#4078f2] dark:text-[#61afef] font-semibold'
+                    : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 }`}
               >
                 Section Level
@@ -108,8 +108,8 @@ export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose })
                 onClick={() => setLevel('chapter')}
                 className={`flex-1 py-1 rounded border text-[11px] font-medium transition-colors ${
                   level === 'chapter'
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                    ? 'border-[#4078f2] dark:border-[#61afef] bg-blue-50 dark:bg-zinc-800 text-[#4078f2] dark:text-[#61afef] font-semibold'
+                    : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 }`}
               >
                 Chapter Level
@@ -123,14 +123,14 @@ export const TocPopover: React.FC<TocPopoverProps> = ({ onInsertCode, onClose })
                 onChange={(e) => setCustomTitle(e.target.value)}
                 placeholder="Title (e.g. Appendices, Glossary)"
                 required
-                className="w-full px-2.5 py-1.5 border border-stone-300 rounded text-xs focus:outline-none focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 text-xs focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef]"
               />
             </div>
 
             <button
               type="submit"
               disabled={!customTitle.trim()}
-              className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded font-medium text-xs shadow-sm flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full py-1.5 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] disabled:opacity-50 text-white dark:text-zinc-950 rounded font-semibold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-colors"
             >
               <PlusCircle className="size-3.5" />
               Register Entry to TOC

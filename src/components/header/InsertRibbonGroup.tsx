@@ -37,25 +37,25 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
   return (
     <div
       ref={containerRef}
-      className="h-full flex items-stretch gap-2 select-none overflow-visible relative"
+      className="h-full flex items-stretch gap-2 select-none overflow-visible relative text-zinc-700 dark:text-zinc-200"
     >
       {/* 1. Sub-panel Equations */}
-      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-stone-200">
+      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
           onClick={() => togglePopover('equation')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
             activePopover === 'equation'
-              ? 'bg-indigo-100 text-indigo-700 font-medium'
-              : 'hover:bg-stone-100 text-stone-700'
+              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
+              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
           }`}
         >
-          <Sigma className="size-4 text-indigo-600" />
+          <Sigma className="size-4 text-blue-600 dark:text-blue-400" />
           <span>Equation Builder</span>
-          <ChevronDown className="size-3 text-stone-400" />
+          <ChevronDown className="size-3 text-zinc-400 dark:text-zinc-500" />
         </button>
 
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Equations
         </span>
 
@@ -71,22 +71,22 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
       </div>
 
       {/* 2. Sub-panel Tables */}
-      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-stone-200">
+      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
           onClick={() => togglePopover('table')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
             activePopover === 'table'
-              ? 'bg-indigo-100 text-indigo-700 font-medium'
-              : 'hover:bg-stone-100 text-stone-700'
+              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
+              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
           }`}
         >
-          <Table className="size-4 text-indigo-600" />
+          <Table className="size-4 text-blue-600 dark:text-blue-400" />
           <span>Table Builder</span>
-          <ChevronDown className="size-3 text-stone-400" />
+          <ChevronDown className="size-3 text-zinc-400 dark:text-zinc-500" />
         </button>
 
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Tables
         </span>
 
@@ -107,16 +107,16 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
           onClick={() => togglePopover('figure')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
             activePopover === 'figure'
-              ? 'bg-indigo-100 text-indigo-700 font-medium'
-              : 'hover:bg-stone-100 text-stone-700'
+              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
+              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
           }`}
         >
-          <Image className="size-4 text-indigo-600" />
+          <Image className="size-4 text-blue-600 dark:text-blue-400" />
           <span>Insert Figure</span>
-          <ChevronDown className="size-3 text-stone-400" />
+          <ChevronDown className="size-3 text-zinc-400 dark:text-zinc-500" />
         </button>
 
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Illustrations
         </span>
 

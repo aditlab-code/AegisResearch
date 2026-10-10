@@ -51,25 +51,25 @@ export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
   return (
     <div
       ref={containerRef}
-      className="h-full flex items-stretch gap-2 select-none overflow-visible relative"
+      className="h-full flex items-stretch gap-2 select-none overflow-visible relative text-zinc-700 dark:text-zinc-200"
     >
       {/* 1. Sub-panel Citations & Bibliography */}
-      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-stone-200">
+      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
           onClick={() => togglePopover('bib')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
             activePopover === 'bib'
-              ? 'bg-indigo-100 text-indigo-700 font-medium'
-              : 'hover:bg-stone-100 text-stone-700'
+              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
+              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
           }`}
         >
-          <Library className="size-4 text-indigo-600" />
+          <Library className="size-4 text-blue-600 dark:text-blue-400" />
           <span>Bibliography</span>
-          <ChevronDown className="size-3 text-stone-400" />
+          <ChevronDown className="size-3 text-zinc-400 dark:text-zinc-500" />
         </button>
 
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Citations ({entries.length})
         </span>
 
@@ -87,22 +87,22 @@ export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
       </div>
 
       {/* 2. Sub-panel Cross-Reference */}
-      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-stone-200">
+      <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
           onClick={() => togglePopover('crossref')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
             activePopover === 'crossref'
-              ? 'bg-indigo-100 text-indigo-700 font-medium'
-              : 'hover:bg-stone-100 text-stone-700'
+              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
+              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
           }`}
         >
-          <ExternalLink className="size-4 text-indigo-600" />
+          <ExternalLink className="size-4 text-blue-600 dark:text-blue-400" />
           <span>Cross-Reference</span>
-          <ChevronDown className="size-3 text-stone-400" />
+          <ChevronDown className="size-3 text-zinc-400 dark:text-zinc-500" />
         </button>
 
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           Labels ({scannedLabels.length})
         </span>
 
@@ -124,16 +124,16 @@ export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
           onClick={() => togglePopover('toc')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
             activePopover === 'toc'
-              ? 'bg-indigo-100 text-indigo-700 font-medium'
-              : 'hover:bg-stone-100 text-stone-700'
+              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
+              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
           }`}
         >
-          <ListTree className="size-4 text-indigo-600" />
+          <ListTree className="size-4 text-blue-600 dark:text-blue-400" />
           <span>Table of Contents</span>
-          <ChevronDown className="size-3 text-stone-400" />
+          <ChevronDown className="size-3 text-zinc-400 dark:text-zinc-500" />
         </button>
 
-        <span className="text-[9px] font-semibold text-stone-400 uppercase tracking-wider mt-1">
+        <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
           TOC & Lists
         </span>
 

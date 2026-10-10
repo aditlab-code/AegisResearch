@@ -33,7 +33,7 @@ export const FigureModalPopover: React.FC<FigureModalPopoverProps> = ({ onInsert
     <PopoverShell title="Insert Figure" icon={ImageIcon} onClose={onClose} widthClass="w-80">
       <form onSubmit={handleInsert} className="space-y-2 text-xs">
         <div>
-          <label className="text-[10px] font-medium text-stone-500 block mb-0.5">
+          <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 block mb-0.5">
             File Path
           </label>
           <input
@@ -41,12 +41,12 @@ export const FigureModalPopover: React.FC<FigureModalPopoverProps> = ({ onInsert
             value={filePath}
             onChange={(e) => setFilePath(e.target.value)}
             placeholder="figures/sample.png"
-            className="w-full px-2 py-1 border border-stone-300 rounded font-mono text-[11px] focus:outline-none focus:border-indigo-500"
+            className="w-full px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 font-mono text-[11px] focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef]"
           />
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-stone-500 block mb-0.5">
+          <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 block mb-0.5">
             Caption
           </label>
           <input
@@ -54,18 +54,18 @@ export const FigureModalPopover: React.FC<FigureModalPopoverProps> = ({ onInsert
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             placeholder="Figure description..."
-            className="w-full px-2 py-1 border border-stone-300 rounded text-[11px] focus:outline-none focus:border-indigo-500"
+            className="w-full px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 text-[11px] focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef]"
           />
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-stone-500 block mb-0.5">
+          <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 block mb-0.5">
             Scale / Width
           </label>
           <select
             value={width}
             onChange={(e) => setWidth(e.target.value)}
-            className="w-full px-2 py-1 border border-stone-300 rounded bg-white font-mono text-[11px]"
+            className="w-full px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-[11px] focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef]"
           >
             <option value="0.8\\textwidth">80% Text Width (0.8\textwidth)</option>
             <option value="0.5\\textwidth">50% Text Width (0.5\textwidth)</option>
@@ -77,7 +77,7 @@ export const FigureModalPopover: React.FC<FigureModalPopoverProps> = ({ onInsert
         <div className="pt-1.5">
           <button
             type="submit"
-            className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow-sm transition-colors"
+            className="w-full py-1.5 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 rounded text-xs font-semibold shadow-sm transition-colors"
           >
             Insert Figure
           </button>

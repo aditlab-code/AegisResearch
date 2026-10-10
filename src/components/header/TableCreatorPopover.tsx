@@ -45,7 +45,7 @@ ${bodyRows}    \\hline
     <PopoverShell title="Table Builder" icon={TableIcon} onClose={onClose} widthClass="w-72">
       {/* Visual Grid Selector */}
       <div className="flex flex-col items-center mb-2.5">
-        <div className="grid grid-cols-6 gap-1 p-2 bg-stone-50 border border-stone-200 rounded">
+        <div className="grid grid-cols-6 gap-1 p-2 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded">
           {Array.from({ length: maxGrid }).map((_, rIdx) =>
             Array.from({ length: maxGrid }).map((_, cIdx) => {
               const r = rIdx + 1
@@ -66,15 +66,15 @@ ${bodyRows}    \\hline
                   }}
                   className={`size-5 rounded border cursor-pointer transition-colors ${
                     isSelected
-                      ? 'bg-indigo-500 border-indigo-600'
-                      : 'bg-white border-stone-300 hover:border-indigo-400'
+                      ? 'bg-[#4078f2] dark:bg-[#61afef] border-[#4078f2] dark:border-[#61afef]'
+                      : 'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500'
                   }`}
                 />
               )
             }),
           )}
         </div>
-        <span className="text-[11px] font-mono text-stone-500 mt-1">
+        <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 mt-1">
           {hovered ? `${hovered.r} Rows × ${hovered.c} Cols` : `${rows} Rows × ${cols} Cols`}
         </span>
       </div>
@@ -86,7 +86,7 @@ ${bodyRows}    \\hline
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           placeholder="Table caption..."
-          className="w-full text-xs px-2 py-1 border border-stone-300 rounded focus:outline-none focus:border-indigo-500"
+          className="w-full text-xs px-2 py-1 border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#4078f2] dark:focus:border-[#61afef]"
         />
       </div>
 
@@ -94,7 +94,7 @@ ${bodyRows}    \\hline
       <button
         type="button"
         onClick={() => handleGenerateTable(rows, cols)}
-        className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow-sm transition-colors"
+        className="w-full py-1.5 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 rounded text-xs font-semibold shadow-sm transition-colors"
       >
         Insert Table ({rows}×{cols})
       </button>
