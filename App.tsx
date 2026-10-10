@@ -2,7 +2,17 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 import { RibbonTab, PanelType, ChatMessage, FileNode } from './src/types'
 import { DEFAULT_CHAT_MESSAGES } from './src/constants'
-import { countWords, parseDocumentOutline, parseBibtex, serializeBibtex, scanDocumentLabels, BibEntry } from './src/utils'
+import {
+  countWords,
+  parseDocumentOutline,
+  parseBibtex,
+  serializeBibtex,
+  scanDocumentLabels,
+  BibEntry,
+  BibliographyStyleChoice,
+  applyLatexBibliographyStyle,
+  applyMarkdownBibliographyStyle,
+} from './src/utils'
 import { projectService } from './src/services/projects'
 import { compilerService } from './src/services/compiler'
 import { synctexService } from './src/services/synctex'
@@ -77,10 +87,9 @@ export default function App() {
   }, [projectName])
 
   const scannedLabels = useMemo(() => {
-    if (!activeDoc?.content || activeDoc.kind !== 'tex') return []
+    if (!activeDoc?.content || (activeDoc.kind !== 'tex' && activeDoc.kind !== 'md')) return []
     return scanDocumentLabels(activeDoc.content)
   }, [activeDoc?.content, activeDoc?.kind])
-
   const handleSaveBibEntries = async (newEntries: BibEntry[]) => {
     setBibEntries(newEntries)
     const serialized = serializeBibtex(newEntries)
@@ -99,17 +108,25 @@ export default function App() {
     editorRef.current?.wrapSelection(code, '', '')
   }
 
-  const handleInsertStyle = (style: 'apa' | 'ieee') => {
-    const isLatex = activeDoc?.kind === 'tex'
+  const handleInsertStyle = (style: BibliographyStyleChoice) => {
+    if (!activeDoc) return
+    const isLatex = activeDoc.kind === 'tex'
+    const currentContent = activeDoc.content || ''
+
     if (isLatex) {
-      const code =
-        style === 'apa'
-          ? '\n\\bibliographystyle{apalike}\n\\bibliography{references}\n'
-          : '\n\\bibliographystyle{ieeetr}\n\\bibliography{references}\n'
-      editorRef.current?.wrapSelection(code, '', '')
+      const result = applyLatexBibliographyStyle(currentContent, style, 'references')
+      if (result.changed) {
+        updateContent(result.content)
+        const styleLabel = typeof style === 'string' ? style.toUpperCase() : `Custom (${style.custom})`
+        setSaveStatus(`✓ Applied ${styleLabel} style with preamble guard`)
+      }
     } else {
-      const code = `\n---\nbibliography: references.bib\ncsl: ${style === 'apa' ? 'apa.csl' : 'ieee.csl'}\n---\n\n## References\n\n<div id="refs"></div>\n`
-      editorRef.current?.wrapSelection(code, '', '')
+      const result = applyMarkdownBibliographyStyle(currentContent, style, 'references.bib')
+      if (result.changed) {
+        updateContent(result.content)
+        const styleLabel = typeof style === 'string' ? style.toUpperCase() : `Custom (${style.custom})`
+        setSaveStatus(`✓ Applied ${styleLabel} style in frontmatter`)
+      }
     }
   }
   const handleInsertRef = (refCode: string) => {
@@ -617,6 +634,7 @@ export default function App() {
             {activeDoc ? (
               <PreviewPanel
                 doc={activeDoc}
+                bibEntries={bibEntries}
                 pdfBlobUrl={pdfBlobUrl}
                 usePdfViewer={Boolean(pdfBlobUrl && activeDoc.kind === 'tex')}
                 onCompile={handleCompile}

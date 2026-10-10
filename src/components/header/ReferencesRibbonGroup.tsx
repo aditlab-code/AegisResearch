@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Library, ExternalLink, ListTree, ChevronDown } from 'lucide-react'
-import { BibEntry, ScannedLabel } from '../../utils'
+import { BibEntry, ScannedLabel, BibliographyStyleChoice } from '../../utils'
 import { OutlineNode } from '../../types'
 import { BibliographyPopover } from './BibliographyPopover'
 import { CrossRefPopover } from './CrossRefPopover'
@@ -12,7 +12,7 @@ export interface ReferencesRibbonGroupProps {
   entries: BibEntry[]
   scannedLabels: ScannedLabel[]
   onInsertCite: (key: string) => void
-  onInsertStyle: (style: 'apa' | 'ieee') => void
+  onInsertStyle: (style: BibliographyStyleChoice) => void
   onSaveBibEntries: (entries: BibEntry[]) => void
   onInsertRef: (refCode: string) => void
   onInsertTocCode: (code: string) => void

@@ -79,3 +79,30 @@ def test_compile_latex_syntax_error():
     finally:
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
+def test_compile_pandoc_engine():
+    project_name = "pytest-pandoc-test"
+    temp_dir = WORKSPACE_DIR / project_name
+    if temp_dir.exists():
+        shutil.rmtree(temp_dir)
+
+    try:
+        client.post("/api/projects", json={"name": project_name})
+
+        # Save markdown file
+        md_content = "# Test Pandoc\n\n| Col 1 | Col 2 |\n| --- | --- |\n| 1 | 2 |\n"
+        client.put(
+            f"/api/projects/{project_name}/files/notes.md",
+            json={"content": md_content},
+        )
+
+        compile_res = client.post(
+            f"/api/projects/{project_name}/compile",
+            json={"mainFile": "notes.md", "engine": "Pandoc"},
+        )
+        assert compile_res.status_code == 200
+        data = compile_res.json()
+        assert "success" in data
+        assert isinstance(data["errors"], list)
+    finally:
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir)

@@ -7,7 +7,7 @@ import { HomeRibbonGroup } from './HomeRibbonGroup'
 import { InsertRibbonGroup } from './InsertRibbonGroup'
 import { ReferencesRibbonGroup } from './ReferencesRibbonGroup'
 import { ReviewRibbonGroup } from './ReviewRibbonGroup'
-import { BibEntry, ScannedLabel } from '../../utils'
+import { BibEntry, ScannedLabel, BibliographyStyleChoice } from '../../utils'
 
 export interface RibbonBarProps {
   currentTab: RibbonTab
@@ -33,7 +33,7 @@ export interface RibbonBarProps {
   outline?: OutlineNode[]
   scannedLabels?: ScannedLabel[]
   onInsertCite?: (key: string) => void
-  onInsertStyle?: (style: 'apa' | 'ieee') => void
+  onInsertStyle?: (style: BibliographyStyleChoice) => void
   onSaveBibEntries?: (entries: BibEntry[]) => void
   onInsertRef?: (refCode: string) => void
   onInsertTocCode?: (code: string) => void
