@@ -11,7 +11,7 @@ This guide provides end-to-end instructions for installing and running **Aegis R
 | **OS** | macOS 12+ / Ubuntu 20.04+ / Fedora 38+ / Windows 10+ (WSL2) | macOS Sonoma/Sequoia or Ubuntu 24.04 LTS |
 | **Node.js** | v18.0.0+ | v20.x or v22.x LTS |
 | **Python** | 3.10+ | 3.11 or 3.12 |
-| **LaTeX** | TeX Live 2022+ / BasicTeX | TeX Live 2024/2025 or MacTeX |
+| **LaTeX** | TeX Live 2022+ / BasicTeX | TeX Live 2024/2025 or MacTeX (includes `pdflatex`, `bibtex`, `synctex`) |
 | **RAM** | 4 GB | 8 GB+ (16 GB if running local AI models) |
 | **Storage** | 1 GB (BasicTeX) | 6 GB (Full TeX Live + local AI models) |
 
@@ -99,6 +99,7 @@ Verify that the binaries are reachable:
 ```bash
 pdflatex --version
 bibtex --version
+synctex help
 ```
 
 ---
@@ -258,3 +259,12 @@ Install packages using TeX Live Manager (`tlmgr`):
 sudo tlmgr update --self
 sudo tlmgr install collection-latexextra collection-fontsrecommended
 ```
+
+### Issue 6: SyncTeX Inverse / Forward Search not responding or returning 404
+**Cause**: The project has not been compiled yet, or the compile failed before generating the SyncTeX mapping file (`.synctex.gz`).  
+**Solution**:
+1. Click **Compile** (or press `Cmd/Ctrl + S` to save and compile).
+2. Verify that the compilation completed successfully with status `Compiled successfully`.
+3. Check that `<project_name>.synctex.gz` is present inside `backend/latex_workspaces/<project_name>/`.
+4. Ensure `synctex` is installed and available in your system `PATH` by running `which synctex`.
+

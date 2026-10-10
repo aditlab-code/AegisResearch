@@ -64,7 +64,26 @@ Fokus: Menambahkan kecerdasan buatan untuk membantu menulis dan memperbaiki eror
     * Unduh model khusus coding yang ringan melalui terminal, contohnya: ollama run deepseek-coder:1.3b atau ollama run qwen2.5-coder:1.5b (sangat ringan untuk laptop standar).
 * Jembatan AI di Backend:
     * Instal pustaka Python: pip install ollama.
-    * Buat endpoint API /api/ai/fix-error. Jika kompilasi di Tahap 4 menghasilkan status error, kirimkan potongan teks kode yang rusak beserta isi log pesan erornya ke Ollama dengan instruksi prompt rbaiki sintaks LaTeX tersebut.
+    * Buat endpoint API /api/ai/fix-error. Jika kompilasi di Tahap 4 menghasilkan status error, kirimkan potongan teks kode yang rusak beserta isi log pesan erornya ke Ollama dengan instruksi prompt perbaiki sintaks LaTeX tersebut.
 * Fitur AI di Antarmuka (Frontend):
     * Tambahkan tombol "Perbaiki dengan AI" di panel editor yang hanya muncul ketika proses kompilasi mendeteksi adanya eror.
     * Tampilkan teks saran perbaikan dari AI di jendela pop-up (modal) atau berikan opsi bagi user untuk langsung mengganti kode yang rusak dengan satu klik.
+
+📌 TAHAP 6: Navigasi Dua Arah SyncTeX & Native PDF.js Viewport (Selesai)
+Fokus: Menghadirkan sinkronisasi presisi tinggi antara teks editor LaTeX dan dokumen PDF preview secara dua arah (bidirectional).
+
+* Kompilasi dengan Flag SyncTeX:
+    * Menambahkan flag `-synctex=1` pada eksekusi `pdflatex` di `backend/services/compiler.py` untuk menghasilkan file `.synctex.gz`.
+* Backend Engine SyncTeX (FastAPI Subprocess):
+    * Modul `backend/services/synctex.py` mengeksekusi CLI `synctex edit` (inverse) dan `synctex view` (forward) secara asynchronous tanpa memblokir server event loop.
+    * Endpoint `POST /api/projects/{name}/synctex/inverse`: Menerima nomor halaman dan koordinat X/Y (72 DPI points), mengembalikan file sumber dan baris baris LaTeX target.
+    * Endpoint `POST /api/projects/{name}/synctex/forward`: Menerima nama file `.tex` dan nomor baris editor, mengembalikan halaman target dan koordinat box PDF.
+* Frontend Native Multi-Page PDF.js Canvas Viewer:
+    * Migrasi dari wrapper pihak ketiga ke canvas rendering multi-halaman continuous berbasis `pdfjs-dist` langsung.
+    * Rasio aspek halaman (A4, US Letter, Beamer) terjamin 100% presisi tanpa distorsi CSS.
+    * Dukungan layar Retina / High-DPI: Menggunakan penyesuaian matriks transformasi canvas (`transform: [dpr, 0, 0, dpr, 0, 0]`) agar teks sangat tajam tanpa terpotong di layar resolusi tinggi.
+    * Fitur Fit to Width, Fit to Page, dan zoom dinamis (25% - 300%).
+* Interaksi Navigasi Dua Arah:
+    * Inverse Search: Double-click pada teks di halaman PDF memicu lompatan instan ke baris kode di Monaco Editor, dengan efek visual animasi pulse line highlight (1.5s), serta otomatis membuka tab file baru jika target berada di subfile terpisah.
+    * Forward Search: Shortcut keyboard `Cmd/Ctrl + Alt + J` atau tombol "Sync to PDF" di Ribbon Bar melompatkan viewport preview ke halaman dan posisi paragraf yang bersangkutan dengan overlay highlight box.
+
