@@ -7,11 +7,15 @@ import { PreviewToolbar } from './PreviewToolbar'
 import { PaperSheet } from './PaperSheet'
 import { detectLatexPaperSize } from '../../utils'
 
+import { SyncTeXForwardTarget } from './PDFViewer'
+
 export interface PreviewPanelProps {
   doc: Doc
   pdfBlobUrl?: string
   usePdfViewer?: boolean
   onCompile?: () => void
+  onInverseSearch?: (query: { page: number; x: number; y: number }) => void
+  forwardTarget?: SyncTeXForwardTarget | null
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({
@@ -19,6 +23,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   pdfBlobUrl,
   usePdfViewer = false,
   onCompile,
+  onInverseSearch,
+  forwardTarget,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -26,6 +32,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   const [zoom, setZoom] = useState<number>(1.0)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [totalPages, setTotalPages] = useState<number>(1)
+  const [pdfPageSize, setPdfPageSize] = useState<{ width: number; height: number } | null>(null)
 
   const isLatex = doc.kind === 'tex'
 
@@ -49,25 +56,73 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
   const handleFitWidth = useCallback(() => {
     if (!containerRef.current) return
-    const containerWidth = containerRef.current.clientWidth - 64
-    const preset = PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4
-    const newZoom = Math.min(2.0, Math.max(0.4, containerWidth / preset.baseWidthPx))
-    setZoom(+newZoom.toFixed(2))
-  }, [paperSize])
+    const containerWidth = containerRef.current.clientWidth - 48
+    const baseWidth = isLatex && pdfPageSize ? pdfPageSize.width : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseWidthPx
+    if (baseWidth > 0 && containerWidth > 0) {
+      const newZoom = Math.min(2.5, Math.max(0.4, +(containerWidth / baseWidth).toFixed(2)))
+      setZoom(newZoom)
+    }
+  }, [isLatex, pdfPageSize, paperSize])
 
   const handleFitPage = useCallback(() => {
     if (!containerRef.current) return
-    const containerHeight = containerRef.current.clientHeight - 80
-    const preset = PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4
-    const newZoom = Math.min(2.0, Math.max(0.4, containerHeight / preset.baseHeightPx))
-    setZoom(+newZoom.toFixed(2))
-  }, [paperSize])
+    const containerHeight = containerRef.current.clientHeight - 48
+    const containerWidth = containerRef.current.clientWidth - 48
+    const baseHeight = isLatex && pdfPageSize ? pdfPageSize.height : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseHeightPx
+    const baseWidth = isLatex && pdfPageSize ? pdfPageSize.width : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseWidthPx
+    if (baseHeight > 0 && containerHeight > 0 && baseWidth > 0 && containerWidth > 0) {
+      const heightZoom = containerHeight / baseHeight
+      const widthZoom = containerWidth / baseWidth
+      const newZoom = Math.min(2.5, Math.max(0.4, +Math.min(heightZoom, widthZoom).toFixed(2)))
+      setZoom(newZoom)
+    }
+  }, [isLatex, pdfPageSize, paperSize])
 
-  // CASE 1: LATEX WITH READY PDF -> 100% FULL-PANEL NATIVE BROWSER VIEWER
+  const handlePageSelect = (newPage: number) => {
+    setCurrentPage(newPage)
+    const pageEl = document.getElementById(`pdf-page-${newPage}`)
+    if (pageEl) {
+      pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
+  // CASE 1: LATEX WITH READY PDF -> INTERACTIVE MULTI-PAGE VIEWER WITH TOOLBAR & SYNCTEX
   if (isLatex && pdfBlobUrl) {
     return (
-      <section className="w-full h-full bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
-        <PDFViewer pdfUrl={pdfBlobUrl} />
+      <section className="w-full h-full flex flex-col bg-zinc-200 dark:bg-zinc-950 overflow-hidden">
+        <PreviewToolbar
+          currentPage={currentPage}
+          totalPages={totalPages}
+          zoom={zoom}
+          paperSize={paperSize}
+          onChangePage={handlePageSelect}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onSetZoom={setZoom}
+          onFitWidth={handleFitWidth}
+          onFitPage={handleFitPage}
+          onChangePaperSize={setPaperSize}
+        />
+        <div ref={containerRef} className="flex-1 min-h-0 w-full overflow-hidden">
+          <PDFViewer
+            pdfUrl={pdfBlobUrl}
+            zoom={zoom}
+            onInverseSearch={onInverseSearch}
+            forwardTarget={forwardTarget}
+            onPageChange={(page, total) => {
+              setCurrentPage(page)
+              setTotalPages(total)
+            }}
+            onPageDimensionsLoaded={(dims) => {
+              setPdfPageSize(dims)
+              if (containerRef.current && dims.width > 0) {
+                const containerWidth = containerRef.current.clientWidth - 48
+                const fitScale = Math.min(2.0, Math.max(0.4, +(containerWidth / dims.width).toFixed(2)))
+                setZoom(fitScale)
+              }
+            }}
+          />
+        </div>
       </section>
     )
   }

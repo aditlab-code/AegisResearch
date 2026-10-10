@@ -57,3 +57,36 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-zinc-400 dark:bg-[#4b5263];
 }
+
+/* SyncTeX Line Pulse Highlight in Monaco Editor */
+@keyframes synctexPulseLight {
+  0% {
+    background-color: rgba(64, 120, 242, 0.45);
+  }
+  50% {
+    background-color: rgba(64, 120, 242, 0.25);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes synctexPulseDark {
+  0% {
+    background-color: rgba(97, 175, 239, 0.5);
+  }
+  50% {
+    background-color: rgba(97, 175, 239, 0.25);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.synctex-line-pulse {
+  animation: synctexPulseLight 1.5s ease-out forwards;
+}
+
+.dark .synctex-line-pulse {
+  animation: synctexPulseDark 1.5s ease-out forwards;
+}

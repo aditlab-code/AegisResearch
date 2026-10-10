@@ -6,6 +6,7 @@ export interface KeyboardShortcutHandlers {
   onCommandPalette?: () => void
   onCopy?: () => void
   onPaste?: () => void
+  onSyncToPdf?: () => void
 }
 
 export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
@@ -16,6 +17,9 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers) {
       if (isMod && e.key.toLowerCase() === 's') {
         e.preventDefault()
         handlers.onSave?.()
+      } else if (isMod && e.altKey && e.key.toLowerCase() === 'j') {
+        e.preventDefault()
+        handlers.onSyncToPdf?.()
       } else if (isMod && e.key.toLowerCase() === 'b') {
         e.preventDefault()
         handlers.onCompile?.()

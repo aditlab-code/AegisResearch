@@ -5,6 +5,8 @@ import { DEFAULT_CHAT_MESSAGES } from './src/constants'
 import { countWords, parseDocumentOutline, parseBibtex, serializeBibtex, scanDocumentLabels, BibEntry } from './src/utils'
 import { projectService } from './src/services/projects'
 import { compilerService } from './src/services/compiler'
+import { synctexService } from './src/services/synctex'
+import { SyncTeXForwardTarget } from './src/components/preview/PDFViewer'
 import { useDocumentManager, useCompiler, useKeyboardShortcuts, useTheme } from './src/hooks'
 import {
   TitleBar,
@@ -43,6 +45,7 @@ export default function App() {
   const [isDirty, setIsDirty] = useState(false)
   const [saveStatus, setSaveStatus] = useState('✓ Ready')
   const editorRef = useRef<CodeEditorHandle>(null)
+  const [forwardTarget, setForwardTarget] = useState<SyncTeXForwardTarget | null>(null)
 
 
   const [bibEntries, setBibEntries] = useState<BibEntry[]>([])
@@ -241,6 +244,83 @@ export default function App() {
     }
   }
 
+  const handleInverseSearch = async ({ page, x, y }: { page: number; x: number; y: number }) => {
+    if (!activeDoc) return
+    const pdfName = activeDoc.name.replace(/\.tex$/i, '.pdf')
+    setSaveStatus(`🔍 SyncTeX: Navigating from PDF p.${page}...`)
+
+    try {
+      const res = await synctexService.inverseSearch(projectName, pdfName, page, x, y)
+      if (res.success && res.file && res.line) {
+        const targetFileName = res.file.split('/').pop() || res.file
+        const isDifferentFile = activeDoc.name !== targetFileName && activeDoc.name !== res.file
+
+        if (isDifferentFile) {
+          const kind = targetFileName.endsWith('.md') ? 'md' : 'tex'
+          openOrCreateDoc(targetFileName, kind)
+          try {
+            const content = await projectService.readFile(projectName, res.file)
+            setDocContent(targetFileName, content)
+          } catch {
+            // ignore
+          }
+        }
+
+        setTimeout(() => {
+          editorRef.current?.jumpToLineAndHighlight(res.line!, res.column || 1)
+          setSaveStatus(`✓ SyncTeX: Jumped to ${targetFileName}:${res.line}`)
+          setTimeout(() => setSaveStatus('✓ Ready'), 3000)
+        }, isDifferentFile ? 100 : 20)
+      } else {
+        setSaveStatus(`⚠️ SyncTeX: ${res.message || 'No source line found for clicked location'}`)
+        setTimeout(() => setSaveStatus('✓ Ready'), 3000)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Inverse search error'
+      setSaveStatus(`✗ SyncTeX error: ${msg}`)
+    }
+  }
+
+  const handleForwardSearch = async () => {
+    if (!activeDoc || activeDoc.kind !== 'tex') {
+      setSaveStatus('⚠️ SyncTeX forward search is only available for LaTeX documents')
+      return
+    }
+
+    const cursorPos = editorRef.current?.getCursorPosition() || { line: 1, column: 1 }
+    const pdfName = activeDoc.name.replace(/\.tex$/i, '.pdf')
+    setSaveStatus(`🔍 SyncTeX: Locating line ${cursorPos.line} in PDF...`)
+
+    try {
+      const res = await synctexService.forwardSearch(
+        projectName,
+        pdfName,
+        activeDoc.name,
+        cursorPos.line,
+        cursorPos.column,
+      )
+
+      if (res.success && res.page && res.x !== undefined && res.y !== undefined) {
+        setForwardTarget({
+          page: res.page,
+          x: res.x,
+          y: res.y,
+          width: res.width || 100,
+          height: res.height || 16,
+          timestamp: Date.now(),
+        })
+        setSaveStatus(`✓ SyncTeX: Jumped to PDF page ${res.page}`)
+        setTimeout(() => setSaveStatus('✓ Ready'), 3000)
+      } else {
+        setSaveStatus(`⚠️ SyncTeX: ${res.message || 'No PDF position found for line ' + cursorPos.line}`)
+        setTimeout(() => setSaveStatus('✓ Ready'), 3000)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Forward search error'
+      setSaveStatus(`✗ SyncTeX error: ${msg}`)
+    }
+  }
+
   const handleRibbonSnippet = async (label: string) => {
     if (label === 'Save') {
       await handleSave()
@@ -430,6 +510,7 @@ export default function App() {
     onCompile: () => {
       compile()
     },
+    onSyncToPdf: handleForwardSearch,
   })
 
   return (
@@ -446,6 +527,7 @@ export default function App() {
         engine={engine}
         onChangeEngine={setEngine}
         onCompile={handleCompile}
+        onSyncToPdf={handleForwardSearch}
         onInsertCodeSnippet={(code) => editorRef.current?.wrapSelection('', '', code)}
         onClipboardAction={handleClipboardAction}
         onFormatAction={handleFormatAction}
@@ -514,6 +596,7 @@ export default function App() {
               onCloseTab={closeDoc}
               isDirty={isDirty}
               onSave={handleSave}
+              onSyncToPdf={handleForwardSearch}
               onChangeContent={handleContentChange}
               theme={theme}
             />
@@ -529,6 +612,8 @@ export default function App() {
                 pdfBlobUrl={pdfBlobUrl}
                 usePdfViewer={Boolean(pdfBlobUrl && activeDoc.kind === 'tex')}
                 onCompile={handleCompile}
+                onInverseSearch={handleInverseSearch}
+                forwardTarget={forwardTarget}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 text-zinc-400 text-xs font-mono">

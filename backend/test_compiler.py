@@ -33,6 +33,11 @@ def test_compile_latex_success_and_streaming():
         assert pdf_res.headers["content-type"] == "application/pdf"
         assert len(pdf_res.content) > 0
 
+        # Assert .synctex.gz was generated
+        synctex_file = temp_dir / "main.synctex.gz"
+        assert synctex_file.exists()
+        assert synctex_file.stat().st_size > 0
+
 
         # Test HEAD request for existing PDF
         head_res = client.head(data["pdfUrl"])

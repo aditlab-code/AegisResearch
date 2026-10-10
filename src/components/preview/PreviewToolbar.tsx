@@ -137,18 +137,18 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
       {/* Right: Paper Layout Preset Selector */}
       <div className="flex items-center gap-1.5">
         <FileSpreadsheet className="size-3.5 text-zinc-400" />
-        <select
-          value={paperSize}
-          onChange={(e) => onChangePaperSize(e.target.value as PaperSize)}
-          aria-label="Paper Size"
-          className="bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[11px] focus:outline-none focus:border-blue-500 cursor-pointer"
-        >
-          <option value="a4">A4 (210×297)</option>
-          <option value="f4">F4 (215×330)</option>
-          <option value="letter">Letter</option>
-          <option value="custom">Custom .tex</option>
-        </select>
+          <select
+            value={paperSize}
+            onChange={(e) => onChangePaperSize(e.target.value as PaperSize)}
+            aria-label="Paper Size"
+            className="bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[11px] focus:outline-none focus:border-blue-500 cursor-pointer"
+          >
+            <option value="a4">A4 (210×297)</option>
+            <option value="f4">F4 (215×330)</option>
+            <option value="letter">Letter</option>
+            <option value="custom">Custom .tex</option>
+          </select>
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }

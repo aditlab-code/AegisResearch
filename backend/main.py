@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from backend.config import WORKSPACE_DIR, CORS_ORIGINS, HOST, PORT
 from backend.watcher import workspace_watcher
 from backend.services.compiler import compile_latex
+from backend.services.synctex import synctex_inverse_search, synctex_forward_search
 
 
 app = FastAPI(
@@ -70,6 +71,34 @@ class CompileResponse(BaseModel):
     pdfUrl: Optional[str] = None
     errors: List[str] = []
     logOutput: Optional[str] = None
+
+class SyncTeXInverseRequest(BaseModel):
+    pdfName: str = Field(..., description="PDF file name, e.g. main.pdf")
+    page: int = Field(..., ge=1, description="1-based page number")
+    x: float = Field(..., description="X coordinate in 72-DPI points")
+    y: float = Field(..., description="Y coordinate in 72-DPI points")
+
+class SyncTeXInverseResponse(BaseModel):
+    success: bool
+    file: Optional[str] = None
+    line: Optional[int] = None
+    column: Optional[int] = None
+    message: Optional[str] = None
+
+class SyncTeXForwardRequest(BaseModel):
+    pdfName: str = Field(..., description="PDF file name, e.g. main.pdf")
+    file: str = Field(..., description="LaTeX source file path, e.g. main.tex")
+    line: int = Field(..., ge=1, description="1-based line number")
+    column: int = Field(default=1, ge=1, description="1-based column number")
+
+class SyncTeXForwardResponse(BaseModel):
+    success: bool
+    page: Optional[int] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
+    width: Optional[float] = None
+    height: Optional[float] = None
+    message: Optional[str] = None
 
 class SearchMatchItem(BaseModel):
     lineNumber: int
@@ -607,6 +636,53 @@ async def get_project_pdf(name: str, pdf_name: str):
         filename=target_pdf.name,
         headers={"Content-Disposition": f"inline; filename={target_pdf.name}"},
     )
+
+
+@app.post(
+    "/api/projects/{name}/synctex/inverse",
+    response_model=SyncTeXInverseResponse,
+    tags=["SyncTeX"],
+)
+async def inverse_synctex(name: str, payload: SyncTeXInverseRequest):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    result = await synctex_inverse_search(
+        project_dir=project_dir,
+        pdf_name=payload.pdfName,
+        page=payload.page,
+        x=payload.x,
+        y=payload.y,
+    )
+    return SyncTeXInverseResponse(**result)
+
+
+@app.post(
+    "/api/projects/{name}/synctex/forward",
+    response_model=SyncTeXForwardResponse,
+    tags=["SyncTeX"],
+)
+async def forward_synctex(name: str, payload: SyncTeXForwardRequest):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    result = await synctex_forward_search(
+        project_dir=project_dir,
+        pdf_name=payload.pdfName,
+        file=payload.file,
+        line=payload.line,
+        column=payload.column,
+    )
+    return SyncTeXForwardResponse(**result)
+
 
 SEARCH_IGNORED_EXTENSIONS = {
     ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg",

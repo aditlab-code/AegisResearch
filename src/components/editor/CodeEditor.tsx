@@ -12,19 +12,32 @@ export interface CodeEditorProps {
   doc: Doc
   onChangeContent: (content: string) => void
   onSave?: () => void
+  onSyncToPdf?: () => void
   theme?: 'dark' | 'light'
 }
 
 export interface CodeEditorHandle {
   jumpToLine: (lineNumber: number) => void
+  jumpToLineAndHighlight: (lineNumber: number, column?: number) => void
+  getCursorPosition: () => { line: number; column: number }
   wrapSelection: (prefix: string, suffix: string, placeholder?: string) => void
   getSelectedText: () => string
 }
 
 export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
-  ({ doc, onChangeContent, onSave, theme = 'dark' }, ref) => {
+  ({ doc, onChangeContent, onSave, onSyncToPdf, theme = 'dark' }, ref) => {
     const editorRef = useRef<Parameters<OnMount>[0] | null>(null)
     const monacoRef = useRef<Parameters<OnMount>[1] | null>(null)
+    const decorationsCollectionRef = useRef<any>(null)
+    const highlightTimeoutRef = useRef<number | null>(null)
+
+    useEffect(() => {
+      return () => {
+        if (highlightTimeoutRef.current) {
+          window.clearTimeout(highlightTimeoutRef.current)
+        }
+      }
+    }, [])
 
     useImperativeHandle(ref, () => ({
       jumpToLine: (lineNumber: number) => {
@@ -34,6 +47,52 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
           editor.setPosition({ lineNumber, column: 1 })
           editor.focus()
         }
+      },
+      jumpToLineAndHighlight: (lineNumber: number, column = 1) => {
+        const editor = editorRef.current
+        const monaco = monacoRef.current
+        if (editor) {
+          editor.revealLineInCenter(lineNumber)
+          editor.setPosition({ lineNumber, column })
+          editor.focus()
+
+          if (monaco) {
+            if (highlightTimeoutRef.current) {
+              window.clearTimeout(highlightTimeoutRef.current)
+              highlightTimeoutRef.current = null
+            }
+            if (decorationsCollectionRef.current) {
+              decorationsCollectionRef.current.clear()
+            }
+
+            decorationsCollectionRef.current = editor.createDecorationsCollection([
+              {
+                range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+                options: {
+                  isWholeLine: true,
+                  className: 'synctex-line-pulse',
+                  overviewRuler: {
+                    color: '#4078f2',
+                    position: monaco.editor.OverviewRulerLane.Full,
+                  },
+                },
+              },
+            ])
+
+            highlightTimeoutRef.current = window.setTimeout(() => {
+              if (decorationsCollectionRef.current) {
+                decorationsCollectionRef.current.clear()
+                decorationsCollectionRef.current = null
+              }
+            }, 1600)
+          }
+        }
+      },
+      getCursorPosition: () => {
+        const editor = editorRef.current
+        if (!editor) return { line: 1, column: 1 }
+        const pos = editor.getPosition()
+        return { line: pos?.lineNumber || 1, column: pos?.column || 1 }
       },
       wrapSelection: (prefix: string, suffix: string, placeholder = 'teks') => {
         const editor = editorRef.current
@@ -128,6 +187,11 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
       // Add Ctrl/Cmd + S shortcut command inside Monaco
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
         onSave?.()
+      })
+
+      // Add Ctrl/Cmd + Alt + J shortcut command inside Monaco for SyncTeX forward search
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyJ, () => {
+        onSyncToPdf?.()
       })
 
       // Safe layout on next frame

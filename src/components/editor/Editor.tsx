@@ -13,6 +13,7 @@ export interface EditorProps {
   onChangeContent: (content: string) => void
   isDirty?: boolean
   onSave?: () => void
+  onSyncToPdf?: () => void
   theme?: 'dark' | 'light'
 }
 
@@ -27,6 +28,7 @@ export const Editor = forwardRef<CodeEditorHandle, EditorProps>(
       onChangeContent,
       isDirty = false,
       onSave,
+      onSyncToPdf,
       theme = 'light',
     },
     ref,
@@ -49,6 +51,7 @@ export const Editor = forwardRef<CodeEditorHandle, EditorProps>(
             doc={activeDoc}
             onChangeContent={onChangeContent}
             onSave={onSave}
+            onSyncToPdf={onSyncToPdf}
             theme={theme}
           />
         ) : (

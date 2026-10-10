@@ -1,5 +1,5 @@
 import React from 'react'
-import { Play } from 'lucide-react'
+import { Play, Target } from 'lucide-react'
 import { RibbonTab, EngineType } from '../../types'
 import { RIBBONS } from '../../constants'
 import { HomeRibbonGroup } from './HomeRibbonGroup'
@@ -14,6 +14,7 @@ export interface RibbonBarProps {
   onSelectTab: (tab: RibbonTab) => void
   onInsertSnippet: (label: string) => void
   onCompile?: () => void
+  onSyncToPdf?: () => void
   engine?: EngineType
   onChangeEngine?: (engine: EngineType) => void
   onInsertCodeSnippet?: (code: string) => void
@@ -45,6 +46,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
   onSelectTab,
   onInsertSnippet,
   onCompile,
+  onSyncToPdf,
   engine = 'pdfLaTeX',
   onChangeEngine,
   onInsertCodeSnippet = () => {},
@@ -136,11 +138,22 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
               <option value="XeLaTeX">XeLaTeX</option>
               <option value="Pandoc">Pandoc</option>
             </select>
+            {isLatex && (
+              <button
+                type="button"
+                onClick={onSyncToPdf}
+                title="Sync cursor position to PDF preview (Cmd/Ctrl + Alt + J)"
+                className="border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs px-2.5 py-1 rounded font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Target className="size-3.5 text-blue-500 dark:text-blue-400" />
+                <span>Sync to PDF</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onCompile}
               title="Compile document (Ctrl+Enter)"
-              className="bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 text-xs px-3 py-1 rounded font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
+              className="bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] text-white dark:text-zinc-950 text-xs px-3 py-1 rounded font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
               <Play className="size-3.5 fill-current" />
               <span>Compile</span>

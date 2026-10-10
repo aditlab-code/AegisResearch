@@ -87,6 +87,7 @@ async def compile_latex(
     cmd_pdf = [
         pdflatex_bin,
         "-interaction=nonstopmode",
+        "-synctex=1",
         "-output-directory=.",
         target_tex.name,
     ]
