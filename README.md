@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>A local-first, privacy-focused scholarly LaTeX IDE and academic research workbench.</strong><br>
-  Combining Word-style academic Ribbon accessibility with VS Code-grade editing, multi-pass LaTeX compilation, real-time Git tracking, and live PDF rendering.
+  Combining ergonomic academic Ribbon accessibility with VS Code-grade editing, multi-pass LaTeX compilation, real-time Git tracking, and live PDF rendering.
 </p>
 
 <p align="center">
@@ -25,6 +25,7 @@ Writing academic papers, theses, and technical publications in LaTeX often force
 - **Native LaTeX & SyncTeX Engine**: Directly interfaces with your local TeX distribution (`pdflatex` + `bibtex` + `synctex`) with automatic multi-pass compilation and bidirectional navigation.
 - **Bidirectional SyncTeX Navigation**: Double-click PDF text to jump to the exact LaTeX source line (Inverse Search), or press `Cmd/Ctrl + Alt + J` / click "Sync to PDF" to locate source lines in the preview (Forward Search).
 - **Embedded Git Studio**: Built-in visual commit and branch graph, staging, diff inspection, and branch switching tailored for scientific writing.
+- **Statistical Research Workbench & Data Ribbon**: Integrated quantitative analysis and scientific data workbench. Inspect datasets, run parametric & non-parametric tests, follow methodological guardrails, and generate publication-ready LaTeX tables (APA, IEEE, Classic) in one click.
 - **Native PDF.js Multi-Page Viewer**: High-performance continuous scroll canvas viewer supporting zoom, Fit Width, Fit Page, High-DPI/Retina displays, and 100% aspect ratio preservation.
 - **Local AI-Ready**: Optional offline assistance powered by [Ollama](https://ollama.com) for syntax diagnostic and automated error recovery.
 
@@ -36,6 +37,7 @@ Writing academic papers, theses, and technical publications in LaTeX often force
 graph TD
     subgraph Client ["Frontend (React 18 + Vite + Monaco)"]
         UI["Academic Ribbon & Workbench Shell"]
+        DataRibbon["Data Ribbon & Statistical Analysis Suite"]
         Monaco["Monaco Editor (LaTeX, BibTeX, Markdown)"]
         PDF["PDF.js Native Multi-Page Canvas Viewer"]
         GitPanel["Git Track Changes & SVG Commit Graph"]
@@ -50,6 +52,8 @@ graph TD
         GitService["Git Controller (init, stage, commit, log)"]
         CompilerService["Multi-Pass Compiler (-synctex=1)"]
         SyncTeXService["SyncTeX CLI Service (edit & view)"]
+        StatsService["Statistical Engine (Polars, SciPy, Statsmodels)"]
+        TableGen["Multi-Style LaTeX Table Generator (APA, IEEE, Classic)"]
     end
 
     subgraph System ["Local System & Runtime"]
@@ -138,6 +142,16 @@ chmod +x setup.sh run.sh
 - High-DPI/Retina display scaling with explicit canvas transformation matrices, rendering razor-sharp text on high-density screens without clipping.
 - Responsive toolbar controls for Zoom (25%–300%), Fit Width, and Fit Page with instant recalculation on pane resizing.
 
+### 8. Statistical Research Workbench & Data Ribbon
+- **Dedicated Data Ribbon**: Ergonomic action cards organized into Data Management, Assumption Tests, Parametric, Non-Parametric, Multivariate, and Output Actions.
+- **Measurement Scale Guardrails**: Automatic validation based on Stevens' 4 measurement scales (Nominal, Ordinal, Interval, Ratio) ensuring researchers never execute incompatible hypothesis tests.
+- **Interactive Statistical Method Advisor**: Modal guide illustrating the standard 4-step quantitative empirical research workflow (Instrument Reliability &rarr; Normality &rarr; Homoscedasticity &rarr; Hypothesis Testing).
+- **Comprehensive Statistical Test Suite**:
+  - *Prerequisite & Assumption Tests*: Shapiro-Wilk, Kolmogorov-Smirnov, Levene's Test, Cronbach's Alpha instrument reliability.
+  - *Parametric Tests*: One-Sample t-Test, Independent Samples t-Test (Student & Welch's correction), Paired t-Test, One-Way ANOVA (Tukey HSD post-hoc), Two-Way Factorial ANOVA, Bivariate Pearson Correlation, Multiple Linear Regression (VIF collinearity), MANOVA (Wilks' Lambda), and PCA.
+  - *Non-Parametric Tests*: Mann-Whitney U, Wilcoxon Signed-Rank, Kruskal-Wallis H, Spearman Rank Correlation, and Chi-Square Test of Independence.
+- **Dynamic Multi-Style LaTeX Table Generator**: Generates publication-ready LaTeX tables across APA (`booktabs`), IEEE, and Classic LaTeX styles, rendered inside a dedicated full centered modal dialog with instant copy-to-clipboard and insert-to-editor triggers.
+
 ---
 
 ## 📁 Repository Structure
@@ -151,9 +165,7 @@ AegisResearch/
 ├── vite.config.ts            # Vite configuration & proxy definitions
 ├── docs/
 │   ├── HOW_TO_INSTALL.md     # Comprehensive cross-platform installation guide
-│   ├── RELEASE_NOTES.md      # Official v0.1.0 release notes
-│   ├── roadmap.md            # Project development roadmap
-│   └── spec-synctex-bidirectional.md # SyncTeX bidirectional specification
+│   └── RELEASE_NOTES.md      # Official release notes
 ├── backend/
 │   ├── main.py               # FastAPI application & REST/WebSocket routes
 │   ├── config.py             # Server host, port, CORS, and workspace path config
@@ -161,19 +173,26 @@ AegisResearch/
 │   ├── services/
 │   │   ├── compiler.py       # LaTeX multi-pass subprocess compiler (-synctex=1)
 │   │   ├── synctex.py        # SyncTeX forward/inverse CLI coordinator
-│   │   └── git_service.py    # Git operations & revision history manager
+│   │   ├── git_service.py    # Git operations & revision history manager
+│   │   ├── stats.py          # Descriptive, reliability & assumption statistics
+│   │   ├── stats_parametric.py # Parametric hypothesis tests & regressions
+│   │   ├── stats_nonparametric.py # Non-parametric rank & association tests
+│   │   └── latex_table_gen.py # Dynamic APA/IEEE/Classic LaTeX table generator
 │   ├── test_compiler.py      # Multi-pass LaTeX compilation tests
 │   ├── test_synctex.py       # SyncTeX CLI parser & coordinate tests
+│   ├── test_stats.py         # Statistical calculation unit tests
+│   ├── test_stats_api.py     # Statistics API integration tests
 │   └── latex_workspaces/     # Local workspace storage for user LaTeX projects
 └── src/
     ├── components/
     │   ├── editor/           # Monaco CodeEditor with pulse line highlight
-    │   ├── header/           # TitleBar & RibbonBar toolbar ("Sync to PDF" action)
+    │   ├── header/           # TitleBar & RibbonBar toolbar ("Sync to PDF", Data Ribbon)
     │   ├── sidebar/          # FileTree, GitTrackPanel, SearchPanel, ReviewNotes
-    │   └── preview/          # PDFViewer native canvas & PreviewPanel/Toolbar
-    ├── services/             # Frontend API clients (projects, search, git, synctex)
+    │   ├── preview/          # PDFViewer native canvas & PreviewPanel/Toolbar
+    │   └── stats/            # Statistical AnalysisDialog, ResultsViewer, MethodAdvisor
+    ├── services/             # Frontend API clients (projects, search, git, synctex, stats)
     ├── hooks/                # Custom hooks (shortcuts, git, compile, file tree)
-    └── types/                # TypeScript interface definitions
+    └── types/                # TypeScript interface definitions (stats, documents)
 ```
 
 ---

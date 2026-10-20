@@ -1,5 +1,9 @@
-import { apiClient } from './api'
-import { SearchResponse, SearchReplaceRequest, SearchReplaceResponse } from '../types'
+import { apiClient } from "./api";
+import {
+  SearchResponse,
+  SearchReplaceRequest,
+  SearchReplaceResponse,
+} from "../types";
 
 export const searchService = {
   async searchProject(
@@ -7,21 +11,21 @@ export const searchService = {
     query: string,
     caseSensitive: boolean = false,
   ): Promise<SearchResponse> {
-    const stripped = query.trim()
+    const stripped = query.trim();
     if (stripped.length < 5) {
       return {
         query: stripped,
         totalMatches: 0,
         fileCount: 0,
         results: [],
-      }
+      };
     }
 
     return apiClient.get<SearchResponse>(
       `/api/projects/${encodeURIComponent(projectName)}/search?q=${encodeURIComponent(
         stripped,
       )}&case_sensitive=${caseSensitive}`,
-    )
+    );
   },
 
   async replaceMatches(
@@ -31,6 +35,6 @@ export const searchService = {
     return apiClient.post<SearchReplaceResponse>(
       `/api/projects/${encodeURIComponent(projectName)}/search/replace`,
       req,
-    )
+    );
   },
-}
+};

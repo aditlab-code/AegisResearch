@@ -6,6 +6,7 @@ from backend.config import WORKSPACE_DIR
 
 client = TestClient(app)
 
+
 def test_git_status_and_init_lifecycle():
     project_name = "pytest-git-init-lifecycle"
     temp_dir = WORKSPACE_DIR / project_name
@@ -45,7 +46,7 @@ def test_git_status_and_init_lifecycle():
 
 
 def test_git_diff_endpoint():
-    res = client.get("/api/projects/quantum-thesis/git/diff")
+    res = client.get("/api/projects/template-thesis/git/diff")
     assert res.status_code == 200
     assert "diff" in res.json()
 
@@ -63,15 +64,22 @@ def test_git_stage_unstage_discard_lifecycle():
 
         # 1. Add changes: modify main.tex and create new-note.md
         main_tex = temp_dir / "main.tex"
-        main_tex.write_text("\\documentclass{article}\n\\begin{document}\nInitial\n\\end{document}\n")
+        main_tex.write_text(
+            "\\documentclass{article}\n\\begin{document}\nInitial\n\\end{document}\n"
+        )
         new_note = temp_dir / "new-note.md"
         new_note.write_text("# New Notes\n")
 
         # Initial commit so main.tex is tracked
-        client.post(f"/api/projects/{project_name}/git/commit", json={"message": "First setup", "smartCommit": True})
+        client.post(
+            f"/api/projects/{project_name}/git/commit",
+            json={"message": "First setup", "smartCommit": True},
+        )
 
         # Now modify main.tex and create extra.tex
-        main_tex.write_text("\\documentclass{article}\n\\begin{document}\nUpdated\n\\end{document}\n")
+        main_tex.write_text(
+            "\\documentclass{article}\n\\begin{document}\nUpdated\n\\end{document}\n"
+        )
         extra_tex = temp_dir / "extra.tex"
         extra_tex.write_text("% Extra\n")
 
@@ -82,7 +90,9 @@ def test_git_stage_unstage_discard_lifecycle():
         assert len(st1["unstaged"]) >= 2
 
         # 2. Stage single file
-        stage_res = client.post(f"/api/projects/{project_name}/git/stage", json={"file": "main.tex"})
+        stage_res = client.post(
+            f"/api/projects/{project_name}/git/stage", json={"file": "main.tex"}
+        )
         assert stage_res.status_code == 200
         st2 = client.get(f"/api/projects/{project_name}/git/status").json()
         staged_paths = [f["path"] for f in st2["staged"]]
@@ -94,30 +104,40 @@ def test_git_stage_unstage_discard_lifecycle():
         assert "Updated" in diff_res.json()["diff"]
 
         # 3. Unstage single file
-        unstage_res = client.post(f"/api/projects/{project_name}/git/unstage", json={"file": "main.tex"})
+        unstage_res = client.post(
+            f"/api/projects/{project_name}/git/unstage", json={"file": "main.tex"}
+        )
         assert unstage_res.status_code == 200
         st3 = client.get(f"/api/projects/{project_name}/git/status").json()
         assert len(st3["staged"]) == 0
 
         # 4. Stage all
-        stage_all_res = client.post(f"/api/projects/{project_name}/git/stage", json={"all": True})
+        stage_all_res = client.post(
+            f"/api/projects/{project_name}/git/stage", json={"all": True}
+        )
         assert stage_all_res.status_code == 200
         st4 = client.get(f"/api/projects/{project_name}/git/status").json()
         assert len(st4["staged"]) >= 2
 
         # 5. Unstage all
-        unstage_all_res = client.post(f"/api/projects/{project_name}/git/unstage", json={"all": True})
+        unstage_all_res = client.post(
+            f"/api/projects/{project_name}/git/unstage", json={"all": True}
+        )
         assert unstage_all_res.status_code == 200
         st5 = client.get(f"/api/projects/{project_name}/git/status").json()
         assert len(st5["staged"]) == 0
 
         # 6. Discard tracked file
-        discard_res = client.post(f"/api/projects/{project_name}/git/discard", json={"file": "main.tex"})
+        discard_res = client.post(
+            f"/api/projects/{project_name}/git/discard", json={"file": "main.tex"}
+        )
         assert discard_res.status_code == 200
         assert "Updated" not in main_tex.read_text()
 
         # 7. Discard untracked file
-        discard_untracked = client.post(f"/api/projects/{project_name}/git/discard", json={"file": "extra.tex"})
+        discard_untracked = client.post(
+            f"/api/projects/{project_name}/git/discard", json={"file": "extra.tex"}
+        )
         assert discard_untracked.status_code == 200
         assert not extra_tex.exists()
 
@@ -189,7 +209,7 @@ def test_git_commit_and_branches_lifecycle():
 
 
 def test_git_log_endpoint():
-    res = client.get("/api/projects/quantum-thesis/git/log")
+    res = client.get("/api/projects/template-thesis/git/log")
     assert res.status_code == 200
     data = res.json()
     assert "commits" in data
@@ -237,7 +257,10 @@ def test_search_replace_endpoint():
         client.post("/api/projects", json={"name": project_name})
         client.post(
             f"/api/projects/{project_name}/files",
-            json={"path": "chapter1.tex", "content": "Hello Universe\nWelcome to Universe"},
+            json={
+                "path": "chapter1.tex",
+                "content": "Hello Universe\nWelcome to Universe",
+            },
         )
 
         # 1. Single line replace
@@ -270,5 +293,3 @@ def test_search_replace_endpoint():
     finally:
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
-
-

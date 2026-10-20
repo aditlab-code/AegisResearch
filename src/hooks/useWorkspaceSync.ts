@@ -1,22 +1,28 @@
-import { useEffect } from 'react'
-import { workspaceWsService } from '../services/websocket'
+import { useEffect } from "react";
+import { workspaceWsService } from "../services/websocket";
 
-export function useWorkspaceSync(projectName: string, onFilesystemChange: () => void) {
+export function useWorkspaceSync(
+  projectName: string,
+  onFilesystemChange: () => void,
+) {
   useEffect(() => {
-    if (!projectName) return
+    if (!projectName) return;
 
-    workspaceWsService.connect(projectName)
+    workspaceWsService.connect(projectName);
 
     const unsubscribe = workspaceWsService.subscribe((msg) => {
-      if (msg.type === 'FS_CHANGED' && (!msg.project || msg.project === projectName)) {
-        onFilesystemChange()
+      if (
+        msg.type === "FS_CHANGED" &&
+        (!msg.project || msg.project === projectName)
+      ) {
+        onFilesystemChange();
       }
-    })
+    });
 
     return () => {
-      unsubscribe()
+      unsubscribe();
       // Disconnect when switching project or unmounting
-      workspaceWsService.disconnect()
-    }
-  }, [projectName, onFilesystemChange])
+      workspaceWsService.disconnect();
+    };
+  }, [projectName, onFilesystemChange]);
 }

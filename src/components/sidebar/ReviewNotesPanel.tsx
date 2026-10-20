@@ -1,60 +1,65 @@
-import React, { useMemo } from 'react'
-import { MessageSquare, AlertCircle, Bookmark } from 'lucide-react'
+import React, { useMemo } from "react";
+import { MessageSquare, AlertCircle, Bookmark } from "lucide-react";
 
 export interface ReviewNoteItem {
-  id: string
-  type: 'todo' | 'fixme' | 'note' | 'comment'
-  author?: string
-  text: string
-  lineNumber: number
+  id: string;
+  type: "todo" | "fixme" | "note" | "comment";
+  author?: string;
+  text: string;
+  lineNumber: number;
 }
 
 export interface ReviewNotesPanelProps {
-  content: string
-  onJumpToLine: (lineNumber: number) => void
+  content: string;
+  onJumpToLine: (lineNumber: number) => void;
 }
 
 export function parseDocumentNotes(content: string): ReviewNoteItem[] {
-  if (!content) return []
-  const items: ReviewNoteItem[] = []
-  const lines = content.split('\n')
+  if (!content) return [];
+  const items: ReviewNoteItem[] = [];
+  const lines = content.split("\n");
 
   lines.forEach((line, idx) => {
-    const trimmed = line.trim()
-    const lineNum = idx + 1
+    const trimmed = line.trim();
+    const lineNum = idx + 1;
 
     // Match % [Author]: Note or % TODO: Note or % FIXME: Note or \todo{Note}
-    const todoMatch = trimmed.match(/^%\s*(TODO|FIXME|NOTE|REVIEWER|REVIEW):\s*(.*)$/i)
+    const todoMatch = trimmed.match(
+      /^%\s*(TODO|FIXME|NOTE|REVIEWER|REVIEW):\s*(.*)$/i,
+    );
     if (todoMatch) {
-      const tag = todoMatch[1].toUpperCase()
-      const text = todoMatch[2].trim() || 'No description'
+      const tag = todoMatch[1].toUpperCase();
+      const text = todoMatch[2].trim() || "No description";
       items.push({
         id: `note-${lineNum}-${idx}`,
-        type: tag === 'FIXME' ? 'fixme' : tag === 'TODO' ? 'todo' : 'note',
+        type: tag === "FIXME" ? "fixme" : tag === "TODO" ? "todo" : "note",
         author: tag,
         text,
         lineNumber: lineNum,
-      })
-      return
+      });
+      return;
     }
 
     // Match \todo{...} or \comment{...}
-    const macroMatch = trimmed.match(/\\(todo|comment)\{([^}]+)\}/)
+    const macroMatch = trimmed.match(/\\(todo|comment)\{([^}]+)\}/);
     if (macroMatch) {
       items.push({
         id: `macro-${lineNum}-${idx}`,
-        type: macroMatch[1] === 'todo' ? 'todo' : 'comment',
+        type: macroMatch[1] === "todo" ? "todo" : "comment",
         text: macroMatch[2].trim(),
         lineNumber: lineNum,
-      })
+      });
     }
-  })
+  });
 
-  return items
+  return items;
 }
 
-export const ReviewNotesPanel: React.FC<ReviewNotesPanelProps> = ({ content, onJumpToLine }) => {
-  const notes = useMemo(() => parseDocumentNotes(content), [content])
+export const ReviewNotesPanel: React.FC<ReviewNotesPanelProps> = ({
+  content,
+  onJumpToLine,
+}) => {
+  const notes = useMemo(() => parseDocumentNotes(content), [content]);
 
   return (
     <div className="flex flex-col gap-2 select-none">
@@ -71,8 +76,8 @@ export const ReviewNotesPanel: React.FC<ReviewNotesPanelProps> = ({ content, onJ
       {notes.length > 0 ? (
         <div className="space-y-1.5 max-h-[calc(100vh-220px)] overflow-y-auto pr-0.5">
           {notes.map((note) => {
-            const isFixme = note.type === 'fixme'
-            const isTodo = note.type === 'todo'
+            const isFixme = note.type === "fixme";
+            const isTodo = note.type === "todo";
 
             return (
               <button
@@ -81,10 +86,10 @@ export const ReviewNotesPanel: React.FC<ReviewNotesPanelProps> = ({ content, onJ
                 onClick={() => onJumpToLine(note.lineNumber)}
                 className={`w-full p-2 rounded-md border text-left transition-colors flex flex-col gap-1 group ${
                   isFixme
-                    ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/60 hover:border-rose-400'
+                    ? "bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/60 hover:border-rose-400"
                     : isTodo
-                    ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60 hover:border-amber-400'
-                    : 'bg-white dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 hover:border-blue-400'
+                      ? "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60 hover:border-amber-400"
+                      : "bg-white dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 hover:border-blue-400"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -99,10 +104,10 @@ export const ReviewNotesPanel: React.FC<ReviewNotesPanelProps> = ({ content, onJ
                     <span
                       className={`text-[9px] font-bold uppercase tracking-wider ${
                         isFixme
-                          ? 'text-rose-700 dark:text-rose-400'
+                          ? "text-rose-700 dark:text-rose-400"
                           : isTodo
-                          ? 'text-amber-700 dark:text-amber-400'
-                          : 'text-blue-700 dark:text-blue-400'
+                            ? "text-amber-700 dark:text-amber-400"
+                            : "text-blue-700 dark:text-blue-400"
                       }`}
                     >
                       {note.author || note.type}
@@ -118,7 +123,7 @@ export const ReviewNotesPanel: React.FC<ReviewNotesPanelProps> = ({ content, onJ
                   {note.text}
                 </div>
               </button>
-            )
+            );
           })}
         </div>
       ) : (
@@ -127,5 +132,5 @@ export const ReviewNotesPanel: React.FC<ReviewNotesPanelProps> = ({ content, onJ
         </div>
       )}
     </div>
-  )
-}
+  );
+};

@@ -1,11 +1,11 @@
-import React from 'react'
-import { PaperSize, PAPER_PRESETS } from '../../types'
+import React from "react";
+import { PaperSize, PAPER_PRESETS } from "../../types";
 
 export interface PaperSheetProps {
-  paperSize: PaperSize
-  zoom?: number
-  pageNumber?: number
-  children: React.ReactNode
+  paperSize: PaperSize;
+  zoom?: number;
+  pageNumber?: number;
+  children: React.ReactNode;
 }
 
 export const PaperSheet: React.FC<PaperSheetProps> = ({
@@ -14,10 +14,10 @@ export const PaperSheet: React.FC<PaperSheetProps> = ({
   pageNumber = 1,
   children,
 }) => {
-  const preset = PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4
+  const preset = PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4;
 
-  const width = Math.round(preset.baseWidthPx * zoom)
-  const minHeight = Math.round(preset.baseHeightPx * zoom)
+  const width = Math.round(preset.baseWidthPx * zoom);
+  const minHeight = Math.round(preset.baseHeightPx * zoom);
 
   return (
     <div className="flex flex-col items-center my-6">
@@ -38,7 +38,7 @@ export const PaperSheet: React.FC<PaperSheetProps> = ({
         <div
           style={{
             transform: `scale(${zoom})`,
-            transformOrigin: 'top left',
+            transformOrigin: "top left",
             width: `${preset.baseWidthPx}px`,
           }}
           className="p-14 font-serif text-[15px] leading-relaxed"
@@ -47,5 +47,5 @@ export const PaperSheet: React.FC<PaperSheetProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

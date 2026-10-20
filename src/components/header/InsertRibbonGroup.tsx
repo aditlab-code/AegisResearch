@@ -1,38 +1,46 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Sigma, Table, Image, ChevronDown } from 'lucide-react'
-import { MathPalettePopover } from './MathPalettePopover'
-import { TableCreatorPopover } from './TableCreatorPopover'
-import { FigureModalPopover } from './FigureModalPopover'
+import React, { useState, useEffect, useRef } from "react";
+import { Sigma, Table, Image, ChevronDown } from "lucide-react";
+import { MathPalettePopover } from "./MathPalettePopover";
+import { TableCreatorPopover } from "./TableCreatorPopover";
+import { FigureModalPopover } from "./FigureModalPopover";
 
 export interface InsertRibbonGroupProps {
-  isLatex?: boolean
-  onInsertCodeSnippet: (code: string) => void
+  isLatex?: boolean;
+  onInsertCodeSnippet: (code: string) => void;
 }
 
-export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = true, onInsertCodeSnippet }) => {
-  const [activePopover, setActivePopover] = useState<'equation' | 'table' | 'figure' | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({
+  isLatex = true,
+  onInsertCodeSnippet,
+}) => {
+  const [activePopover, setActivePopover] = useState<
+    "equation" | "table" | "figure" | null
+  >(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const togglePopover = (type: 'equation' | 'table' | 'figure') => {
-    setActivePopover((prev) => (prev === type ? null : type))
-  }
+  const togglePopover = (type: "equation" | "table" | "figure") => {
+    setActivePopover((prev) => (prev === type ? null : type));
+  };
 
   // Click-outside listener
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setActivePopover(null)
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setActivePopover(null);
       }
-    }
+    };
 
     if (activePopover) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [activePopover])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activePopover]);
 
   return (
     <div
@@ -43,11 +51,11 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
       <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
-          onClick={() => togglePopover('equation')}
+          onClick={() => togglePopover("equation")}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
-            activePopover === 'equation'
-              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
-              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+            activePopover === "equation"
+              ? "bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium"
+              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
           }`}
         >
           <Sigma className="size-4 text-blue-600 dark:text-blue-400" />
@@ -59,7 +67,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
           Equations
         </span>
 
-        {activePopover === 'equation' && (
+        {activePopover === "equation" && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <MathPalettePopover
               isLatex={isLatex}
@@ -74,11 +82,11 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
       <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
-          onClick={() => togglePopover('table')}
+          onClick={() => togglePopover("table")}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
-            activePopover === 'table'
-              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
-              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+            activePopover === "table"
+              ? "bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium"
+              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
           }`}
         >
           <Table className="size-4 text-blue-600 dark:text-blue-400" />
@@ -90,7 +98,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
           Tables
         </span>
 
-        {activePopover === 'table' && (
+        {activePopover === "table" && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <TableCreatorPopover
               isLatex={isLatex}
@@ -105,11 +113,11 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
       <div className="relative h-full flex flex-col items-center justify-between py-1 px-3">
         <button
           type="button"
-          onClick={() => togglePopover('figure')}
+          onClick={() => togglePopover("figure")}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
-            activePopover === 'figure'
-              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
-              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+            activePopover === "figure"
+              ? "bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium"
+              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
           }`}
         >
           <Image className="size-4 text-blue-600 dark:text-blue-400" />
@@ -121,7 +129,7 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
           Illustrations
         </span>
 
-        {activePopover === 'figure' && (
+        {activePopover === "figure" && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <FigureModalPopover
               isLatex={isLatex}
@@ -132,5 +140,5 @@ export const InsertRibbonGroup: React.FC<InsertRibbonGroupProps> = ({ isLatex = 
         )}
       </div>
     </div>
-  )
-}
+  );
+};

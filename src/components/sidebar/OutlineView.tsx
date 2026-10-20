@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react'
-import { ListTree, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
-import { OutlineNode } from '../../types'
-import { OutlineTreeItem } from './OutlineTreeItem'
+import React, { useState, useEffect } from "react";
+import { ListTree, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { OutlineNode } from "../../types";
+import { OutlineTreeItem } from "./OutlineTreeItem";
 
 export interface OutlineViewProps {
-  outlineTree: OutlineNode[]
-  onNavigate?: (lineNumber: number) => void
-  activeDocName?: string
+  outlineTree: OutlineNode[];
+  onNavigate?: (lineNumber: number) => void;
+  activeDocName?: string;
 }
 
 export const OutlineView: React.FC<OutlineViewProps> = ({
@@ -14,45 +14,45 @@ export const OutlineView: React.FC<OutlineViewProps> = ({
   onNavigate,
   activeDocName,
 }) => {
-  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
 
   // Collect all expandable IDs recursively
   const getAllExpandableIds = (nodes: OutlineNode[]): string[] => {
-    let ids: string[] = []
+    let ids: string[] = [];
     nodes.forEach((n) => {
       if (n.children && n.children.length > 0) {
-        ids.push(n.id)
-        ids = ids.concat(getAllExpandableIds(n.children))
+        ids.push(n.id);
+        ids = ids.concat(getAllExpandableIds(n.children));
       }
-    })
-    return ids
-  }
+    });
+    return ids;
+  };
 
   // By default expand all nodes when outline changes
   useEffect(() => {
-    const allIds = getAllExpandableIds(outlineTree)
-    setExpandedKeys(new Set(allIds))
-  }, [outlineTree])
+    const allIds = getAllExpandableIds(outlineTree);
+    setExpandedKeys(new Set(allIds));
+  }, [outlineTree]);
 
   const toggleExpand = (id: string) => {
     setExpandedKeys((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(id)) {
-        next.delete(id)
+        next.delete(id);
       } else {
-        next.add(id)
+        next.add(id);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   const expandAll = () => {
-    setExpandedKeys(new Set(getAllExpandableIds(outlineTree)))
-  }
+    setExpandedKeys(new Set(getAllExpandableIds(outlineTree)));
+  };
 
   const collapseAll = () => {
-    setExpandedKeys(new Set())
-  }
+    setExpandedKeys(new Set());
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -60,8 +60,11 @@ export const OutlineView: React.FC<OutlineViewProps> = ({
       <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-1.5 min-w-0">
           <ListTree className="size-3.5 text-zinc-400 shrink-0" />
-          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate" title={activeDocName || 'Outline'}>
-            {activeDocName || 'Outline'}
+          <span
+            className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate"
+            title={activeDocName || "Outline"}
+          >
+            {activeDocName || "Outline"}
           </span>
         </div>
 
@@ -107,5 +110,5 @@ export const OutlineView: React.FC<OutlineViewProps> = ({
         </div>
       )}
     </div>
-  )
-}
+  );
+};

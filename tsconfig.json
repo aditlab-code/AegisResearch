@@ -6,7 +6,6 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -15,10 +14,10 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
+    "esModuleInterop": true,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "App.tsx", "main.tsx", "vite-env.d.ts"]
+  "include": ["src", "App.tsx", "main.tsx", "vite-env.d.ts", "vite.config.ts"]
 }

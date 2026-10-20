@@ -1,28 +1,33 @@
-import React, { useState } from 'react'
-import { Sparkles, Plus, Send } from 'lucide-react'
-import { ChatMessage } from '../../types'
+import React, { useState } from "react";
+import { Sparkles, Plus, Send } from "lucide-react";
+import { ChatMessage } from "../../types";
 
 export interface AIAssistantPanelProps {
-  chat: ChatMessage[]
-  onSendMessage: (text: string) => void
-  onInsertCodeSnippet: (code: string) => void
+  chat: ChatMessage[];
+  onSendMessage: (text: string) => void;
+  onInsertCodeSnippet: (code: string) => void;
 }
 
-const QUICK_ACTIONS = ['Summarize document', 'Insert equation', 'Find citation', 'Improve wording']
+const QUICK_ACTIONS = [
+  "Summarize document",
+  "Insert equation",
+  "Find citation",
+  "Improve wording",
+];
 
 export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
   chat,
   onSendMessage,
   onInsertCodeSnippet,
 }) => {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!query.trim()) return
-    onSendMessage(query)
-    setQuery('')
-  }
+    e.preventDefault();
+    if (!query.trim()) return;
+    onSendMessage(query);
+    setQuery("");
+  };
 
   return (
     <div className="flex flex-col h-[calc(100%-1.5rem)] text-zinc-800 dark:text-zinc-200">
@@ -42,12 +47,12 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
           <div
             key={index}
             className={`rounded-lg px-3 py-2 text-xs leading-5 shadow-xs ${
-              msg.role === 'user'
-                ? 'bg-blue-600 text-white ml-6'
-                : 'bg-white dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-750 text-zinc-800 dark:text-zinc-200 mr-2'
+              msg.role === "user"
+                ? "bg-blue-600 text-white ml-6"
+                : "bg-white dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-750 text-zinc-800 dark:text-zinc-200 mr-2"
             }`}
           >
-            {msg.role === 'ai' && (
+            {msg.role === "ai" && (
               <div className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-0.5 flex items-center gap-1">
                 <Sparkles className="size-3 text-amber-500" />
                 <span>Aegis AI</span>
@@ -86,5 +91,5 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
         </button>
       </form>
     </div>
-  )
-}
+  );
+};

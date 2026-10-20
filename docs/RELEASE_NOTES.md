@@ -60,7 +60,17 @@
 - **File Staging & Diff Inspection**: Inspect modified, added, and untracked files; stage individual files or all changes; discard modifications safely.
 - **Commit Authoring**: Create atomic Git commits directly from the sidebar without opening a terminal.
 
-### 7. Global Search & Replace
+### 8. Statistical Research Workbench & Data Ribbon
+- **Ergonomic Data Ribbon**: Structured action cards for Data Management, Assumption Tests, Parametric, Non-Parametric, Multivariate, and LaTeX Output Actions.
+- **Measurement Scale Guardrails**: Enforces scientific measurement rules across Nominal, Ordinal, Interval, and Ratio scales to prevent methodological errors before computation starts.
+- **Interactive Statistical Method Advisor**: Built-in modal guide walking researchers through the 4-stage empirical quantitative testing workflow (Instrument Reliability &rarr; Normality &rarr; Homoscedasticity &rarr; Hypothesis Testing).
+- **Comprehensive Statistical Test Suite**:
+  - *Prerequisite & Assumption Tests*: Shapiro-Wilk, Kolmogorov-Smirnov, Levene's Test, Cronbach's Alpha instrument reliability.
+  - *Parametric Tests*: One-Sample t-Test, Independent Samples t-Test (Student & Welch's correction), Paired t-Test, One-Way ANOVA (Tukey HSD post-hoc), Two-Way Factorial ANOVA, Bivariate Pearson Correlation, Multiple Linear Regression (VIF collinearity), MANOVA (Wilks' Lambda), and PCA.
+  - *Non-Parametric Tests*: Mann-Whitney U, Wilcoxon Signed-Rank, Kruskal-Wallis H, Spearman Rank Correlation, and Chi-Square Test of Independence.
+- **Dynamic Multi-Style LaTeX Table Generator**: Generates publication-ready LaTeX tables across APA (`booktabs`), IEEE, and Classic LaTeX styles, rendered inside a dedicated full centered modal dialog with instant copy-to-clipboard and insert-to-editor triggers.
+
+### 9. Global Search & Replace
 - **Project-Wide Search**: Scan all workspace files for keywords and expressions.
 - **Advanced Filters**: Toggle Case Sensitivity (`Aa`), Match Whole Word (`\b`), and Regular Expressions (`.*`).
 - **Search & Replace Capabilities**:
@@ -68,15 +78,15 @@
   - Per-match hover replacement for fine-grained control.
   - Atomic backend replacement endpoint (`POST /api/projects/{name}/search/replace`).
 
-### 8. Review Notes Panel
+### 10. Review Notes Panel
 - **Annotation Scanner**: Scans open documents for `TODO`, `FIXME`, and custom review tags.
 - **Jump to Line**: Click any scanned annotation to jump directly to the target line in the Monaco editor.
 
-### 9. Theming & Accessibility
+### 11. Theming & Accessibility
 - **Theme Switcher**: Instant switching between Light and Dark mode with automatic persistence in `localStorage`.
 - **Zinc Palette**: Professional, distraction-free neutral color palette optimized for long research sessions.
 
-### 10. Automation Shell Runners
+### 12. Automation Shell Runners
 - **`setup.sh`**: One-line cross-platform setup script detecting macOS (Homebrew), Debian/Ubuntu (APT), Fedora (DNF), and Windows WSL. Automatically provisions Python venv, LaTeX binaries, storage workspaces, and frontend dependencies.
 - **`run.sh`**: Concurrent process manager launching FastAPI and Vite together with port collision checks and clean `SIGINT`/`SIGTERM` signal trapping.
 
@@ -92,10 +102,11 @@
   - `pdfjs-dist` 4.10 (Native continuous multi-page canvas engine with DPR scaling)
   - `lucide-react` icons
   - `zustand` 5.0 for state management
-- **Backend**:
+- **Backend & Statistical Engine**:
   - FastAPI 0.115+ (Asynchronous REST & WebSocket API)
   - Uvicorn 0.32+
   - Pydantic v2.10+
+  - Polars, NumPy, SciPy & Statsmodels for high-performance statistical computations
   - WatchFiles for filesystem event notification
 - **Compiler & Tools**:
   - TeX Live / MacTeX / BasicTeX (`pdflatex`, `bibtex`, `synctex`)

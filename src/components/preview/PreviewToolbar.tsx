@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 import {
   ZoomIn,
   ZoomOut,
@@ -8,26 +8,26 @@ import {
   ChevronRight,
   FileSpreadsheet,
   RefreshCw,
-} from 'lucide-react'
-import { PaperSize } from '../../types'
+} from "lucide-react";
+import { PaperSize } from "../../types";
 
 export interface PreviewToolbarProps {
-  currentPage: number
-  totalPages: number
-  zoom: number // 1.0 = 100%
-  paperSize: PaperSize
-  onChangePage?: (page: number) => void
-  onZoomIn: () => void
-  onZoomOut: () => void
-  onSetZoom: (zoom: number) => void
-  onFitWidth: () => void
-  onFitPage: () => void
-  onChangePaperSize: (size: PaperSize) => void
-  syncEnabled?: boolean
-  onToggleSync?: () => void
+  currentPage: number;
+  totalPages: number;
+  zoom: number; // 1.0 = 100%
+  paperSize: PaperSize;
+  onChangePage?: (page: number) => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onSetZoom: (zoom: number) => void;
+  onFitWidth: () => void;
+  onFitPage: () => void;
+  onChangePaperSize: (size: PaperSize) => void;
+  syncEnabled?: boolean;
+  onToggleSync?: () => void;
 }
 
-const ZOOM_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+const ZOOM_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
 export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
   currentPage,
@@ -44,7 +44,7 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
   syncEnabled = true,
   onToggleSync,
 }) => {
-  const zoomPercent = Math.round(zoom * 100)
+  const zoomPercent = Math.round(zoom * 100);
 
   return (
     <div className="flex items-center justify-between px-3 py-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 text-xs border-b border-zinc-200 dark:border-zinc-800 select-none shrink-0 shadow-xs">
@@ -95,12 +95,12 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
           className="bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 py-0.5 text-[11px] font-mono focus:outline-none focus:border-blue-500 cursor-pointer"
         >
           {ZOOM_OPTIONS.map((val) => {
-            const p = Math.round(val * 100)
+            const p = Math.round(val * 100);
             return (
               <option key={p} value={p}>
                 {p}%
               </option>
-            )
+            );
           })}
           {!ZOOM_OPTIONS.some((v) => Math.round(v * 100) === zoomPercent) && (
             <option value={zoomPercent}>{zoomPercent}%</option>
@@ -144,14 +144,20 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
             <button
               type="button"
               onClick={onToggleSync}
-              title={syncEnabled ? 'Sync PDF → Code aktif (Klik untuk matikan)' : 'Sync PDF → Code nonaktif (Klik untuk nyalakan)'}
+              title={
+                syncEnabled
+                  ? "Sync PDF → Code aktif (Klik untuk matikan)"
+                  : "Sync PDF → Code nonaktif (Klik untuk nyalakan)"
+              }
               className={`px-1.5 py-1 rounded transition-colors flex items-center gap-1 text-[11px] font-medium ${
                 syncEnabled
-                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20'
-                  : 'text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800'
+                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
+                  : "text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800"
               }`}
             >
-              <RefreshCw className={`size-3.5 ${syncEnabled ? 'text-blue-500 dark:text-blue-400' : 'text-zinc-400'}`} />
+              <RefreshCw
+                className={`size-3.5 ${syncEnabled ? "text-blue-500 dark:text-blue-400" : "text-zinc-400"}`}
+              />
               <span>Sync</span>
             </button>
           </>
@@ -161,18 +167,18 @@ export const PreviewToolbar: React.FC<PreviewToolbarProps> = ({
       {/* Right: Paper Layout Preset Selector */}
       <div className="flex items-center gap-1.5">
         <FileSpreadsheet className="size-3.5 text-zinc-400" />
-          <select
-            value={paperSize}
-            onChange={(e) => onChangePaperSize(e.target.value as PaperSize)}
-            aria-label="Paper Size"
-            className="bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[11px] focus:outline-none focus:border-blue-500 cursor-pointer"
-          >
-            <option value="a4">A4 (210×297)</option>
-            <option value="f4">F4 (215×330)</option>
-            <option value="letter">Letter</option>
-            <option value="custom">Custom .tex</option>
-          </select>
-        </div>
+        <select
+          value={paperSize}
+          onChange={(e) => onChangePaperSize(e.target.value as PaperSize)}
+          aria-label="Paper Size"
+          className="bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[11px] focus:outline-none focus:border-blue-500 cursor-pointer"
+        >
+          <option value="a4">A4 (210×297)</option>
+          <option value="f4">F4 (215×330)</option>
+          <option value="letter">Letter</option>
+          <option value="custom">Custom .tex</option>
+        </select>
       </div>
-    )
-  }
+    </div>
+  );
+};

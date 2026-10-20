@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   GitBranch,
   RefreshCw,
@@ -14,79 +14,96 @@ import {
   AlertCircle,
   X,
   GitCommit,
-} from 'lucide-react'
-import { apiClient } from '../../services/api'
-import { GitCommitNode, GitLogResponse } from '../../types'
+} from "lucide-react";
+import { apiClient } from "../../services/api";
+import { GitCommitNode, GitLogResponse } from "../../types";
 
-const LANE_COLORS = ['#4078f2', '#98c379', '#e5c07b', '#c678dd', '#e06c75', '#56b6c2']
+const LANE_COLORS = [
+  "#4078f2",
+  "#98c379",
+  "#e5c07b",
+  "#c678dd",
+  "#e06c75",
+  "#56b6c2",
+];
 
 interface GitFileChange {
-  status: string
-  path: string
-  staged: boolean
+  status: string;
+  path: string;
+  staged: boolean;
 }
 
 interface GitStatusData {
-  isGitRepo: boolean
-  branch: string | null
-  modifiedCount: number
-  files: GitFileChange[]
-  staged: GitFileChange[]
-  unstaged: GitFileChange[]
+  isGitRepo: boolean;
+  branch: string | null;
+  modifiedCount: number;
+  files: GitFileChange[];
+  staged: GitFileChange[];
+  unstaged: GitFileChange[];
 }
 
 interface GitBranchesData {
-  branches: string[]
-  current: string
+  branches: string[];
+  current: string;
 }
 
 export interface GitTrackPanelProps {
-  projectName: string
-  onSelectFile?: (filePath: string) => void
+  projectName: string;
+  onSelectFile?: (filePath: string) => void;
 }
 
-export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSelectFile }) => {
-  const [data, setData] = useState<GitStatusData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(false)
+export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({
+  projectName,
+  onSelectFile,
+}) => {
+  const [data, setData] = useState<GitStatusData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
 
   // Commit state
-  const [commitMessage, setCommitMessage] = useState('')
-  const [isCommitting, setIsCommitting] = useState(false)
-  const [commitError, setCommitError] = useState<string | null>(null)
+  const [commitMessage, setCommitMessage] = useState("");
+  const [isCommitting, setIsCommitting] = useState(false);
+  const [commitError, setCommitError] = useState<string | null>(null);
 
   // Branch management state
-  const [isBranchMenuOpen, setIsBranchMenuOpen] = useState(false)
-  const [branchesData, setBranchesData] = useState<GitBranchesData | null>(null)
-  const [newBranchName, setNewBranchName] = useState('')
-  const [isCreatingBranch, setIsCreatingBranch] = useState(false)
-  const [branchActionLoading, setBranchActionLoading] = useState(false)
-  const [branchError, setBranchError] = useState<string | null>(null)
-  const branchMenuRef = useRef<HTMLDivElement>(null)
+  const [isBranchMenuOpen, setIsBranchMenuOpen] = useState(false);
+  const [branchesData, setBranchesData] = useState<GitBranchesData | null>(
+    null,
+  );
+  const [newBranchName, setNewBranchName] = useState("");
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false);
+  const [branchActionLoading, setBranchActionLoading] = useState(false);
+  const [branchError, setBranchError] = useState<string | null>(null);
+  const branchMenuRef = useRef<HTMLDivElement>(null);
 
   // Diff state
-  const [activeDiffFile, setActiveDiffFile] = useState<{ path: string; staged: boolean } | null>(null)
-  const [selectedFileDiff, setSelectedFileDiff] = useState<string | null>(null)
-  const [diffLoading, setDiffLoading] = useState(false)
+  const [activeDiffFile, setActiveDiffFile] = useState<{
+    path: string;
+    staged: boolean;
+  } | null>(null);
+  const [selectedFileDiff, setSelectedFileDiff] = useState<string | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
 
   // Section collapse state
-  const [isStagedOpen, setIsStagedOpen] = useState(true)
-  const [isChangesOpen, setIsChangesOpen] = useState(true)
-  const [isGraphOpen, setIsGraphOpen] = useState(true)
+  const [isStagedOpen, setIsStagedOpen] = useState(true);
+  const [isChangesOpen, setIsChangesOpen] = useState(true);
+  const [isGraphOpen, setIsGraphOpen] = useState(true);
 
   // Commit Graph state
-  const [commits, setCommits] = useState<GitCommitNode[]>([])
-  const [graphLoading, setGraphLoading] = useState(false)
-  const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(null)
+  const [commits, setCommits] = useState<GitCommitNode[]>([]);
+  const [graphLoading, setGraphLoading] = useState(false);
+  const [selectedCommitHash, setSelectedCommitHash] = useState<string | null>(
+    null,
+  );
 
   // Fetch status
   const fetchStatus = useCallback(async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const res = await apiClient.get<GitStatusData>(
         `/api/projects/${encodeURIComponent(projectName)}/git/status`,
-      )
-      setData(res)
+      );
+      setData(res);
     } catch {
       setData({
         isGitRepo: false,
@@ -95,269 +112,303 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
         files: [],
         staged: [],
         unstaged: [],
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [projectName])
+  }, [projectName]);
 
   // Fetch branches
   const fetchBranches = useCallback(async () => {
     try {
       const res = await apiClient.get<GitBranchesData>(
         `/api/projects/${encodeURIComponent(projectName)}/git/branches`,
-      )
-      setBranchesData(res)
+      );
+      setBranchesData(res);
     } catch {
       // ignore
     }
-  }, [projectName])
+  }, [projectName]);
 
   // Fetch git log
   const fetchGitLog = useCallback(async () => {
-    setGraphLoading(true)
+    setGraphLoading(true);
     try {
       const res = await apiClient.get<GitLogResponse>(
         `/api/projects/${encodeURIComponent(projectName)}/git/log`,
-      )
-      setCommits(res.commits || [])
+      );
+      setCommits(res.commits || []);
     } catch {
-      setCommits([])
+      setCommits([]);
     } finally {
-      setGraphLoading(false)
+      setGraphLoading(false);
     }
-  }, [projectName])
+  }, [projectName]);
 
   useEffect(() => {
-    fetchStatus()
-  }, [fetchStatus])
+    fetchStatus();
+  }, [fetchStatus]);
 
   useEffect(() => {
     if (data?.isGitRepo) {
-      fetchGitLog()
+      fetchGitLog();
     }
-  }, [data?.isGitRepo, fetchGitLog])
+  }, [data?.isGitRepo, fetchGitLog]);
 
   // Close branch dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (branchMenuRef.current && !branchMenuRef.current.contains(e.target as Node)) {
-        setIsBranchMenuOpen(false)
-        setBranchError(null)
+      if (
+        branchMenuRef.current &&
+        !branchMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsBranchMenuOpen(false);
+        setBranchError(null);
       }
-    }
+    };
     if (isBranchMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isBranchMenuOpen])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isBranchMenuOpen]);
 
   // Initialize Git repo
   const handleInitGit = async () => {
-    setIsInitializing(true)
+    setIsInitializing(true);
     try {
       await apiClient.post<{ success: boolean }>(
         `/api/projects/${encodeURIComponent(projectName)}/git/init`,
-      )
-      await fetchStatus()
-      await fetchGitLog()
+      );
+      await fetchStatus();
+      await fetchGitLog();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to initialize Git repository.'
-      alert(msg)
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Failed to initialize Git repository.";
+      alert(msg);
     } finally {
-      setIsInitializing(false)
+      setIsInitializing(false);
     }
-  }
+  };
 
   // Toggle branch menu
   const handleToggleBranchMenu = () => {
     if (!isBranchMenuOpen) {
-      fetchBranches()
+      fetchBranches();
     }
-    setIsBranchMenuOpen((prev) => !prev)
-    setBranchError(null)
-  }
+    setIsBranchMenuOpen((prev) => !prev);
+    setBranchError(null);
+  };
 
   // Checkout existing branch
   const handleCheckoutBranch = async (branch: string) => {
     if (branch === data?.branch) {
-      setIsBranchMenuOpen(false)
-      return
+      setIsBranchMenuOpen(false);
+      return;
     }
-    setBranchActionLoading(true)
-    setBranchError(null)
+    setBranchActionLoading(true);
+    setBranchError(null);
     try {
       await apiClient.post<{ success: boolean }>(
         `/api/projects/${encodeURIComponent(projectName)}/git/checkout`,
         { branch },
-      )
-      setIsBranchMenuOpen(false)
-      await fetchStatus()
-      await fetchBranches()
-      await fetchGitLog()
+      );
+      setIsBranchMenuOpen(false);
+      await fetchStatus();
+      await fetchBranches();
+      await fetchGitLog();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to switch branch.'
-      setBranchError(msg)
+      const msg =
+        err instanceof Error ? err.message : "Failed to switch branch.";
+      setBranchError(msg);
     } finally {
-      setBranchActionLoading(false)
+      setBranchActionLoading(false);
     }
-  }
+  };
 
   // Create new branch
   const handleCreateBranch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const trimmed = newBranchName.trim()
-    if (!trimmed) return
+    e.preventDefault();
+    const trimmed = newBranchName.trim();
+    if (!trimmed) return;
 
-    setIsCreatingBranch(true)
-    setBranchError(null)
+    setIsCreatingBranch(true);
+    setBranchError(null);
     try {
       await apiClient.post<{ success: boolean }>(
         `/api/projects/${encodeURIComponent(projectName)}/git/branch/create`,
         { name: trimmed, checkout: true },
-      )
-      setNewBranchName('')
-      setIsBranchMenuOpen(false)
-      await fetchStatus()
-      await fetchBranches()
-      await fetchGitLog()
+      );
+      setNewBranchName("");
+      setIsBranchMenuOpen(false);
+      await fetchStatus();
+      await fetchBranches();
+      await fetchGitLog();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to create new branch.'
-      setBranchError(msg)
+      const msg =
+        err instanceof Error ? err.message : "Failed to create new branch.";
+      setBranchError(msg);
     } finally {
-      setIsCreatingBranch(false)
+      setIsCreatingBranch(false);
     }
-  }
+  };
 
   // Commit changes (with Smart Commit)
   const handleCommit = async () => {
-    const trimmed = commitMessage.trim()
+    const trimmed = commitMessage.trim();
     if (!trimmed) {
-      setCommitError('Please enter a commit message.')
-      return
+      setCommitError("Please enter a commit message.");
+      return;
     }
 
-    setIsCommitting(true)
-    setCommitError(null)
+    setIsCommitting(true);
+    setCommitError(null);
     try {
       await apiClient.post<{ success: boolean }>(
         `/api/projects/${encodeURIComponent(projectName)}/git/commit`,
         { message: trimmed, smartCommit: true },
-      )
-      setCommitMessage('')
-      setActiveDiffFile(null)
-      setSelectedFileDiff(null)
-      await fetchStatus()
-      await fetchGitLog()
+      );
+      setCommitMessage("");
+      setActiveDiffFile(null);
+      setSelectedFileDiff(null);
+      await fetchStatus();
+      await fetchGitLog();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to execute commit.'
-      setCommitError(msg)
+      const msg =
+        err instanceof Error ? err.message : "Failed to execute commit.";
+      setCommitError(msg);
     } finally {
-      setIsCommitting(false)
+      setIsCommitting(false);
     }
-  }
+  };
 
   // Stage single file
   const handleStageFile = async (path: string, e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     try {
-      await apiClient.post(`/api/projects/${encodeURIComponent(projectName)}/git/stage`, {
-        file: path,
-      })
-      await fetchStatus()
+      await apiClient.post(
+        `/api/projects/${encodeURIComponent(projectName)}/git/stage`,
+        {
+          file: path,
+        },
+      );
+      await fetchStatus();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to stage file.'
-      alert(msg)
+      const msg = err instanceof Error ? err.message : "Failed to stage file.";
+      alert(msg);
     }
-  }
+  };
 
   // Stage all
   const handleStageAll = async (e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     try {
-      await apiClient.post(`/api/projects/${encodeURIComponent(projectName)}/git/stage`, {
-        all: true,
-      })
-      await fetchStatus()
+      await apiClient.post(
+        `/api/projects/${encodeURIComponent(projectName)}/git/stage`,
+        {
+          all: true,
+        },
+      );
+      await fetchStatus();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to stage all files.'
-      alert(msg)
+      const msg =
+        err instanceof Error ? err.message : "Failed to stage all files.";
+      alert(msg);
     }
-  }
+  };
 
   // Unstage single file
   const handleUnstageFile = async (path: string, e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     try {
-      await apiClient.post(`/api/projects/${encodeURIComponent(projectName)}/git/unstage`, {
-        file: path,
-      })
-      await fetchStatus()
+      await apiClient.post(
+        `/api/projects/${encodeURIComponent(projectName)}/git/unstage`,
+        {
+          file: path,
+        },
+      );
+      await fetchStatus();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to unstage file.'
-      alert(msg)
+      const msg =
+        err instanceof Error ? err.message : "Failed to unstage file.";
+      alert(msg);
     }
-  }
+  };
 
   // Unstage all
   const handleUnstageAll = async (e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     try {
-      await apiClient.post(`/api/projects/${encodeURIComponent(projectName)}/git/unstage`, {
-        all: true,
-      })
-      await fetchStatus()
+      await apiClient.post(
+        `/api/projects/${encodeURIComponent(projectName)}/git/unstage`,
+        {
+          all: true,
+        },
+      );
+      await fetchStatus();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to unstage all files.'
-      alert(msg)
+      const msg =
+        err instanceof Error ? err.message : "Failed to unstage all files.";
+      alert(msg);
     }
-  }
+  };
 
   // Discard file changes
   const handleDiscardFile = async (path: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const ok = window.confirm(`Discard all changes in "${path}"? Local changes will be lost.`)
-    if (!ok) return
+    e.stopPropagation();
+    const ok = window.confirm(
+      `Discard all changes in "${path}"? Local changes will be lost.`,
+    );
+    if (!ok) return;
 
     try {
-      await apiClient.post(`/api/projects/${encodeURIComponent(projectName)}/git/discard`, {
-        file: path,
-      })
+      await apiClient.post(
+        `/api/projects/${encodeURIComponent(projectName)}/git/discard`,
+        {
+          file: path,
+        },
+      );
       if (activeDiffFile?.path === path) {
-        setActiveDiffFile(null)
-        setSelectedFileDiff(null)
+        setActiveDiffFile(null);
+        setSelectedFileDiff(null);
       }
-      await fetchStatus()
+      await fetchStatus();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to discard file changes.'
-      alert(msg)
+      const msg =
+        err instanceof Error ? err.message : "Failed to discard file changes.";
+      alert(msg);
     }
-  }
+  };
 
   // Fetch diff
-  const handleToggleDiff = async (path: string, staged: boolean, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleToggleDiff = async (
+    path: string,
+    staged: boolean,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
     if (activeDiffFile?.path === path && activeDiffFile.staged === staged) {
-      setActiveDiffFile(null)
-      setSelectedFileDiff(null)
-      return
+      setActiveDiffFile(null);
+      setSelectedFileDiff(null);
+      return;
     }
 
-    setDiffLoading(true)
-    setActiveDiffFile({ path, staged })
+    setDiffLoading(true);
+    setActiveDiffFile({ path, staged });
     try {
       const res = await apiClient.get<{ diff: string }>(
         `/api/projects/${encodeURIComponent(projectName)}/git/diff?file=${encodeURIComponent(path)}&staged=${staged}`,
-      )
-      setSelectedFileDiff(res.diff || 'No text differences.')
+      );
+      setSelectedFileDiff(res.diff || "No text differences.");
     } catch {
-      setSelectedFileDiff('Failed to load diff.')
+      setSelectedFileDiff("Failed to load diff.");
     } finally {
-      setDiffLoading(false)
+      setDiffLoading(false);
     }
-  }
+  };
 
   // CASE 1: NOT A GIT REPO -> INITIALIZE UI
   if (data && !data.isGitRepo) {
@@ -370,7 +421,8 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           Git Repository Not Initialized
         </h4>
         <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-4 leading-relaxed">
-          Workspace "{projectName}" is not tracked with Git yet. Initialize now to track document revisions and history.
+          Workspace "{projectName}" is not tracked with Git yet. Initialize now
+          to track document revisions and history.
         </p>
 
         <button
@@ -392,17 +444,20 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           )}
         </button>
       </div>
-    )
+    );
   }
 
-  const stagedFiles = data?.staged || []
-  const unstagedFiles = data?.unstaged || []
-  const hasAnyChanges = stagedFiles.length > 0 || unstagedFiles.length > 0
+  const stagedFiles = data?.staged || [];
+  const unstagedFiles = data?.unstaged || [];
+  const hasAnyChanges = stagedFiles.length > 0 || unstagedFiles.length > 0;
 
   return (
     <div className="flex flex-col gap-2.5 select-none text-xs">
       {/* 1. Branch Toolbar & Dropdown */}
-      <div className="relative pb-1.5 border-b border-zinc-200 dark:border-zinc-800" ref={branchMenuRef}>
+      <div
+        className="relative pb-1.5 border-b border-zinc-200 dark:border-zinc-800"
+        ref={branchMenuRef}
+      >
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -411,7 +466,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             title="Click to switch or create branch"
           >
             <GitBranch className="size-3.5 text-[#4078f2] dark:text-[#61afef] shrink-0" />
-            <span className="font-mono text-xs truncate">{data?.branch || 'main'}</span>
+            <span className="font-mono text-xs truncate">
+              {data?.branch || "main"}
+            </span>
             <ChevronDown className="size-3 text-zinc-400 shrink-0" />
           </button>
 
@@ -422,7 +479,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             title="Refresh Git Status"
             className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <RefreshCw className={`size-3 ${loading ? 'animate-spin text-[#4078f2] dark:text-[#61afef]' : ''}`} />
+            <RefreshCw
+              className={`size-3 ${loading ? "animate-spin text-[#4078f2] dark:text-[#61afef]" : ""}`}
+            />
           </button>
         </div>
 
@@ -449,7 +508,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             {/* Existing branches list */}
             <div className="max-h-36 overflow-y-auto space-y-0.5">
               {branchesData?.branches.map((b) => {
-                const isCurrent = b === data?.branch
+                const isCurrent = b === data?.branch;
                 return (
                   <button
                     key={b}
@@ -458,19 +517,22 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                     onClick={() => handleCheckoutBranch(b)}
                     className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-colors font-mono text-[11px] ${
                       isCurrent
-                        ? 'bg-blue-50 dark:bg-zinc-700 text-[#4078f2] dark:text-[#61afef] font-bold'
-                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/60'
+                        ? "bg-blue-50 dark:bg-zinc-700 text-[#4078f2] dark:text-[#61afef] font-bold"
+                        : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700/60"
                     }`}
                   >
                     <span className="truncate">{b}</span>
                     {isCurrent && <Check className="size-3 shrink-0" />}
                   </button>
-                )
+                );
               })}
             </div>
 
             {/* Create new branch form */}
-            <form onSubmit={handleCreateBranch} className="pt-1.5 border-t border-zinc-100 dark:border-zinc-700/60 flex gap-1">
+            <form
+              onSubmit={handleCreateBranch}
+              className="pt-1.5 border-t border-zinc-100 dark:border-zinc-700/60 flex gap-1"
+            >
               <input
                 type="text"
                 placeholder="Create new branch..."
@@ -484,7 +546,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                 disabled={isCreatingBranch || !newBranchName.trim()}
                 className="px-2 py-1 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] disabled:opacity-50 text-white dark:text-zinc-950 rounded text-[11px] font-semibold transition-colors shrink-0"
               >
-                {isCreatingBranch ? '...' : '+ Create'}
+                {isCreatingBranch ? "..." : "+ Create"}
               </button>
             </form>
           </div>
@@ -498,9 +560,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           value={commitMessage}
           onChange={(e) => setCommitMessage(e.target.value)}
           onKeyDown={(e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-              e.preventDefault()
-              handleCommit()
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+              e.preventDefault();
+              handleCommit();
             }
           }}
           placeholder="Write commit message (Ctrl+Enter)..."
@@ -521,8 +583,8 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           disabled={isCommitting || !hasAnyChanges}
           title={
             stagedFiles.length === 0 && unstagedFiles.length > 0
-              ? 'Smart Commit: Automatically stage all changes then commit'
-              : 'Commit staged files'
+              ? "Smart Commit: Automatically stage all changes then commit"
+              : "Commit staged files"
           }
           className="w-full py-1.5 bg-[#4078f2] hover:bg-[#3362c4] dark:bg-[#61afef] dark:hover:bg-[#528bff] disabled:opacity-40 disabled:hover:bg-[#4078f2] dark:disabled:hover:bg-[#61afef] text-white dark:text-zinc-950 rounded text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors"
         >
@@ -535,7 +597,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             <>
               <span>Commit</span>
               {stagedFiles.length === 0 && unstagedFiles.length > 0 && (
-                <span className="text-[10px] font-normal opacity-90">(Smart Commit All)</span>
+                <span className="text-[10px] font-normal opacity-90">
+                  (Smart Commit All)
+                </span>
               )}
             </>
           )}
@@ -551,7 +615,11 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
               onClick={() => setIsStagedOpen((prev) => !prev)}
               className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-200"
             >
-              {isStagedOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+              {isStagedOpen ? (
+                <ChevronDown className="size-3.5" />
+              ) : (
+                <ChevronRight className="size-3.5" />
+              )}
               <span>STAGED CHANGES</span>
               <span className="font-mono bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-1.5 py-0.2 rounded-full text-[10px] ml-1">
                 {stagedFiles.length}
@@ -571,7 +639,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           {isStagedOpen && (
             <div className="space-y-1">
               {stagedFiles.map((f) => {
-                const isExpanded = activeDiffFile?.path === f.path && activeDiffFile.staged === true
+                const isExpanded =
+                  activeDiffFile?.path === f.path &&
+                  activeDiffFile.staged === true;
                 return (
                   <div
                     key={`staged-${f.path}`}
@@ -585,7 +655,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                         title={f.path}
                       >
                         <FileText className="size-3.5 text-zinc-400 shrink-0" />
-                        <span className="truncate text-xs text-zinc-800 dark:text-zinc-200">{f.path}</span>
+                        <span className="truncate text-xs text-zinc-800 dark:text-zinc-200">
+                          {f.path}
+                        </span>
                       </button>
 
                       <div className="flex items-center gap-1 shrink-0">
@@ -599,11 +671,15 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                           title="View Differences (Diff)"
                           className={`p-0.5 rounded transition-colors ${
                             isExpanded
-                              ? 'text-[#4078f2] dark:text-[#61afef]'
-                              : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                              ? "text-[#4078f2] dark:text-[#61afef]"
+                              : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                           }`}
                         >
-                          {isExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                          {isExpanded ? (
+                            <ChevronDown className="size-3.5" />
+                          ) : (
+                            <ChevronRight className="size-3.5" />
+                          )}
                         </button>
 
                         <button
@@ -621,29 +697,33 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                     {isExpanded && (
                       <div className="p-2 bg-zinc-50 dark:bg-zinc-950 font-mono text-[10px] overflow-x-auto max-h-48 border-t border-zinc-200 dark:border-zinc-800">
                         {diffLoading ? (
-                          <div className="text-zinc-400 animate-pulse">Loading diff...</div>
+                          <div className="text-zinc-400 animate-pulse">
+                            Loading diff...
+                          </div>
                         ) : selectedFileDiff ? (
                           <div className="space-y-0.5 whitespace-pre">
-                            {selectedFileDiff.split('\n').map((line, idx) => {
-                              const isAdd = line.startsWith('+') && !line.startsWith('+++')
-                              const isDel = line.startsWith('-') && !line.startsWith('---')
-                              const isHeader = line.startsWith('@@')
+                            {selectedFileDiff.split("\n").map((line, idx) => {
+                              const isAdd =
+                                line.startsWith("+") && !line.startsWith("+++");
+                              const isDel =
+                                line.startsWith("-") && !line.startsWith("---");
+                              const isHeader = line.startsWith("@@");
                               return (
                                 <div
                                   key={idx}
                                   className={
                                     isAdd
-                                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1'
+                                      ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1"
                                       : isDel
-                                      ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1'
-                                      : isHeader
-                                      ? 'text-sky-600 dark:text-sky-400 font-bold'
-                                      : 'text-zinc-600 dark:text-zinc-400'
+                                        ? "text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1"
+                                        : isHeader
+                                          ? "text-sky-600 dark:text-sky-400 font-bold"
+                                          : "text-zinc-600 dark:text-zinc-400"
                                   }
                                 >
-                                  {line || ' '}
+                                  {line || " "}
                                 </div>
-                              )
+                              );
                             })}
                           </div>
                         ) : (
@@ -652,7 +732,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                       </div>
                     )}
                   </div>
-                )
+                );
               })}
             </div>
           )}
@@ -667,7 +747,11 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             onClick={() => setIsChangesOpen((prev) => !prev)}
             className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-200"
           >
-            {isChangesOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            {isChangesOpen ? (
+              <ChevronDown className="size-3.5" />
+            ) : (
+              <ChevronRight className="size-3.5" />
+            )}
             <span>CHANGES</span>
             <span className="font-mono bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-1.5 py-0.2 rounded-full text-[10px] ml-1">
               {unstagedFiles.length}
@@ -690,9 +774,11 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
           <div className="space-y-1">
             {unstagedFiles.length > 0 ? (
               unstagedFiles.map((f) => {
-                const isExpanded = activeDiffFile?.path === f.path && activeDiffFile.staged === false
-                const isM = f.status === 'M'
-                const isD = f.status === 'D'
+                const isExpanded =
+                  activeDiffFile?.path === f.path &&
+                  activeDiffFile.staged === false;
+                const isM = f.status === "M";
+                const isD = f.status === "D";
                 return (
                   <div
                     key={`unstaged-${f.path}`}
@@ -706,17 +792,19 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                         title={f.path}
                       >
                         <FileText className="size-3.5 text-zinc-400 shrink-0" />
-                        <span className="truncate text-xs text-zinc-800 dark:text-zinc-200">{f.path}</span>
+                        <span className="truncate text-xs text-zinc-800 dark:text-zinc-200">
+                          {f.path}
+                        </span>
                       </button>
 
                       <div className="flex items-center gap-1 shrink-0">
                         <span
                           className={`text-[9px] font-mono font-bold px-1 rounded ${
                             isM
-                              ? 'text-amber-500 bg-amber-500/10'
+                              ? "text-amber-500 bg-amber-500/10"
                               : isD
-                              ? 'text-rose-500 bg-rose-500/10'
-                              : 'text-emerald-500 bg-emerald-500/10'
+                                ? "text-rose-500 bg-rose-500/10"
+                                : "text-emerald-500 bg-emerald-500/10"
                           }`}
                         >
                           {f.status}
@@ -728,11 +816,15 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                           title="View Differences (Diff)"
                           className={`p-0.5 rounded transition-colors ${
                             isExpanded
-                              ? 'text-[#4078f2] dark:text-[#61afef]'
-                              : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                              ? "text-[#4078f2] dark:text-[#61afef]"
+                              : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                           }`}
                         >
-                          {isExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                          {isExpanded ? (
+                            <ChevronDown className="size-3.5" />
+                          ) : (
+                            <ChevronRight className="size-3.5" />
+                          )}
                         </button>
 
                         <button
@@ -759,29 +851,33 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                     {isExpanded && (
                       <div className="p-2 bg-zinc-50 dark:bg-zinc-950 font-mono text-[10px] overflow-x-auto max-h-48 border-t border-zinc-200 dark:border-zinc-800">
                         {diffLoading ? (
-                          <div className="text-zinc-400 animate-pulse">Loading diff...</div>
+                          <div className="text-zinc-400 animate-pulse">
+                            Loading diff...
+                          </div>
                         ) : selectedFileDiff ? (
                           <div className="space-y-0.5 whitespace-pre">
-                            {selectedFileDiff.split('\n').map((line, idx) => {
-                              const isAdd = line.startsWith('+') && !line.startsWith('+++')
-                              const isDel = line.startsWith('-') && !line.startsWith('---')
-                              const isHeader = line.startsWith('@@')
+                            {selectedFileDiff.split("\n").map((line, idx) => {
+                              const isAdd =
+                                line.startsWith("+") && !line.startsWith("+++");
+                              const isDel =
+                                line.startsWith("-") && !line.startsWith("---");
+                              const isHeader = line.startsWith("@@");
                               return (
                                 <div
                                   key={idx}
                                   className={
                                     isAdd
-                                      ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1'
+                                      ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1"
                                       : isDel
-                                      ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1'
-                                      : isHeader
-                                      ? 'text-sky-600 dark:text-sky-400 font-bold'
-                                      : 'text-zinc-600 dark:text-zinc-400'
+                                        ? "text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1"
+                                        : isHeader
+                                          ? "text-sky-600 dark:text-sky-400 font-bold"
+                                          : "text-zinc-600 dark:text-zinc-400"
                                   }
                                 >
-                                  {line || ' '}
+                                  {line || " "}
                                 </div>
-                              )
+                              );
                             })}
                           </div>
                         ) : (
@@ -790,7 +886,7 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                       </div>
                     )}
                   </div>
-                )
+                );
               })
             ) : (
               <div className="text-center py-6 text-zinc-400 dark:text-zinc-500 text-xs italic">
@@ -809,7 +905,11 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             onClick={() => setIsGraphOpen((prev) => !prev)}
             className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-200"
           >
-            {isGraphOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            {isGraphOpen ? (
+              <ChevronDown className="size-3.5" />
+            ) : (
+              <ChevronRight className="size-3.5" />
+            )}
             <GitCommit className="size-3 text-[#4078f2] dark:text-[#61afef]" />
             <span>COMMITS & GRAPH</span>
             <span className="font-mono bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-1.5 py-0.2 rounded-full text-[10px] ml-1">
@@ -823,7 +923,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             title="Refresh Commit Graph"
             className="p-0.5 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
           >
-            <RefreshCw className={`size-3.5 ${graphLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`size-3.5 ${graphLoading ? "animate-spin" : ""}`}
+            />
           </button>
         </div>
 
@@ -836,20 +938,25 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
             ) : commits.length > 0 ? (
               <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/60 max-h-72 overflow-y-auto">
                 {commits.map((c, idx) => {
-                  const isSelected = selectedCommitHash === c.hash
-                  const color = LANE_COLORS[c.lane % LANE_COLORS.length]
-                  const maxLane = Math.max(...commits.slice(0, 15).map((x) => x.lane), 0)
-                  const svgWidth = Math.max((maxLane + 1) * 12 + 10, 24)
-                  const cx = 8 + c.lane * 12
+                  const isSelected = selectedCommitHash === c.hash;
+                  const color = LANE_COLORS[c.lane % LANE_COLORS.length];
+                  const maxLane = Math.max(
+                    ...commits.slice(0, 15).map((x) => x.lane),
+                    0,
+                  );
+                  const svgWidth = Math.max((maxLane + 1) * 12 + 10, 24);
+                  const cx = 8 + c.lane * 12;
 
                   return (
                     <div
                       key={c.hash}
-                      onClick={() => setSelectedCommitHash(isSelected ? null : c.hash)}
+                      onClick={() =>
+                        setSelectedCommitHash(isSelected ? null : c.hash)
+                      }
                       className={`flex items-start gap-1.5 py-1 px-1 rounded transition-colors cursor-pointer select-none ${
                         isSelected
-                          ? 'bg-blue-50/80 dark:bg-zinc-800/90'
-                          : 'hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50'
+                          ? "bg-blue-50/80 dark:bg-zinc-800/90"
+                          : "hover:bg-zinc-100/70 dark:hover:bg-zinc-800/50"
                       }`}
                     >
                       {/* SVG Lane & Node Graph */}
@@ -885,7 +992,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                           <path
                             d={`M ${cx} 17 Q ${cx + 10} 25 ${cx + 12} 34`}
                             fill="none"
-                            stroke={LANE_COLORS[(c.lane + 1) % LANE_COLORS.length]}
+                            stroke={
+                              LANE_COLORS[(c.lane + 1) % LANE_COLORS.length]
+                            }
                             strokeWidth={1.5}
                             strokeDasharray="2 2"
                           />
@@ -918,9 +1027,9 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                             <span
                               key={ref}
                               className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${
-                                ref.includes('HEAD')
-                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
-                                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                                ref.includes("HEAD")
+                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                                  : "bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                               }`}
                             >
                               {ref}
@@ -935,25 +1044,43 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
                         </div>
 
                         <div className="flex items-center gap-2 text-[10px] text-zinc-400 dark:text-zinc-500 font-mono mt-0.5">
-                          <span className="text-[#4078f2] dark:text-[#61afef] font-semibold">{c.hash}</span>
+                          <span className="text-[#4078f2] dark:text-[#61afef] font-semibold">
+                            {c.hash}
+                          </span>
                           <span className="truncate">{c.author}</span>
                           <span className="ml-auto">{c.date}</span>
                         </div>
 
                         {isSelected && (
                           <div className="mt-1.5 p-1.5 bg-zinc-50 dark:bg-zinc-950 rounded border border-zinc-200 dark:border-zinc-800 text-[10px] space-y-0.5 font-mono">
-                            <div><strong className="text-zinc-500">Hash:</strong> {c.hash}</div>
+                            <div>
+                              <strong className="text-zinc-500">Hash:</strong>{" "}
+                              {c.hash}
+                            </div>
                             {c.parents.length > 0 && (
-                              <div><strong className="text-zinc-500">Parents:</strong> {c.parents.join(', ')}</div>
+                              <div>
+                                <strong className="text-zinc-500">
+                                  Parents:
+                                </strong>{" "}
+                                {c.parents.join(", ")}
+                              </div>
                             )}
-                            <div><strong className="text-zinc-500">Author:</strong> {c.author}</div>
-                            <div><strong className="text-zinc-500">Date:</strong> {c.date}</div>
-                            <div className="pt-0.5 text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-sans">{c.message}</div>
+                            <div>
+                              <strong className="text-zinc-500">Author:</strong>{" "}
+                              {c.author}
+                            </div>
+                            <div>
+                              <strong className="text-zinc-500">Date:</strong>{" "}
+                              {c.date}
+                            </div>
+                            <div className="pt-0.5 text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-sans">
+                              {c.message}
+                            </div>
                           </div>
                         )}
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             ) : (
@@ -965,5 +1092,5 @@ export const GitTrackPanel: React.FC<GitTrackPanelProps> = ({ projectName, onSel
         )}
       </div>
     </div>
-  )
-}
+  );
+};

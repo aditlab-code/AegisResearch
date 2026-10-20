@@ -7,7 +7,9 @@ from typing import Dict, Any, Optional
 from backend.services.compiler import find_tex_bin, run_cmd
 
 
-def parse_synctex_edit_output(output_text: str, project_dir: Optional[Path] = None) -> Dict[str, Any]:
+def parse_synctex_edit_output(
+    output_text: str, project_dir: Optional[Path] = None
+) -> Dict[str, Any]:
     """
     Parses the stdout from `synctex edit -o page:x:y:file.pdf`.
     Extracts Input, Line, and Column.
@@ -20,7 +22,10 @@ def parse_synctex_edit_output(output_text: str, project_dir: Optional[Path] = No
     col_match = re.search(r"^Column:(-?\d+)$", output_text, re.MULTILINE)
 
     if not input_match or not line_match:
-        return {"success": False, "message": "Could not resolve source location from SyncTeX."}
+        return {
+            "success": False,
+            "message": "Could not resolve source location from SyncTeX.",
+        }
 
     raw_path = input_match.group(1).strip()
     line = int(line_match.group(1))
@@ -62,7 +67,10 @@ def parse_synctex_view_output(output_text: str) -> Dict[str, Any]:
     h_match = re.search(r"^H:([\d.]+)$", output_text, re.MULTILINE)
 
     if not page_match or not x_match or not y_match:
-        return {"success": False, "message": "Could not resolve PDF position from SyncTeX."}
+        return {
+            "success": False,
+            "message": "Could not resolve PDF position from SyncTeX.",
+        }
 
     page = int(page_match.group(1))
     x = float(x_match.group(1))
@@ -179,6 +187,26 @@ async def synctex_forward_search(
     try:
         code, stdout, stderr = await run_cmd(cmd, project_dir, timeout=timeout)
         out_str = stdout.decode("utf-8", errors="replace")
+
+        # Fallback between ./relative and relative format if first attempt yielded no result
+        if code != 0 or not out_str or "SyncTeX result begin" not in out_str:
+            alt_file = f"./{file}" if not file.startswith("./") else file[2:]
+            cmd_alt = [
+                synctex_bin,
+                "view",
+                "-i",
+                f"{line}:{column}:{alt_file}",
+                "-o",
+                pdf_name,
+                "-d",
+                str(project_dir),
+            ]
+            code2, stdout2, _ = await run_cmd(cmd_alt, project_dir, timeout=timeout)
+            out_str2 = stdout2.decode("utf-8", errors="replace")
+            if code2 == 0 and "SyncTeX result begin" in out_str2:
+                out_str = out_str2
+                code = 0
+
         if code != 0 or not out_str:
             err_str = stderr.decode("utf-8", errors="replace")
             return {

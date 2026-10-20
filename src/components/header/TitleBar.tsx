@@ -1,19 +1,19 @@
-import React from 'react'
-import { ShieldCheck, Sun, Moon } from 'lucide-react'
+import React from "react";
+import { ShieldCheck, Sun, Moon } from "lucide-react";
 
 export interface TitleBarProps {
-  appName?: string
-  avatarText?: string
-  statusText?: string
-  theme?: 'dark' | 'light'
-  onToggleTheme?: () => void
+  appName?: string;
+  avatarText?: string;
+  statusText?: string;
+  theme?: "dark" | "light";
+  onToggleTheme?: () => void;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
-  appName = 'Aegis Research',
-  avatarText = 'AR',
-  statusText = 'Auto-saved',
-  theme = 'light',
+  appName = "Aegis Research",
+  avatarText = "AR",
+  statusText = "Auto-saved",
+  theme = "light",
   onToggleTheme,
 }) => {
   return (
@@ -30,17 +30,19 @@ export const TitleBar: React.FC<TitleBarProps> = ({
       <div className="flex-1" />
 
       {/* Status indicator */}
-      <span className="text-xs text-zinc-500 dark:text-zinc-400">{statusText}</span>
+      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+        {statusText}
+      </span>
 
       {/* Theme Toggle Button */}
       {onToggleTheme && (
         <button
           onClick={onToggleTheme}
-          title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} theme`}
+          title={`Switch to ${theme === "dark" ? "Light" : "Dark"} theme`}
           className="size-7 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center justify-center transition-colors"
           aria-label="Toggle theme"
         >
-          {theme === 'dark' ? (
+          {theme === "dark" ? (
             <Sun className="size-4 text-[#e5c07b]" />
           ) : (
             <Moon className="size-4 text-zinc-600" />
@@ -53,5 +55,5 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         {avatarText}
       </div>
     </header>
-  )
-}
+  );
+};

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from "react";
 import {
   Copy,
   Scissors,
@@ -19,17 +19,21 @@ import {
   FileMinus,
   Eye,
   ChevronDown,
-} from 'lucide-react'
-import { HeadingStylePopover } from './HeadingStylePopover'
+} from "lucide-react";
+import { HeadingStylePopover } from "./HeadingStylePopover";
 
 export interface HomeRibbonGroupProps {
-  isLatex: boolean
-  onClipboardAction: (action: 'copy' | 'cut' | 'paste') => void
-  onFormatAction: (type: 'bold' | 'italic' | 'quote' | 'superscript' | 'subscript') => void
-  onAlignAction: (type: 'left' | 'center' | 'right' | 'justify') => void
-  onStructureAction: (type: 'heading1' | 'heading2' | 'numbering' | 'bullet' | 'line') => void
-  onSelectHeadingStyle?: (styleCode: string) => void
-  onPageAction: (type: 'break' | 'next' | 'preview') => void
+  isLatex: boolean;
+  onClipboardAction: (action: "copy" | "cut" | "paste") => void;
+  onFormatAction: (
+    type: "bold" | "italic" | "quote" | "superscript" | "subscript",
+  ) => void;
+  onAlignAction: (type: "left" | "center" | "right" | "justify") => void;
+  onStructureAction: (
+    type: "heading1" | "heading2" | "numbering" | "bullet" | "line",
+  ) => void;
+  onSelectHeadingStyle?: (styleCode: string) => void;
+  onPageAction: (type: "break" | "next" | "preview") => void;
 }
 
 export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
@@ -41,25 +45,28 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
   onSelectHeadingStyle = () => {},
   onPageAction,
 }) => {
-  const [showHeadingPopover, setShowHeadingPopover] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [showHeadingPopover, setShowHeadingPopover] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Click-outside listener
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowHeadingPopover(false)
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setShowHeadingPopover(false);
       }
-    }
+    };
 
     if (showHeadingPopover) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showHeadingPopover])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showHeadingPopover]);
 
   return (
     <div
@@ -71,7 +78,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => onClipboardAction('paste')}
+            onClick={() => onClipboardAction("paste")}
             title="Paste (Ctrl+V)"
             className="flex flex-col items-center justify-center px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -82,7 +89,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           <div className="flex flex-col gap-0.5">
             <button
               type="button"
-              onClick={() => onClipboardAction('copy')}
+              onClick={() => onClipboardAction("copy")}
               title="Copy (Ctrl+C)"
               className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] transition-colors"
             >
@@ -91,7 +98,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onClipboardAction('cut')}
+              onClick={() => onClipboardAction("cut")}
               title="Cut (Ctrl+X)"
               className="flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] transition-colors"
             >
@@ -110,23 +117,23 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
         <div className="flex items-center gap-0.5 pt-0.5">
           <button
             type="button"
-            onClick={() => onFormatAction('bold')}
-            title={isLatex ? 'Bold (\\textbf{...})' : 'Bold (**...**)'}
+            onClick={() => onFormatAction("bold")}
+            title={isLatex ? "Bold (\\textbf{...})" : "Bold (**...**)"}
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold transition-colors"
           >
             <Bold className="size-4" />
           </button>
           <button
             type="button"
-            onClick={() => onFormatAction('italic')}
-            title={isLatex ? 'Italic (\\textit{...})' : 'Italic (*...*)'}
+            onClick={() => onFormatAction("italic")}
+            title={isLatex ? "Italic (\\textit{...})" : "Italic (*...*)"}
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 italic transition-colors"
           >
             <Italic className="size-4" />
           </button>
           <button
             type="button"
-            onClick={() => onFormatAction('quote')}
+            onClick={() => onFormatAction("quote")}
             title="Quote"
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -134,16 +141,16 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onFormatAction('superscript')}
-            title={isLatex ? 'Superscript (^{...})' : 'Superscript (^...^)'}
+            onClick={() => onFormatAction("superscript")}
+            title={isLatex ? "Superscript (^{...})" : "Superscript (^...^)"}
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <Superscript className="size-4" />
           </button>
           <button
             type="button"
-            onClick={() => onFormatAction('subscript')}
-            title={isLatex ? 'Subscript (_{...})' : 'Subscript (~...~)'}
+            onClick={() => onFormatAction("subscript")}
+            title={isLatex ? "Subscript (_{...})" : "Subscript (~...~)"}
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
             <Subscript className="size-4" />
@@ -159,7 +166,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
         <div className="flex items-center gap-0.5 pt-0.5">
           <button
             type="button"
-            onClick={() => onAlignAction('left')}
+            onClick={() => onAlignAction("left")}
             title="Align Left"
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -167,7 +174,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onAlignAction('center')}
+            onClick={() => onAlignAction("center")}
             title="Center"
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -175,7 +182,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onAlignAction('right')}
+            onClick={() => onAlignAction("right")}
             title="Align Right"
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -183,7 +190,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onAlignAction('justify')}
+            onClick={() => onAlignAction("justify")}
             title="Justify"
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -204,8 +211,8 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
             title="Heading & Document Styles Gallery"
             className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
               showHeadingPopover
-                ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
-                : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+                ? "bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium"
+                : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
             }`}
           >
             <Heading className="size-4 text-blue-600 dark:text-blue-400" />
@@ -218,7 +225,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           {/* Quick List & Line buttons */}
           <button
             type="button"
-            onClick={() => onStructureAction('numbering')}
+            onClick={() => onStructureAction("numbering")}
             title="Numbered List"
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -226,7 +233,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onStructureAction('bullet')}
+            onClick={() => onStructureAction("bullet")}
             title="Bulleted List"
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -234,7 +241,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onStructureAction('line')}
+            onClick={() => onStructureAction("line")}
             title="Horizontal Divider"
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 transition-colors"
           >
@@ -262,7 +269,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
         <div className="flex items-center gap-1 pt-0.5">
           <button
             type="button"
-            onClick={() => onPageAction('break')}
+            onClick={() => onPageAction("break")}
             title="Page Break (\\newpage)"
             className="flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs transition-colors"
           >
@@ -271,7 +278,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onPageAction('next')}
+            onClick={() => onPageAction("next")}
             title="Clear Page (\\clearpage)"
             className="flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs transition-colors"
           >
@@ -280,7 +287,7 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => onPageAction('preview')}
+            onClick={() => onPageAction("preview")}
             title="Refresh Preview"
             className="flex items-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs transition-colors"
           >
@@ -293,8 +300,8 @@ export const HomeRibbonGroup: React.FC<HomeRibbonGroupProps> = ({
         </span>
       </div>
     </div>
-  )
-}
+  );
+};
 
 function FileBreakIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -313,5 +320,5 @@ function FileBreakIcon(props: React.SVGProps<SVGSVGElement>) {
       <path d="M14 2v6h6" />
       <path d="M2 12h20" strokeDasharray="3 3" />
     </svg>
-  )
+  );
 }

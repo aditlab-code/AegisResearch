@@ -7,6 +7,7 @@ from backend.config import WORKSPACE_DIR
 
 client = TestClient(app)
 
+
 def test_tree_hierarchy_endpoint():
     project_name = "pytest-tree-proj"
     temp_dir = WORKSPACE_DIR / project_name
@@ -19,11 +20,16 @@ def test_tree_hierarchy_endpoint():
         assert create_res.status_code == 201
 
         # Create subfolder 'chapters'
-        folder_res = client.post(f"/api/projects/{project_name}/folders", json={"path": "chapters"})
+        folder_res = client.post(
+            f"/api/projects/{project_name}/folders", json={"path": "chapters"}
+        )
         assert folder_res.status_code == 201
 
         # Create file in subfolder 'chapters/intro.tex'
-        file_res = client.post(f"/api/projects/{project_name}/files", json={"path": "chapters/intro.tex", "content": "% intro"})
+        file_res = client.post(
+            f"/api/projects/{project_name}/files",
+            json={"path": "chapters/intro.tex", "content": "% intro"},
+        )
         assert file_res.status_code == 201
 
         # Fetch tree
@@ -43,6 +49,7 @@ def test_tree_hierarchy_endpoint():
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
 
+
 def test_create_folder_conflict_and_traversal():
     project_name = "pytest-folder-guard"
     temp_dir = WORKSPACE_DIR / project_name
@@ -53,19 +60,26 @@ def test_create_folder_conflict_and_traversal():
         client.post("/api/projects", json={"name": project_name})
 
         # Valid create
-        res1 = client.post(f"/api/projects/{project_name}/folders", json={"path": "data"})
+        res1 = client.post(
+            f"/api/projects/{project_name}/folders", json={"path": "data"}
+        )
         assert res1.status_code == 201
 
         # Conflict create
-        res2 = client.post(f"/api/projects/{project_name}/folders", json={"path": "data"})
+        res2 = client.post(
+            f"/api/projects/{project_name}/folders", json={"path": "data"}
+        )
         assert res2.status_code == 409
 
         # Path traversal prevention
-        res3 = client.post(f"/api/projects/{project_name}/folders", json={"path": "../forbidden"})
+        res3 = client.post(
+            f"/api/projects/{project_name}/folders", json={"path": "../forbidden"}
+        )
         assert res3.status_code == 400
     finally:
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
+
 
 def test_workspace_websocket_sync():
     project_name = "pytest-ws-sync"

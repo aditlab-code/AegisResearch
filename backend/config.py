@@ -6,7 +6,9 @@ from typing import List
 BASE_DIR: Path = Path(__file__).resolve().parent
 
 # Workspace storage directory for LaTeX projects
-WORKSPACE_DIR: Path = Path(os.getenv("WORKSPACE_DIR", str(BASE_DIR / "latex_workspaces"))).resolve()
+WORKSPACE_DIR: Path = Path(
+    os.getenv("WORKSPACE_DIR", str(BASE_DIR / "latex_workspaces"))
+).resolve()
 WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Allowed CORS origins
@@ -19,7 +21,9 @@ DEFAULT_CORS_ORIGINS: List[str] = [
 
 env_cors = os.getenv("CORS_ORIGINS")
 if env_cors:
-    CORS_ORIGINS: List[str] = [origin.strip() for origin in env_cors.split(",") if origin.strip()]
+    CORS_ORIGINS: List[str] = [
+        origin.strip() for origin in env_cors.split(",") if origin.strip()
+    ]
 else:
     CORS_ORIGINS: List[str] = DEFAULT_CORS_ORIGINS
 

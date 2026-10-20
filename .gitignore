@@ -23,8 +23,17 @@ __pycache__/
 *.sqlite
 *.sqlite3
 *.db
+backend/workspaces.json
 # backend/latex_workspaces/
 # latex_workspaces/
+
+# Big data & dataset files
+*.csv
+*.tsv
+*.parquet
+*.feather
+backend/latex_workspaces/**/assets/*.csv
+backend/latex_workspaces/**/assets/*.parquet
 
 # LaTeX build artifacts & temporary files
 *.aux
@@ -50,6 +59,7 @@ __pycache__/
 .Trashes
 ehthumbs.db
 Thumbs.db
+Screenshot_*.png
 .vscode/
 .idea/
 *.sublime-workspace
@@ -62,3 +72,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+

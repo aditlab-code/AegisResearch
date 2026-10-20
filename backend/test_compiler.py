@@ -6,6 +6,7 @@ from backend.config import WORKSPACE_DIR
 
 client = TestClient(app)
 
+
 def test_compile_latex_success_and_streaming():
     project_name = "pytest-compile-proj"
     temp_dir = WORKSPACE_DIR / project_name
@@ -38,7 +39,6 @@ def test_compile_latex_success_and_streaming():
         assert synctex_file.exists()
         assert synctex_file.stat().st_size > 0
 
-
         # Test HEAD request for existing PDF
         head_res = client.head(data["pdfUrl"])
         assert head_res.status_code == 200
@@ -50,6 +50,7 @@ def test_compile_latex_success_and_streaming():
     finally:
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
+
 
 def test_compile_latex_syntax_error():
     project_name = "pytest-syntax-err"
@@ -79,6 +80,8 @@ def test_compile_latex_syntax_error():
     finally:
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
+
+
 def test_compile_pandoc_engine():
     project_name = "pytest-pandoc-test"
     temp_dir = WORKSPACE_DIR / project_name
@@ -103,6 +106,66 @@ def test_compile_pandoc_engine():
         data = compile_res.json()
         assert "success" in data
         assert isinstance(data["errors"], list)
+    finally:
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir)
+
+
+def test_compile_modular_project_and_raw_asset():
+    project_name = "pytest-modular-proj"
+    temp_dir = WORKSPACE_DIR / project_name
+    if temp_dir.exists():
+        shutil.rmtree(temp_dir)
+
+    try:
+        # Create base project
+        create_res = client.post("/api/projects", json={"name": project_name})
+        assert create_res.status_code == 201
+
+        # Create subfolder file: chapters/bab1.tex
+        chapter_content = (
+            "\\section{Pendahuluan Modular}\nIni adalah isi bab 1 dari subfolder.\n"
+        )
+        save_chap = client.put(
+            f"/api/projects/{project_name}/files/chapters/bab1.tex",
+            json={"content": chapter_content},
+        )
+        assert save_chap.status_code == 200
+
+        # Create assets/sample.txt
+        asset_content = "binary-asset-sample-data"
+        save_asset = client.put(
+            f"/api/projects/{project_name}/files/assets/sample.txt",
+            json={"content": asset_content},
+        )
+        assert save_asset.status_code == 200
+
+        # Update main.tex to include chapters/bab1
+        main_content = (
+            "\\documentclass{article}\n"
+            "\\begin{document}\n"
+            "\\input{chapters/bab1}\n"
+            "\\end{document}\n"
+        )
+        save_main = client.put(
+            f"/api/projects/{project_name}/files/main.tex",
+            json={"content": main_content},
+        )
+        assert save_main.status_code == 200
+
+        # Compile main.tex
+        compile_res = client.post(
+            f"/api/projects/{project_name}/compile",
+            json={"mainFile": "main.tex", "engine": "pdfLaTeX"},
+        )
+        assert compile_res.status_code == 200
+        comp_data = compile_res.json()
+        assert comp_data["success"] is True
+
+        # Test raw asset streaming endpoint
+        raw_res = client.get(f"/api/projects/{project_name}/raw/assets/sample.txt")
+        assert raw_res.status_code == 200
+        assert raw_res.text == asset_content
     finally:
         if temp_dir.exists():
             shutil.rmtree(temp_dir)

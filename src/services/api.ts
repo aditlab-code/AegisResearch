@@ -1,102 +1,140 @@
-const DEFAULT_BASE_URL = 'http://localhost:8000'
+export const DEFAULT_BASE_URL = "http://localhost:8000";
+
+export function buildApiUrl(
+  path: string,
+  params?: Record<string, string | number>,
+): string {
+  const base =
+    typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : DEFAULT_BASE_URL;
+  const url = new URL(path.startsWith("http") ? path : `${base}${path}`);
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      url.searchParams.append(k, String(v));
+    });
+  }
+  return url.toString();
+}
 
 export interface RequestOptions extends RequestInit {
-  params?: Record<string, string | number>
+  params?: Record<string, string | number>;
 }
 
 export interface HealthResponse {
-  status: string
-  cors: boolean
-  workspace_dir: string
-  allowed_origins?: string[]
+  status: string;
+  cors: boolean;
+  workspace_dir: string;
+  allowed_origins?: string[];
 }
 
 export class ApiClient {
-  private baseUrl: string
+  private baseUrl: string;
 
   constructor(baseUrl: string = DEFAULT_BASE_URL) {
-    this.baseUrl = baseUrl
+    this.baseUrl = baseUrl;
   }
 
-  private buildUrl(path: string, params?: Record<string, string | number>): string {
-    const url = new URL(path.startsWith('http') ? path : `${this.baseUrl}${path}`)
+  private buildUrl(
+    path: string,
+    params?: Record<string, string | number>,
+  ): string {
+    const url = new URL(
+      path.startsWith("http") ? path : `${this.baseUrl}${path}`,
+    );
     if (params) {
       Object.entries(params).forEach(([k, v]) => {
-        url.searchParams.append(k, String(v))
-      })
+        url.searchParams.append(k, String(v));
+      });
     }
-    return url.toString()
+    return url.toString();
   }
 
   async get<T>(path: string, options?: RequestOptions): Promise<T> {
-    const url = this.buildUrl(path, options?.params)
+    const url = this.buildUrl(path, options?.params);
     const res = await fetch(url, {
       ...options,
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options?.headers,
       },
-    })
+    });
     if (!res.ok) {
-      throw new Error(`API GET request failed with status ${res.status}: ${res.statusText}`)
+      throw new Error(
+        `API GET request failed with status ${res.status}: ${res.statusText}`,
+      );
     }
-    return res.json()
+    return res.json();
   }
 
-  async post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
-    const url = this.buildUrl(path, options?.params)
+  async post<T>(
+    path: string,
+    body?: unknown,
+    options?: RequestOptions,
+  ): Promise<T> {
+    const url = this.buildUrl(path, options?.params);
     const res = await fetch(url, {
       ...options,
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options?.headers,
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
-    })
+    });
     if (!res.ok) {
-      throw new Error(`API POST request failed with status ${res.status}: ${res.statusText}`)
+      throw new Error(
+        `API POST request failed with status ${res.status}: ${res.statusText}`,
+      );
     }
-    return res.json()
+    return res.json();
   }
 
-  async put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
-    const url = this.buildUrl(path, options?.params)
+  async put<T>(
+    path: string,
+    body?: unknown,
+    options?: RequestOptions,
+  ): Promise<T> {
+    const url = this.buildUrl(path, options?.params);
     const res = await fetch(url, {
       ...options,
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options?.headers,
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
-    })
+    });
     if (!res.ok) {
-      throw new Error(`API PUT request failed with status ${res.status}: ${res.statusText}`)
+      throw new Error(
+        `API PUT request failed with status ${res.status}: ${res.statusText}`,
+      );
     }
-    return res.json()
+    return res.json();
   }
 
   async delete<T>(path: string, options?: RequestOptions): Promise<T> {
-    const url = this.buildUrl(path, options?.params)
+    const url = this.buildUrl(path, options?.params);
     const res = await fetch(url, {
       ...options,
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options?.headers,
       },
-    })
+    });
     if (!res.ok) {
-      throw new Error(`API DELETE request failed with status ${res.status}: ${res.statusText}`)
+      throw new Error(
+        `API DELETE request failed with status ${res.status}: ${res.statusText}`,
+      );
     }
-    return res.json()
+    return res.json();
   }
 
   async checkHealth(): Promise<HealthResponse> {
-    return this.get<HealthResponse>('/api/health')
+    return this.get<HealthResponse>("/api/health");
   }
 }
 
-export const apiClient = new ApiClient()
+export const apiClient = new ApiClient();

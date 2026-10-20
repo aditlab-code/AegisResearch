@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
-import { MessageSquare, Plus } from 'lucide-react'
-import { PopoverShell } from './PopoverShell'
+import React, { useState } from "react";
+import { MessageSquare, Plus } from "lucide-react";
+import { PopoverShell } from "./PopoverShell";
 
 export interface CommentPopoverProps {
-  isLatex: boolean
-  onInsertComment: (commentText: string) => void
-  onClose: () => void
+  isLatex: boolean;
+  onInsertComment: (commentText: string) => void;
+  onClose: () => void;
 }
 
 export const CommentPopover: React.FC<CommentPopoverProps> = ({
@@ -13,30 +13,32 @@ export const CommentPopover: React.FC<CommentPopoverProps> = ({
   onInsertComment,
   onClose,
 }) => {
-  const [commentType, setCommentType] = useState<'todo' | 'note' | 'fixme'>('todo')
-  const [text, setText] = useState('')
+  const [commentType, setCommentType] = useState<"todo" | "note" | "fixme">(
+    "todo",
+  );
+  const [text, setText] = useState("");
 
   const handleInsert = (e: React.FormEvent) => {
-    e.preventDefault()
-    const clean = text.trim()
-    if (!clean) return
+    e.preventDefault();
+    const clean = text.trim();
+    if (!clean) return;
 
-    let code = ''
+    let code = "";
     if (isLatex) {
-      if (commentType === 'todo') {
-        code = `\n% TODO: ${clean}\n`
-      } else if (commentType === 'fixme') {
-        code = `\n% FIXME: ${clean}\n`
+      if (commentType === "todo") {
+        code = `\n% TODO: ${clean}\n`;
+      } else if (commentType === "fixme") {
+        code = `\n% FIXME: ${clean}\n`;
       } else {
-        code = `\n% [NOTE]: ${clean}\n`
+        code = `\n% [NOTE]: ${clean}\n`;
       }
     } else {
-      code = `\n<!-- ${commentType.toUpperCase()}: ${clean} -->\n`
+      code = `\n<!-- ${commentType.toUpperCase()}: ${clean} -->\n`;
     }
 
-    onInsertComment(code)
-    onClose()
-  }
+    onInsertComment(code);
+    onClose();
+  };
 
   return (
     <PopoverShell
@@ -47,37 +49,39 @@ export const CommentPopover: React.FC<CommentPopoverProps> = ({
     >
       <form onSubmit={handleInsert} className="space-y-2.5 text-xs">
         <div>
-          <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 block mb-1">Note Type</label>
+          <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 block mb-1">
+            Note Type
+          </label>
           <div className="grid grid-cols-3 gap-1">
             <button
               type="button"
-              onClick={() => setCommentType('todo')}
+              onClick={() => setCommentType("todo")}
               className={`py-1 rounded border text-[11px] font-medium transition-colors ${
-                commentType === 'todo'
-                  ? 'border-amber-500 dark:border-amber-400 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold'
-                  : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                commentType === "todo"
+                  ? "border-amber-500 dark:border-amber-400 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold"
+                  : "border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
               % TODO
             </button>
             <button
               type="button"
-              onClick={() => setCommentType('note')}
+              onClick={() => setCommentType("note")}
               className={`py-1 rounded border text-[11px] font-medium transition-colors ${
-                commentType === 'note'
-                  ? 'border-[#4078f2] dark:border-[#61afef] bg-blue-50 dark:bg-zinc-800 text-[#4078f2] dark:text-[#61afef] font-bold'
-                  : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                commentType === "note"
+                  ? "border-[#4078f2] dark:border-[#61afef] bg-blue-50 dark:bg-zinc-800 text-[#4078f2] dark:text-[#61afef] font-bold"
+                  : "border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
               % NOTE
             </button>
             <button
               type="button"
-              onClick={() => setCommentType('fixme')}
+              onClick={() => setCommentType("fixme")}
               className={`py-1 rounded border text-[11px] font-medium transition-colors ${
-                commentType === 'fixme'
-                  ? 'border-rose-500 dark:border-rose-400 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold'
-                  : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                commentType === "fixme"
+                  ? "border-rose-500 dark:border-rose-400 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold"
+                  : "border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               }`}
             >
               % FIXME
@@ -86,7 +90,9 @@ export const CommentPopover: React.FC<CommentPopoverProps> = ({
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 block mb-0.5">Comment Note</label>
+          <label className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 block mb-0.5">
+            Comment Note
+          </label>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -107,5 +113,5 @@ export const CommentPopover: React.FC<CommentPopoverProps> = ({
         </button>
       </form>
     </PopoverShell>
-  )
-}
+  );
+};

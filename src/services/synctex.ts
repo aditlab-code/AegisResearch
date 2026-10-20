@@ -1,21 +1,21 @@
-import { apiClient } from './api'
+import { apiClient } from "./api";
 
 export interface SyncTeXInverseResult {
-  success: boolean
-  file?: string
-  line?: number
-  column?: number
-  message?: string
+  success: boolean;
+  file?: string;
+  line?: number;
+  column?: number;
+  message?: string;
 }
 
 export interface SyncTeXForwardResult {
-  success: boolean
-  page?: number
-  x?: number
-  y?: number
-  width?: number
-  height?: number
-  message?: string
+  success: boolean;
+  page?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  message?: string;
 }
 
 export const synctexService = {
@@ -30,14 +30,14 @@ export const synctexService = {
       const res = await apiClient.post<SyncTeXInverseResult>(
         `/api/projects/${encodeURIComponent(projectName)}/synctex/inverse`,
         { pdfName, page, x, y },
-      )
-      return res
+      );
+      return res;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'SyncTeX query failed'
+      const msg = err instanceof Error ? err.message : "SyncTeX query failed";
       return {
         success: false,
         message: msg,
-      }
+      };
     }
   },
 
@@ -52,14 +52,14 @@ export const synctexService = {
       const res = await apiClient.post<SyncTeXForwardResult>(
         `/api/projects/${encodeURIComponent(projectName)}/synctex/forward`,
         { pdfName, file, line, column },
-      )
-      return res
+      );
+      return res;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'SyncTeX query failed'
+      const msg = err instanceof Error ? err.message : "SyncTeX query failed";
       return {
         success: false,
         message: msg,
-      }
+      };
     }
   },
-}
+};

@@ -1,0 +1,16 @@
+*.aux
+*.log
+*.toc
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.out
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.csv
+*.tsv
+*.parquet
+assets/*.csv
+assets/*.parquet

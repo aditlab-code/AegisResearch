@@ -90,25 +90,25 @@ def test_api_synctex_not_found_project():
     assert res.status_code == 404
 
 
-def test_api_synctex_real_quantum_thesis():
-    # quantum-thesis exists and has thesis.pdf + thesis.synctex.gz
+def test_api_synctex_real_template_thesis():
+    # template-thesis exists and has main.pdf + main.synctex.gz
     # Test inverse search
     inv_res = client.post(
-        "/api/projects/quantum-thesis/synctex/inverse",
-        json={"pdfName": "thesis.pdf", "page": 1, "x": 200.0, "y": 250.0},
+        "/api/projects/template-thesis/synctex/inverse",
+        json={"pdfName": "main.pdf", "page": 1, "x": 200.0, "y": 250.0},
     )
     assert inv_res.status_code == 200
     inv_data = inv_res.json()
     assert inv_data["success"] is True
-    assert "thesis.tex" in inv_data["file"]
+    assert "main.tex" in inv_data["file"]
     assert inv_data["line"] > 0
 
     # Test forward search
     fwd_res = client.post(
-        "/api/projects/quantum-thesis/synctex/forward",
+        "/api/projects/template-thesis/synctex/forward",
         json={
-            "pdfName": "thesis.pdf",
-            "file": "thesis.tex",
+            "pdfName": "main.pdf",
+            "file": "main.tex",
             "line": inv_data["line"],
             "column": 1,
         },

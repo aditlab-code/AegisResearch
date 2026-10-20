@@ -14,6 +14,49 @@ from backend.config import WORKSPACE_DIR, CORS_ORIGINS, HOST, PORT
 from backend.watcher import workspace_watcher
 from backend.services.compiler import compile_latex
 from backend.services.synctex import synctex_inverse_search, synctex_forward_search
+from backend.services.workspace_registry import workspace_registry
+from backend.services.os_dialog import pick_directory_native
+from backend.services.dataset import (
+    get_dataset_schema,
+    get_dataset_slice,
+    DatasetError,
+)
+from backend.services.stats import (
+    run_descriptive_analysis,
+    run_reliability_analysis,
+    run_regression_analysis,
+    run_manova_analysis,
+    run_pca_analysis,
+    StatsError,
+)
+from backend.services.stats_parametric import (
+    run_ttest_one_sample,
+    run_ttest_independent,
+    run_ttest_paired,
+    run_anova_oneway,
+    run_anova_twoway,
+    run_correlation_pearson,
+)
+from backend.services.stats_nonparametric import (
+    run_mann_whitney_u,
+    run_wilcoxon_signed_rank,
+    run_kruskal_wallis,
+    run_correlation_spearman,
+    run_chisquare_independence,
+)
+from backend.services.latex_table_gen import (
+    generate_descriptive_latex_table,
+    generate_reliability_latex_table,
+    generate_regression_latex_table,
+    generate_manova_latex_table,
+    generate_pca_latex_table,
+    generate_ttest_latex_table,
+    generate_anova_latex_table,
+    generate_correlation_latex_table,
+    generate_nonparametric_latex_table,
+    generate_chisquare_latex_table,
+    generate_multi_style_table,
+)
 
 
 app = FastAPI(
@@ -33,7 +76,9 @@ app.add_middleware(
 
 
 class ProjectCreateRequest(BaseModel):
-    name: str = Field(..., min_length=1, max_length=120, description="Project directory name")
+    name: str = Field(
+        ..., min_length=1, max_length=120, description="Project directory name"
+    )
 
 
 class FileNodeResponse(BaseModel):
@@ -54,16 +99,43 @@ class TreeNodeResponse(BaseModel):
     updatedAt: Optional[str] = None
     children: Optional[List["TreeNodeResponse"]] = None
 
+
+class OpenDialogResponse(BaseModel):
+    selected_path: Optional[str] = None
+    cancelled: bool = False
+    requires_manual_input: bool = False
+
+
+class OpenWorkspaceRequest(BaseModel):
+    path: str = Field(
+        ...,
+        min_length=1,
+        description="Absolute or home-relative path to project folder",
+    )
+    custom_root: Optional[str] = None
+
+
+class WorkspaceDetailResponse(BaseModel):
+    id: str
+    name: str
+    path: str
+    root_file: Optional[str] = None
+    last_opened: float
+
+
 class FolderCreateRequest(BaseModel):
     path: str = Field(..., min_length=1, description="Relative path for the new folder")
+
 
 class FileCreateRequest(BaseModel):
     path: str = Field(..., min_length=1, description="Relative path for the new file")
     content: Optional[str] = ""
 
+
 class CompileRequest(BaseModel):
     mainFile: str = "main.tex"
     engine: str = "pdfLaTeX"
+
 
 class CompileResponse(BaseModel):
     success: bool
@@ -72,11 +144,13 @@ class CompileResponse(BaseModel):
     errors: List[str] = []
     logOutput: Optional[str] = None
 
+
 class SyncTeXInverseRequest(BaseModel):
     pdfName: str = Field(..., description="PDF file name, e.g. main.pdf")
     page: int = Field(..., ge=1, description="1-based page number")
     x: float = Field(..., description="X coordinate in 72-DPI points")
     y: float = Field(..., description="Y coordinate in 72-DPI points")
+
 
 class SyncTeXInverseResponse(BaseModel):
     success: bool
@@ -85,11 +159,13 @@ class SyncTeXInverseResponse(BaseModel):
     column: Optional[int] = None
     message: Optional[str] = None
 
+
 class SyncTeXForwardRequest(BaseModel):
     pdfName: str = Field(..., description="PDF file name, e.g. main.pdf")
     file: str = Field(..., description="LaTeX source file path, e.g. main.tex")
     line: int = Field(..., ge=1, description="1-based line number")
     column: int = Field(default=1, ge=1, description="1-based column number")
+
 
 class SyncTeXForwardResponse(BaseModel):
     success: bool
@@ -100,11 +176,13 @@ class SyncTeXForwardResponse(BaseModel):
     height: Optional[float] = None
     message: Optional[str] = None
 
+
 class SearchMatchItem(BaseModel):
     lineNumber: int
     lineText: str
     matchStart: int
     matchEnd: int
+
 
 class SearchFileItem(BaseModel):
     filePath: str
@@ -113,11 +191,13 @@ class SearchFileItem(BaseModel):
     matchCount: int
     matches: List[SearchMatchItem]
 
+
 class SearchProjectResponse(BaseModel):
     query: str
     totalMatches: int
     fileCount: int
     results: List[SearchFileItem]
+
 
 class FileContentResponse(BaseModel):
     name: str
@@ -138,6 +218,7 @@ class FileSaveResponse(BaseModel):
     size: int
     updatedAt: str
 
+
 class ProjectResponse(BaseModel):
     name: str
     rootPath: str
@@ -153,13 +234,46 @@ def get_file_kind(file_name: str) -> str:
         return "md"
     elif ext == ".pdf":
         return "pdf"
+    elif ext in [
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".svg",
+        ".gif",
+        ".webp",
+        ".eps",
+        ".bmp",
+        ".tif",
+        ".tiff",
+    ]:
+        return "image"
+    elif ext in [".csv", ".tsv", ".parquet", ".pqt"]:
+        return "dataset"
     return "other"
 
+
 TEX_BUILD_ARTIFACT_EXTS = {
-    ".aux", ".log", ".toc", ".bbl", ".blg", ".fls",
-    ".fdb_latexmk", ".synctex.gz", ".out", ".lof", ".lot",
-    ".nav", ".snm", ".vrb", ".idx", ".ilg", ".ind"
+    ".aux",
+    ".log",
+    ".toc",
+    ".bbl",
+    ".blg",
+    ".fls",
+    ".fdb_latexmk",
+    ".synctex.gz",
+    ".out",
+    ".lof",
+    ".lot",
+    ".nav",
+    ".snm",
+    ".vrb",
+    ".idx",
+    ".ilg",
+    ".ind",
+    ".bcf",
+    ".run.xml",
 }
+
 
 def is_tex_artifact(file_name: str) -> bool:
     lower = file_name.lower()
@@ -167,6 +281,14 @@ def is_tex_artifact(file_name: str) -> bool:
 
 
 def resolve_project_dir(name: str) -> Path:
+    # 1. Check registered workspaces (external or registered in WorkspaceRegistry)
+    entry = workspace_registry.get(name.strip())
+    if entry:
+        target = Path(entry.path).resolve()
+        if target.exists() and target.is_dir():
+            return target
+
+    # 2. Fallback to standard WORKSPACE_DIR resolution
     safe_name = re.sub(r"[^a-zA-Z0-9_\-]", "", name.strip())
     if not safe_name:
         raise HTTPException(
@@ -183,6 +305,7 @@ def resolve_project_dir(name: str) -> Path:
         )
     return project_dir
 
+
 def resolve_file_path(project_dir: Path, file_path: str) -> Path:
     target_file = (project_dir / file_path).resolve()
     try:
@@ -193,6 +316,7 @@ def resolve_file_path(project_dir: Path, file_path: str) -> Path:
             detail="Invalid file path. Path traversal is not allowed.",
         )
     return target_file
+
 
 @app.api_route("/", methods=["GET", "HEAD"], tags=["General"])
 async def root():
@@ -212,20 +336,107 @@ async def health_check():
         "allowed_origins": CORS_ORIGINS,
     }
 
+
 @app.get("/api/projects", response_model=List[str], tags=["Projects"])
 async def list_projects():
-    if not WORKSPACE_DIR.exists():
-        return []
-    projects = [
-        item.name
-        for item in WORKSPACE_DIR.iterdir()
-        if item.is_dir() and not item.name.startswith(".")
-    ]
-    projects.sort()
+    projects_set = set()
+    if WORKSPACE_DIR.exists():
+        for item in WORKSPACE_DIR.iterdir():
+            if item.is_dir() and not item.name.startswith("."):
+                projects_set.add(item.name)
+
+    # Include all registered workspaces (by id)
+    for ws in workspace_registry.list_recent():
+        if Path(ws.path).exists():
+            projects_set.add(ws.id)
+
+    projects = sorted(list(projects_set))
     return projects
 
 
-@app.post("/api/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED, tags=["Projects"])
+@app.post(
+    "/api/workspaces/open-dialog",
+    response_model=OpenDialogResponse,
+    tags=["Workspaces"],
+)
+async def open_workspace_dialog():
+    """Trigger native OS directory picker dialog (zenity/tkinter) or report fallback requirement."""
+    selected = await pick_directory_native()
+    if selected:
+        return OpenDialogResponse(
+            selected_path=selected, cancelled=False, requires_manual_input=False
+        )
+
+    zenity_bin = shutil.which("zenity")
+    has_display = bool(os.getenv("DISPLAY") or os.getenv("WAYLAND_DISPLAY"))
+    if not zenity_bin and not has_display:
+        return OpenDialogResponse(
+            selected_path=None, cancelled=False, requires_manual_input=True
+        )
+
+    return OpenDialogResponse(
+        selected_path=None, cancelled=True, requires_manual_input=False
+    )
+
+
+@app.post(
+    "/api/workspaces/open", response_model=WorkspaceDetailResponse, tags=["Workspaces"]
+)
+async def open_workspace_by_path(payload: OpenWorkspaceRequest):
+    """Register and open an existing folder in-place as a workspace."""
+    try:
+        entry = workspace_registry.register(payload.path, payload.custom_root)
+        return WorkspaceDetailResponse(
+            id=entry.id,
+            name=entry.name,
+            path=entry.path,
+            root_file=entry.root_file,
+            last_opened=entry.last_opened,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@app.get(
+    "/api/workspaces/recent",
+    response_model=List[WorkspaceDetailResponse],
+    tags=["Workspaces"],
+)
+async def get_recent_workspaces():
+    """Return all known workspaces sorted by recency."""
+    recent = workspace_registry.list_recent()
+    return [
+        WorkspaceDetailResponse(
+            id=w.id,
+            name=w.name,
+            path=w.path,
+            root_file=w.root_file,
+            last_opened=w.last_opened,
+        )
+        for w in recent
+    ]
+
+
+@app.delete("/api/workspaces/{workspace_id}", tags=["Workspaces"])
+async def remove_recent_workspace(workspace_id: str):
+    """Remove a workspace from the recent workspaces list."""
+    removed = workspace_registry.remove(workspace_id)
+    if not removed:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found"
+        )
+    return {"status": "ok", "removed_id": workspace_id}
+
+
+@app.post(
+    "/api/projects",
+    response_model=ProjectResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Projects"],
+)
 async def create_project(payload: ProjectCreateRequest):
     project_dir = resolve_project_dir(payload.name)
     safe_name = project_dir.name
@@ -281,7 +492,11 @@ async def get_project_files(name: str):
     file_nodes: List[FileNodeResponse] = []
     for item in sorted(project_dir.rglob("*")):
         rel_parts = item.relative_to(project_dir).parts
-        if any(part.startswith(".") or part in {".git", ".venv", "node_modules", "__pycache__"} for part in rel_parts):
+        if any(
+            part.startswith(".")
+            or part in {".git", ".venv", "node_modules", "__pycache__"}
+            for part in rel_parts
+        ):
             continue
         if item.is_file() and not is_tex_artifact(item.name):
             rel_path = item.relative_to(project_dir).as_posix()
@@ -345,6 +560,722 @@ async def read_file(name: str, file_path: str):
     )
 
 
+@app.get(
+    "/api/projects/{name}/raw/{file_path:path}",
+    tags=["Projects"],
+)
+async def get_raw_file(name: str, file_path: str):
+    project_dir = resolve_project_dir(name)
+    if not project_dir.exists() or not project_dir.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project '{name}' not found.",
+        )
+
+    target_file = resolve_file_path(project_dir, file_path)
+    if not target_file.exists() or not target_file.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File '{file_path}' not found in project '{name}'.",
+        )
+
+    ext = target_file.suffix.lower()
+    media_types = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".svg": "image/svg+xml",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+        ".bmp": "image/bmp",
+        ".pdf": "application/pdf",
+        ".txt": "text/plain",
+        ".tex": "text/x-tex",
+        ".bib": "text/plain",
+    }
+    media_type = media_types.get(ext, "application/octet-stream")
+
+    return FileResponse(
+        path=str(target_file),
+        media_type=media_type,
+        filename=target_file.name,
+        headers={"Content-Disposition": f"inline; filename={target_file.name}"},
+    )
+
+
+@app.get(
+    "/api/projects/{name}/dataset/schema",
+    tags=["Dataset"],
+)
+async def get_project_dataset_schema(name: str, path: str):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, path)
+    try:
+        return get_dataset_schema(target_file)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except DatasetError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.get(
+    "/api/projects/{name}/dataset/slice",
+    tags=["Dataset"],
+)
+async def get_project_dataset_slice(
+    name: str,
+    path: str,
+    row_offset: int = 0,
+    row_limit: int = 100,
+    col_offset: int = 0,
+    col_limit: int = 50,
+):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, path)
+    try:
+        return get_dataset_slice(
+            target_file,
+            row_offset=row_offset,
+            row_limit=row_limit,
+            col_offset=col_offset,
+            col_limit=col_limit,
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except DatasetError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+class DescriptiveAnalysisRequest(BaseModel):
+    file_path: str
+    variables: List[str]
+    include_normality: bool = True
+
+
+class ReliabilityAnalysisRequest(BaseModel):
+    file_path: str
+    items: List[str]
+
+
+class RegressionAnalysisRequest(BaseModel):
+    file_path: str
+    dependent: str
+    independents: List[str]
+    check_vif: bool = True
+    check_durbin_watson: bool = True
+
+
+class ManovaAnalysisRequest(BaseModel):
+    file_path: str
+    dependents: List[str]
+    factor: str
+
+
+class PcaAnalysisRequest(BaseModel):
+    file_path: str
+    variables: List[str]
+    n_components: Optional[int] = None
+
+
+class TTestOneSampleRequest(BaseModel):
+    file_path: str
+    variable: str
+    test_value: float = 0.0
+
+
+class TTestIndependentRequest(BaseModel):
+    file_path: str
+    test_variable: str
+    group_variable: str
+
+
+class TTestPairedRequest(BaseModel):
+    file_path: str
+    var1: str
+    var2: str
+
+
+class AnovaOneWayRequest(BaseModel):
+    file_path: str
+    dependent: str
+    factor: str
+    post_hoc: bool = True
+
+
+class AnovaTwoWayRequest(BaseModel):
+    file_path: str
+    dependent: str
+    factor1: str
+    factor2: str
+
+
+class CorrelationRequest(BaseModel):
+    file_path: str
+    variables: List[str]
+
+
+class MannWhitneyURequest(BaseModel):
+    file_path: str
+    test_variable: str
+    group_variable: str
+
+
+class WilcoxonSignedRankRequest(BaseModel):
+    file_path: str
+    var1: str
+    var2: str
+
+
+class KruskalWallisRequest(BaseModel):
+    file_path: str
+    test_variable: str
+    group_variable: str
+
+
+class ChiSquareIndependenceRequest(BaseModel):
+    file_path: str
+    row_variable: str
+    col_variable: str
+
+
+@app.post(
+    "/api/projects/{name}/stats/descriptive",
+    tags=["Statistics"],
+)
+async def analyze_descriptive(name: str, payload: DescriptiveAnalysisRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        results = await asyncio.to_thread(
+            run_descriptive_analysis,
+            target_file,
+            payload.variables,
+            payload.include_normality,
+        )
+        latex_tables = generate_multi_style_table(
+            generate_descriptive_latex_table, results
+        )
+        return {
+            "analysis_type": "descriptive",
+            "results": results,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/reliability",
+    tags=["Statistics"],
+)
+async def analyze_reliability(name: str, payload: ReliabilityAnalysisRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_reliability_analysis,
+            target_file,
+            payload.items,
+        )
+        latex_tables = generate_multi_style_table(
+            generate_reliability_latex_table,
+            res["cronbach_alpha"],
+            res["items_count"],
+            res["sample_size"],
+            res["item_stats"],
+        )
+        return {
+            "analysis_type": "reliability",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/regression",
+    tags=["Statistics"],
+)
+async def analyze_regression(name: str, payload: RegressionAnalysisRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_regression_analysis,
+            target_file,
+            payload.dependent,
+            payload.independents,
+            payload.check_vif,
+            payload.check_durbin_watson,
+        )
+        latex_tables = generate_multi_style_table(
+            generate_regression_latex_table,
+            res["dependent"],
+            res["r"],
+            res["r_squared"],
+            res["adj_r_squared"],
+            res["f_statistic"],
+            res["f_p_value"],
+            res["coefficients"],
+        )
+        return {
+            "analysis_type": "regression",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/manova",
+    tags=["Statistics"],
+)
+async def analyze_manova(name: str, payload: ManovaAnalysisRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_manova_analysis,
+            target_file,
+            payload.dependents,
+            payload.factor,
+        )
+        latex_tables = generate_multi_style_table(
+            generate_manova_latex_table,
+            res["factor"],
+            res["dependents"],
+            res["tests"],
+        )
+        return {
+            "analysis_type": "manova",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/pca",
+    tags=["Statistics"],
+)
+async def analyze_pca(name: str, payload: PcaAnalysisRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_pca_analysis,
+            target_file,
+            payload.variables,
+            payload.n_components,
+        )
+        latex_tables = generate_multi_style_table(
+            generate_pca_latex_table,
+            res["loadings"],
+            res["explained_variance_ratio"],
+            res["eigenvalues"],
+        )
+        return {
+            "analysis_type": "pca",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/ttest/one-sample",
+    tags=["Statistics"],
+)
+async def analyze_ttest_one_sample(name: str, payload: TTestOneSampleRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_ttest_one_sample,
+            target_file,
+            payload.variable,
+            payload.test_value,
+        )
+        latex_tables = generate_multi_style_table(generate_ttest_latex_table, res)
+        return {
+            "analysis_type": "ttest_one_sample",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/ttest/independent",
+    tags=["Statistics"],
+)
+async def analyze_ttest_independent(name: str, payload: TTestIndependentRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_ttest_independent,
+            target_file,
+            payload.test_variable,
+            payload.group_variable,
+        )
+        latex_tables = generate_multi_style_table(generate_ttest_latex_table, res)
+        return {
+            "analysis_type": "ttest_independent",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/ttest/paired",
+    tags=["Statistics"],
+)
+async def analyze_ttest_paired(name: str, payload: TTestPairedRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_ttest_paired,
+            target_file,
+            payload.var1,
+            payload.var2,
+        )
+        latex_tables = generate_multi_style_table(generate_ttest_latex_table, res)
+        return {
+            "analysis_type": "ttest_paired",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/anova/oneway",
+    tags=["Statistics"],
+)
+async def analyze_anova_oneway(name: str, payload: AnovaOneWayRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_anova_oneway,
+            target_file,
+            payload.dependent,
+            payload.factor,
+            payload.post_hoc,
+        )
+        latex_tables = generate_multi_style_table(generate_anova_latex_table, res)
+        return {
+            "analysis_type": "anova_oneway",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/anova/twoway",
+    tags=["Statistics"],
+)
+async def analyze_anova_twoway(name: str, payload: AnovaTwoWayRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_anova_twoway,
+            target_file,
+            payload.dependent,
+            payload.factor1,
+            payload.factor2,
+        )
+        latex_tables = generate_multi_style_table(generate_anova_latex_table, res)
+        return {
+            "analysis_type": "anova_twoway",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/correlation/pearson",
+    tags=["Statistics"],
+)
+async def analyze_correlation_pearson(name: str, payload: CorrelationRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_correlation_pearson,
+            target_file,
+            payload.variables,
+        )
+        latex_tables = generate_multi_style_table(generate_correlation_latex_table, res)
+        return {
+            "analysis_type": "correlation_pearson",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/nonparametric/mann-whitney",
+    tags=["Statistics"],
+)
+async def analyze_mann_whitney(name: str, payload: MannWhitneyURequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_mann_whitney_u,
+            target_file,
+            payload.test_variable,
+            payload.group_variable,
+        )
+        latex_tables = generate_multi_style_table(
+            generate_nonparametric_latex_table, res
+        )
+        return {
+            "analysis_type": "mann_whitney_u",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/nonparametric/wilcoxon",
+    tags=["Statistics"],
+)
+async def analyze_wilcoxon(name: str, payload: WilcoxonSignedRankRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_wilcoxon_signed_rank,
+            target_file,
+            payload.var1,
+            payload.var2,
+        )
+        latex_tables = generate_multi_style_table(
+            generate_nonparametric_latex_table, res
+        )
+        return {
+            "analysis_type": "wilcoxon_signed_rank",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/nonparametric/kruskal",
+    tags=["Statistics"],
+)
+async def analyze_kruskal(name: str, payload: KruskalWallisRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_kruskal_wallis,
+            target_file,
+            payload.test_variable,
+            payload.group_variable,
+        )
+        latex_tables = generate_multi_style_table(
+            generate_nonparametric_latex_table, res
+        )
+        return {
+            "analysis_type": "kruskal_wallis",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/nonparametric/spearman",
+    tags=["Statistics"],
+)
+async def analyze_correlation_spearman(name: str, payload: CorrelationRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_correlation_spearman,
+            target_file,
+            payload.variables,
+        )
+        latex_tables = generate_multi_style_table(generate_correlation_latex_table, res)
+        return {
+            "analysis_type": "correlation_spearman",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/stats/chisquare",
+    tags=["Statistics"],
+)
+async def analyze_chisquare(name: str, payload: ChiSquareIndependenceRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_chisquare_independence,
+            target_file,
+            payload.row_variable,
+            payload.col_variable,
+        )
+        latex_tables = generate_multi_style_table(generate_chisquare_latex_table, res)
+        return {
+            "analysis_type": "chisquare_independence",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
 @app.put(
     "/api/projects/{name}/files/{file_path:path}",
     response_model=FileSaveResponse,
@@ -377,18 +1308,25 @@ async def save_file(name: str, file_path: str, payload: FileSaveRequest):
         updatedAt=datetime.fromtimestamp(stat_result.st_mtime).isoformat(),
     )
 
+
 def build_tree_node(item_path: Path, project_root: Path) -> Optional[TreeNodeResponse]:
     rel_path = item_path.relative_to(project_root).as_posix()
     name = item_path.name
 
     # Ignore hidden files, caches, dot folders, and LaTeX build artifacts
-    if name.startswith(".") or name in {".git", ".venv", "node_modules", "__pycache__", ".DS_Store"} or is_tex_artifact(name):
+    if (
+        name.startswith(".")
+        or name in {".git", ".venv", "node_modules", "__pycache__", ".DS_Store"}
+        or is_tex_artifact(name)
+    ):
         return None
 
     if item_path.is_dir():
         children: List[TreeNodeResponse] = []
         try:
-            for sub_item in sorted(item_path.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
+            for sub_item in sorted(
+                item_path.iterdir(), key=lambda p: (p.is_file(), p.name.lower())
+            ):
                 child_node = build_tree_node(sub_item, project_root)
                 if child_node:
                     children.append(child_node)
@@ -429,7 +1367,9 @@ async def get_project_tree(name: str):
         )
 
     tree_nodes: List[TreeNodeResponse] = []
-    for item in sorted(project_dir.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
+    for item in sorted(
+        project_dir.iterdir(), key=lambda p: (p.is_file(), p.name.lower())
+    ):
         node = build_tree_node(item, project_dir)
         if node:
             tree_nodes.append(node)
@@ -685,10 +1625,27 @@ async def forward_synctex(name: str, payload: SyncTeXForwardRequest):
 
 
 SEARCH_IGNORED_EXTENSIONS = {
-    ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg",
-    ".aux", ".log", ".out", ".toc", ".gz", ".synctex", ".fls",
-    ".fdb_latexmk", ".bbl", ".blg", ".pyc", ".DS_Store"
+    ".pdf",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".ico",
+    ".svg",
+    ".aux",
+    ".log",
+    ".out",
+    ".toc",
+    ".gz",
+    ".synctex",
+    ".fls",
+    ".fdb_latexmk",
+    ".bbl",
+    ".blg",
+    ".pyc",
+    ".DS_Store",
 }
+
 
 @app.get(
     "/api/projects/{name}/search",
@@ -727,8 +1684,10 @@ async def search_project(
     for root, dirs, files in os.walk(project_dir):
         # Skip hidden/cache directories
         dirs[:] = [
-            d for d in dirs
-            if not d.startswith(".") and d not in {".git", ".venv", "node_modules", "__pycache__"}
+            d
+            for d in dirs
+            if not d.startswith(".")
+            and d not in {".git", ".venv", "node_modules", "__pycache__"}
         ]
 
         for file in files:
@@ -864,8 +1823,10 @@ async def replace_project_matches(name: str, payload: SearchReplaceRequest):
     else:
         for root, dirs, files in os.walk(project_dir):
             dirs[:] = [
-                d for d in dirs
-                if not d.startswith(".") and d not in {".git", ".venv", "node_modules", "__pycache__"}
+                d
+                for d in dirs
+                if not d.startswith(".")
+                and d not in {".git", ".venv", "node_modules", "__pycache__"}
             ]
 
             for file in files:
@@ -902,6 +1863,7 @@ class GitFileChange(BaseModel):
     path: str
     staged: bool = False
 
+
 class GitStatusResponse(BaseModel):
     isGitRepo: bool
     branch: Optional[str] = None
@@ -910,27 +1872,34 @@ class GitStatusResponse(BaseModel):
     staged: List[GitFileChange] = []
     unstaged: List[GitFileChange] = []
 
+
 class GitStageRequest(BaseModel):
     file: Optional[str] = None
     all: bool = False
+
 
 class GitUnstageRequest(BaseModel):
     file: Optional[str] = None
     all: bool = False
 
+
 class GitDiscardRequest(BaseModel):
     file: str
+
 
 class GitCommitRequest(BaseModel):
     message: str
     smartCommit: bool = True
 
+
 class GitCheckoutRequest(BaseModel):
     branch: str
+
 
 class GitCreateBranchRequest(BaseModel):
     name: str
     checkout: bool = True
+
 
 @app.get(
     "/api/projects/{name}/git/status",
@@ -958,7 +1927,9 @@ async def get_project_git_status(name: str):
 
     try:
         branch_proc = await asyncio.create_subprocess_exec(
-            "git", "branch", "--show-current",
+            "git",
+            "branch",
+            "--show-current",
             cwd=str(project_dir),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -967,7 +1938,9 @@ async def get_project_git_status(name: str):
         branch_name = branch_out.decode("utf-8").strip() or "main"
 
         status_proc = await asyncio.create_subprocess_exec(
-            "git", "status", "-s",
+            "git",
+            "status",
+            "-s",
             cwd=str(project_dir),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -991,13 +1964,17 @@ async def get_project_git_status(name: str):
                 continue
 
             # Staged changes (index)
-            if index_char in {'M', 'A', 'D', 'R', 'C'}:
-                staged_files.append(GitFileChange(status=index_char, path=raw_path, staged=True))
+            if index_char in {"M", "A", "D", "R", "C"}:
+                staged_files.append(
+                    GitFileChange(status=index_char, path=raw_path, staged=True)
+                )
 
             # Unstaged / Untracked changes (working tree)
-            if worktree_char in {'M', 'D'} or line.startswith("??"):
-                u_status = worktree_char if worktree_char in {'M', 'D'} else '?'
-                unstaged_files.append(GitFileChange(status=u_status, path=raw_path, staged=False))
+            if worktree_char in {"M", "D"} or line.startswith("??"):
+                u_status = worktree_char if worktree_char in {"M", "D"} else "?"
+                unstaged_files.append(
+                    GitFileChange(status=u_status, path=raw_path, staged=False)
+                )
 
             if raw_path not in seen_paths:
                 seen_paths.add(raw_path)
@@ -1006,7 +1983,7 @@ async def get_project_git_status(name: str):
                     GitFileChange(
                         status=combined_status,
                         path=raw_path,
-                        staged=index_char in {'M', 'A', 'D'},
+                        staged=index_char in {"M", "A", "D"},
                     )
                 )
 
@@ -1063,7 +2040,8 @@ async def init_project_git(name: str):
 
     # Run git init
     init_proc = await asyncio.create_subprocess_exec(
-        "git", "init",
+        "git",
+        "init",
         cwd=str(project_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
@@ -1072,7 +2050,9 @@ async def init_project_git(name: str):
 
     # Run git add .
     add_proc = await asyncio.create_subprocess_exec(
-        "git", "add", ".",
+        "git",
+        "add",
+        ".",
         cwd=str(project_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
@@ -1081,7 +2061,10 @@ async def init_project_git(name: str):
 
     # Initial commit (fallback if already committed or empty)
     commit_proc = await asyncio.create_subprocess_exec(
-        "git", "commit", "-m", "Initial commit",
+        "git",
+        "commit",
+        "-m",
+        "Initial commit",
         cwd=str(project_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
@@ -1119,7 +2102,10 @@ async def stage_project_git_files(name: str, req: GitStageRequest):
     )
     _, stderr = await proc.communicate()
     if proc.returncode != 0:
-        raise HTTPException(status_code=400, detail=stderr.decode("utf-8", errors="replace") or "Git add failed.")
+        raise HTTPException(
+            status_code=400,
+            detail=stderr.decode("utf-8", errors="replace") or "Git add failed.",
+        )
     return {"success": True, "message": "File(s) staged successfully."}
 
 
@@ -1148,16 +2134,26 @@ async def unstage_project_git_files(name: str, req: GitUnstageRequest):
     _, stderr = await proc.communicate()
     if proc.returncode != 0:
         # Fallback to git reset HEAD
-        fallback_target = "." if (req.all or not req.file) else str(resolve_file_path(project_dir, req.file).relative_to(project_dir))
+        fallback_target = (
+            "."
+            if (req.all or not req.file)
+            else str(resolve_file_path(project_dir, req.file).relative_to(project_dir))
+        )
         f_proc = await asyncio.create_subprocess_exec(
-            "git", "reset", "HEAD", fallback_target,
+            "git",
+            "reset",
+            "HEAD",
+            fallback_target,
             cwd=str(project_dir),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         _, f_err = await f_proc.communicate()
         if f_proc.returncode != 0:
-            raise HTTPException(status_code=400, detail=f_err.decode("utf-8", errors="replace") or "Git unstage failed.")
+            raise HTTPException(
+                status_code=400,
+                detail=f_err.decode("utf-8", errors="replace") or "Git unstage failed.",
+            )
 
     return {"success": True, "message": "File(s) unstaged successfully."}
 
@@ -1176,7 +2172,10 @@ async def discard_project_git_file(name: str, req: GitDiscardRequest):
 
     # Check status of file to see if untracked
     status_proc = await asyncio.create_subprocess_exec(
-        "git", "status", "-s", rel_path,
+        "git",
+        "status",
+        "-s",
+        rel_path,
         cwd=str(project_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
@@ -1192,7 +2191,9 @@ async def discard_project_git_file(name: str, req: GitDiscardRequest):
                 shutil.rmtree(safe_file)
     else:
         restore_proc = await asyncio.create_subprocess_exec(
-            "git", "restore", rel_path,
+            "git",
+            "restore",
+            rel_path,
             cwd=str(project_dir),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -1201,7 +2202,10 @@ async def discard_project_git_file(name: str, req: GitDiscardRequest):
         if restore_proc.returncode != 0:
             # Fallback to git checkout --
             co_proc = await asyncio.create_subprocess_exec(
-                "git", "checkout", "--", rel_path,
+                "git",
+                "checkout",
+                "--",
+                rel_path,
                 cwd=str(project_dir),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -1226,7 +2230,10 @@ async def commit_project_git(name: str, req: GitCommitRequest):
 
     # Check if there are staged changes
     diff_proc = await asyncio.create_subprocess_exec(
-        "git", "diff", "--cached", "--name-only",
+        "git",
+        "diff",
+        "--cached",
+        "--name-only",
         cwd=str(project_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
@@ -1237,7 +2244,9 @@ async def commit_project_git(name: str, req: GitCommitRequest):
     if not has_staged:
         if req.smartCommit:
             add_proc = await asyncio.create_subprocess_exec(
-                "git", "add", ".",
+                "git",
+                "add",
+                ".",
                 cwd=str(project_dir),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -1247,14 +2256,21 @@ async def commit_project_git(name: str, req: GitCommitRequest):
             raise HTTPException(status_code=400, detail="No staged changes to commit.")
 
     commit_proc = await asyncio.create_subprocess_exec(
-        "git", "commit", "-m", msg,
+        "git",
+        "commit",
+        "-m",
+        msg,
         cwd=str(project_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
     c_out, c_err = await commit_proc.communicate()
     if commit_proc.returncode != 0:
-        err_msg = c_err.decode("utf-8", errors="replace") or c_out.decode("utf-8", errors="replace") or "Commit failed."
+        err_msg = (
+            c_err.decode("utf-8", errors="replace")
+            or c_out.decode("utf-8", errors="replace")
+            or "Commit failed."
+        )
         raise HTTPException(status_code=400, detail=err_msg)
 
     return {"success": True, "message": f"Committed: {msg}"}
@@ -1270,7 +2286,9 @@ async def list_project_git_branches(name: str):
         raise HTTPException(status_code=400, detail="Not a git repository.")
 
     proc = await asyncio.create_subprocess_exec(
-        "git", "branch", "--list",
+        "git",
+        "branch",
+        "--list",
         cwd=str(project_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
@@ -1308,17 +2326,27 @@ async def checkout_project_git_branch(name: str, req: GitCheckoutRequest):
         raise HTTPException(status_code=400, detail="Invalid branch name.")
 
     proc = await asyncio.create_subprocess_exec(
-        "git", "checkout", branch,
+        "git",
+        "checkout",
+        branch,
         cwd=str(project_dir),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
     out, err = await proc.communicate()
     if proc.returncode != 0:
-        detail_msg = err.decode("utf-8", errors="replace") or out.decode("utf-8", errors="replace") or "Failed to checkout branch."
+        detail_msg = (
+            err.decode("utf-8", errors="replace")
+            or out.decode("utf-8", errors="replace")
+            or "Failed to checkout branch."
+        )
         raise HTTPException(status_code=400, detail=detail_msg)
 
-    return {"success": True, "branch": branch, "message": f"Switched to branch '{branch}'."}
+    return {
+        "success": True,
+        "branch": branch,
+        "message": f"Switched to branch '{branch}'.",
+    }
 
 
 @app.post(
@@ -1334,7 +2362,9 @@ async def create_project_git_branch(name: str, req: GitCreateBranchRequest):
     if not branch or not re.match(r"^[a-zA-Z0-9_\-./]+$", branch):
         raise HTTPException(status_code=400, detail="Invalid branch name.")
 
-    cmd = ["git", "checkout", "-b", branch] if req.checkout else ["git", "branch", branch]
+    cmd = (
+        ["git", "checkout", "-b", branch] if req.checkout else ["git", "branch", branch]
+    )
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         cwd=str(project_dir),
@@ -1343,17 +2373,27 @@ async def create_project_git_branch(name: str, req: GitCreateBranchRequest):
     )
     out, err = await proc.communicate()
     if proc.returncode != 0:
-        detail_msg = err.decode("utf-8", errors="replace") or out.decode("utf-8", errors="replace") or "Failed to create branch."
+        detail_msg = (
+            err.decode("utf-8", errors="replace")
+            or out.decode("utf-8", errors="replace")
+            or "Failed to create branch."
+        )
         raise HTTPException(status_code=400, detail=detail_msg)
 
-    return {"success": True, "branch": branch, "message": f"Branch '{branch}' created successfully."}
+    return {
+        "success": True,
+        "branch": branch,
+        "message": f"Branch '{branch}' created successfully.",
+    }
 
 
 @app.get(
     "/api/projects/{name}/git/diff",
     tags=["Git"],
 )
-async def get_project_git_diff(name: str, file: Optional[str] = None, staged: bool = False):
+async def get_project_git_diff(
+    name: str, file: Optional[str] = None, staged: bool = False
+):
     project_dir = resolve_project_dir(name)
     if not project_dir.exists() or not project_dir.is_dir():
         raise HTTPException(
@@ -1409,7 +2449,11 @@ async def get_project_git_log(name: str, limit: int = 50):
 
     try:
         proc = await asyncio.create_subprocess_exec(
-            "git", "log", "--all", "--graph", "--date=short",
+            "git",
+            "log",
+            "--all",
+            "--graph",
+            "--date=short",
             "--format=format:__COMMIT__%h|%p|%d|%s|%an|%cd",
             f"-n{limit}",
             cwd=str(project_dir),
@@ -1476,4 +2520,5 @@ async def get_project_git_log(name: str, limit: int = 50):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("backend.main:app", host=HOST, port=PORT, reload=True)

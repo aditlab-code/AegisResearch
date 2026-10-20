@@ -1,19 +1,21 @@
-import React, { useState } from 'react'
-import { CheckCheck } from 'lucide-react'
-import { PopoverShell } from './PopoverShell'
+import React, { useState } from "react";
+import { CheckCheck } from "lucide-react";
+import { PopoverShell } from "./PopoverShell";
 
 export interface SpellingPopoverProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
-export const SpellingPopover: React.FC<SpellingPopoverProps> = ({ onClose }) => {
-  const [selectedLang, setSelectedLang] = useState('en-US')
-  const [enableSpellcheck, setEnableSpellcheck] = useState(true)
+export const SpellingPopover: React.FC<SpellingPopoverProps> = ({
+  onClose,
+}) => {
+  const [selectedLang, setSelectedLang] = useState("en-US");
+  const [enableSpellcheck, setEnableSpellcheck] = useState(true);
 
   const handleApply = (e: React.FormEvent) => {
-    e.preventDefault()
-    onClose()
-  }
+    e.preventDefault();
+    onClose();
+  };
 
   return (
     <PopoverShell
@@ -47,7 +49,10 @@ export const SpellingPopover: React.FC<SpellingPopoverProps> = ({ onClose }) => 
             onChange={(e) => setEnableSpellcheck(e.target.checked)}
             className="rounded border-zinc-300 dark:border-zinc-700 text-[#4078f2] dark:text-[#61afef] focus:ring-0 bg-white dark:bg-zinc-800"
           />
-          <label htmlFor="spellcheck-toggle" className="text-zinc-700 dark:text-zinc-300 cursor-pointer">
+          <label
+            htmlFor="spellcheck-toggle"
+            className="text-zinc-700 dark:text-zinc-300 cursor-pointer"
+          >
             Check spelling as you type
           </label>
         </div>
@@ -60,5 +65,5 @@ export const SpellingPopover: React.FC<SpellingPopoverProps> = ({ onClose }) => 
         </button>
       </form>
     </PopoverShell>
-  )
-}
+  );
+};

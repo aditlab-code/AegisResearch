@@ -3,11 +3,11 @@
  * for LaTeX and Markdown documents.
  */
 
-export type BibliographyStyleChoice = 'apa' | 'ieee' | { custom: string }
+export type BibliographyStyleChoice = "apa" | "ieee" | { custom: string };
 
 export interface StyleTransformResult {
-  content: string
-  changed: boolean
+  content: string;
+  changed: boolean;
 }
 
 /**
@@ -18,87 +18,97 @@ export interface StyleTransformResult {
 export function applyLatexBibliographyStyle(
   docContent: string,
   styleChoice: BibliographyStyleChoice,
-  bibFileName = 'references'
+  bibFileName = "references",
 ): StyleTransformResult {
-  let content = docContent
-  let changed = false
+  let content = docContent;
+  let changed = false;
 
   const styleName =
-    typeof styleChoice === 'string'
-      ? styleChoice === 'apa'
-        ? 'apalike'
-        : 'ieeetr'
-      : styleChoice.custom.trim()
+    typeof styleChoice === "string"
+      ? styleChoice === "apa"
+        ? "apalike"
+        : "ieeetr"
+      : styleChoice.custom.trim();
 
-  const isApa = styleName === 'apalike'
+  const isApa = styleName === "apalike";
 
   // 1. Guard Preamble (\usepackage{apalike})
-  const apalikePkgRegex = /^[ \t]*\\usepackage(\[[^\]]*\])?\{apalike\}[ \t]*\r?\n?/m
-  const docClassRegex = /^[ \t]*\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/m
-  const beginDocRegex = /^[ \t]*\\begin\{document\}/m
+  const apalikePkgRegex =
+    /^[ \t]*\\usepackage(\[[^\]]*\])?\{apalike\}[ \t]*\r?\n?/m;
+  const docClassRegex = /^[ \t]*\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/m;
+  const beginDocRegex = /^[ \t]*\\begin\{document\}/m;
 
   if (isApa) {
     if (!apalikePkgRegex.test(content)) {
       if (beginDocRegex.test(content)) {
-        content = content.replace(beginDocRegex, `\\usepackage{apalike}\n\\begin{document}`)
-        changed = true
+        content = content.replace(
+          beginDocRegex,
+          `\\usepackage{apalike}\n\\begin{document}`,
+        );
+        changed = true;
       } else if (docClassRegex.test(content)) {
-        content = content.replace(docClassRegex, (match) => `${match}\n\\usepackage{apalike}`)
-        changed = true
+        content = content.replace(
+          docClassRegex,
+          (match) => `${match}\n\\usepackage{apalike}`,
+        );
+        changed = true;
       } else {
-        content = `\\usepackage{apalike}\n${content}`
-        changed = true
+        content = `\\usepackage{apalike}\n${content}`;
+        changed = true;
       }
     }
   } else {
     // When switching from APA to IEEE / custom non-apalike, remove \usepackage{apalike} to avoid conflicting styles
     if (apalikePkgRegex.test(content)) {
-      content = content.replace(apalikePkgRegex, '')
-      changed = true
+      content = content.replace(apalikePkgRegex, "");
+      changed = true;
     }
   }
 
   // 2. Update or Insert \bibliographystyle and \bibliography
-  const bibstyleRegex = /\\bibliographystyle\{[^}]+\}/
-  const bibliographyRegex = /\\bibliography\{[^}]+\}/
-  const endDocRegex = /^[ \t]*\\end\{document\}/m
+  const bibstyleRegex = /\\bibliographystyle\{[^}]+\}/;
+  const bibliographyRegex = /\\bibliography\{[^}]+\}/;
+  const endDocRegex = /^[ \t]*\\end\{document\}/m;
 
-  const cleanBibFile = bibFileName.replace(/\.bib$/i, '')
-  const newStyleCmd = `\\bibliographystyle{${styleName}}`
-  const newBibCmd = `\\bibliography{${cleanBibFile}}`
+  const cleanBibFile = bibFileName.replace(/\.bib$/i, "");
+  const newStyleCmd = `\\bibliographystyle{${styleName}}`;
+  const newBibCmd = `\\bibliography{${cleanBibFile}}`;
 
   if (bibstyleRegex.test(content)) {
-    content = content.replace(bibstyleRegex, newStyleCmd)
-    changed = true
+    content = content.replace(bibstyleRegex, newStyleCmd);
+    changed = true;
   }
 
   if (bibliographyRegex.test(content)) {
     // keep or update bib file
-    content = content.replace(bibliographyRegex, newBibCmd)
-    changed = true
+    content = content.replace(bibliographyRegex, newBibCmd);
+    changed = true;
   }
 
   // If neither bibliography command is present in document body, insert before \end{document}
   if (!bibstyleRegex.test(content) && !bibliographyRegex.test(content)) {
-    const bibBlock = `\n${newStyleCmd}\n${newBibCmd}\n`
+    const bibBlock = `\n${newStyleCmd}\n${newBibCmd}\n`;
     if (endDocRegex.test(content)) {
-      content = content.replace(endDocRegex, `${bibBlock}\\end{document}`)
-      changed = true
+      content = content.replace(endDocRegex, `${bibBlock}\\end{document}`);
+      changed = true;
     } else {
-      content = `${content.trimEnd()}\n${bibBlock}`
-      changed = true
+      content = `${content.trimEnd()}\n${bibBlock}`;
+      changed = true;
     }
   } else if (!bibstyleRegex.test(content)) {
     // Only bibliography exists, insert style right before it
-    content = content.replace(bibliographyRegex, `${newStyleCmd}\n${newBibCmd}`)
-    changed = true
+    content = content.replace(
+      bibliographyRegex,
+      `${newStyleCmd}\n${newBibCmd}`,
+    );
+    changed = true;
   } else if (!bibliographyRegex.test(content)) {
     // Only style exists, insert bibliography right after it
-    content = content.replace(bibstyleRegex, `${newStyleCmd}\n${newBibCmd}`)
-    changed = true
+    content = content.replace(bibstyleRegex, `${newStyleCmd}\n${newBibCmd}`);
+    changed = true;
   }
 
-  return { content, changed }
+  return { content, changed };
 }
 
 /**
@@ -107,49 +117,58 @@ export function applyLatexBibliographyStyle(
 export function applyMarkdownBibliographyStyle(
   docContent: string,
   styleChoice: BibliographyStyleChoice,
-  bibFileName = 'references.bib'
+  bibFileName = "references.bib",
 ): StyleTransformResult {
-  let content = docContent
-  let changed = false
+  let content = docContent;
+  let changed = false;
 
-  const cleanBibFile = bibFileName.endsWith('.bib') ? bibFileName : `${bibFileName}.bib`
+  const cleanBibFile = bibFileName.endsWith(".bib")
+    ? bibFileName
+    : `${bibFileName}.bib`;
   const cslFile =
-    typeof styleChoice === 'string'
-      ? styleChoice === 'apa'
-        ? 'apa.csl'
-        : 'ieee.csl'
-      : `${styleChoice.custom.trim().replace(/\.csl$/i, '')}.csl`
+    typeof styleChoice === "string"
+      ? styleChoice === "apa"
+        ? "apa.csl"
+        : "ieee.csl"
+      : `${styleChoice.custom.trim().replace(/\.csl$/i, "")}.csl`;
 
-  const yamlFrontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---/
-  const match = content.match(yamlFrontmatterRegex)
+  const yamlFrontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---/;
+  const match = content.match(yamlFrontmatterRegex);
 
   if (match) {
-    let yaml = match[1]
+    let yaml = match[1];
     if (/^bibliography:\s*.*$/m.test(yaml)) {
-      yaml = yaml.replace(/^bibliography:\s*.*$/m, `bibliography: ${cleanBibFile}`)
+      yaml = yaml.replace(
+        /^bibliography:\s*.*$/m,
+        `bibliography: ${cleanBibFile}`,
+      );
     } else {
-      yaml = `${yaml}\nbibliography: ${cleanBibFile}`
+      yaml = `${yaml}\nbibliography: ${cleanBibFile}`;
     }
 
     if (/^csl:\s*.*$/m.test(yaml)) {
-      yaml = yaml.replace(/^csl:\s*.*$/m, `csl: ${cslFile}`)
+      yaml = yaml.replace(/^csl:\s*.*$/m, `csl: ${cslFile}`);
     } else {
-      yaml = `${yaml}\ncsl: ${cslFile}`
+      yaml = `${yaml}\ncsl: ${cslFile}`;
     }
 
-    content = content.replace(yamlFrontmatterRegex, `---\n${yaml.trim()}\n---`)
-    changed = true
+    content = content.replace(yamlFrontmatterRegex, `---\n${yaml.trim()}\n---`);
+    changed = true;
   } else {
-    const frontmatter = `---\nbibliography: ${cleanBibFile}\ncsl: ${cslFile}\n---\n\n`
-    content = `${frontmatter}${content}`
-    changed = true
+    const frontmatter = `---\nbibliography: ${cleanBibFile}\ncsl: ${cslFile}\n---\n\n`;
+    content = `${frontmatter}${content}`;
+    changed = true;
   }
 
   // Ensure references container exists
-  if (!content.includes('id="refs"') && !content.includes('# References') && !content.includes('## References')) {
-    content = `${content.trimEnd()}\n\n## References\n\n<div id="refs"></div>\n`
-    changed = true
+  if (
+    !content.includes('id="refs"') &&
+    !content.includes("# References") &&
+    !content.includes("## References")
+  ) {
+    content = `${content.trimEnd()}\n\n## References\n\n<div id="refs"></div>\n`;
+    changed = true;
   }
 
-  return { content, changed }
+  return { content, changed };
 }

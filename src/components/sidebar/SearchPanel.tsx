@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Search,
   X,
@@ -10,105 +10,111 @@ import {
   ChevronRight,
   Replace,
   ReplaceAll,
-} from 'lucide-react'
-import { SearchFileResult, SearchMatch } from '../../types'
-import { searchService } from '../../services'
-import { SearchTreeItem } from './SearchTreeItem'
+} from "lucide-react";
+import { SearchFileResult, SearchMatch } from "../../types";
+import { searchService } from "../../services";
+import { SearchTreeItem } from "./SearchTreeItem";
 
 export interface SearchPanelProps {
-  value?: string
-  projectName?: string
-  onChange?: (val: string) => void
-  onSelectMatch?: (filePath: string, lineNumber: number) => void
-  onRefreshDocs?: () => void
+  value?: string;
+  projectName?: string;
+  onChange?: (val: string) => void;
+  onSelectMatch?: (filePath: string, lineNumber: number) => void;
+  onRefreshDocs?: () => void;
 }
 
 export const SearchPanel: React.FC<SearchPanelProps> = ({
-  value = '',
-  projectName = 'quantum-thesis',
+  value = "",
+  projectName = "template-thesis",
   onChange,
   onSelectMatch,
   onRefreshDocs,
 }) => {
-  const [query, setQuery] = useState(value)
-  const [caseSensitive, setCaseSensitive] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [results, setResults] = useState<SearchFileResult[]>([])
-  const [totalMatches, setTotalMatches] = useState(0)
-  const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set())
+  const [query, setQuery] = useState(value);
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<SearchFileResult[]>([]);
+  const [totalMatches, setTotalMatches] = useState(0);
+  const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
 
   // Replace state
-  const [isReplaceOpen, setIsReplaceOpen] = useState(false)
-  const [replaceQuery, setReplaceQuery] = useState('')
-  const [isReplacing, setIsReplacing] = useState(false)
-  const [replaceNotice, setReplaceNotice] = useState<string | null>(null)
+  const [isReplaceOpen, setIsReplaceOpen] = useState(false);
+  const [replaceQuery, setReplaceQuery] = useState("");
+  const [isReplacing, setIsReplacing] = useState(false);
+  const [replaceNotice, setReplaceNotice] = useState<string | null>(null);
 
   const handleSearch = useCallback(
     async (q: string, cs: boolean) => {
-      const stripped = q.trim()
+      const stripped = q.trim();
       if (stripped.length < 5) {
-        setResults([])
-        setTotalMatches(0)
-        setExpandedFiles(new Set())
-        return
+        setResults([]);
+        setTotalMatches(0);
+        setExpandedFiles(new Set());
+        return;
       }
 
-      setLoading(true)
+      setLoading(true);
       try {
-        const data = await searchService.searchProject(projectName, stripped, cs)
-        setResults(data.results || [])
-        setTotalMatches(data.totalMatches || 0)
+        const data = await searchService.searchProject(
+          projectName,
+          stripped,
+          cs,
+        );
+        setResults(data.results || []);
+        setTotalMatches(data.totalMatches || 0);
         // Auto-expand all result files
-        const allPaths = new Set<string>((data.results || []).map((r) => r.filePath))
-        setExpandedFiles(allPaths)
+        const allPaths = new Set<string>(
+          (data.results || []).map((r) => r.filePath),
+        );
+        setExpandedFiles(allPaths);
       } catch (err) {
-        console.warn('Search error:', err)
-        setResults([])
-        setTotalMatches(0)
+        console.warn("Search error:", err);
+        setResults([]);
+        setTotalMatches(0);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     },
     [projectName],
-  )
+  );
 
   // Debounced search on query or caseSensitive change
   useEffect(() => {
     const timer = setTimeout(() => {
-      handleSearch(query, caseSensitive)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [query, caseSensitive, handleSearch])
+      handleSearch(query, caseSensitive);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query, caseSensitive, handleSearch]);
 
   const handleInputChange = (newVal: string) => {
-    setQuery(newVal)
-    onChange?.(newVal)
-  }
+    setQuery(newVal);
+    onChange?.(newVal);
+  };
 
   const toggleFile = (path: string) => {
     setExpandedFiles((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(path)) {
-        next.delete(path)
+        next.delete(path);
       } else {
-        next.add(path)
+        next.add(path);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   const expandAll = () => {
-    setExpandedFiles(new Set(results.map((r) => r.filePath)))
-  }
+    setExpandedFiles(new Set(results.map((r) => r.filePath)));
+  };
 
   const collapseAll = () => {
-    setExpandedFiles(new Set())
-  }
+    setExpandedFiles(new Set());
+  };
 
   const handleReplaceSingle = async (filePath: string, match: SearchMatch) => {
-    if (!query.trim()) return
-    setIsReplacing(true)
-    setReplaceNotice(null)
+    if (!query.trim()) return;
+    setIsReplacing(true);
+    setReplaceNotice(null);
     try {
       const res = await searchService.replaceMatches(projectName, {
         query: query.trim(),
@@ -116,38 +122,38 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
         caseSensitive,
         filePath,
         lineNumber: match.lineNumber,
-      })
-      onRefreshDocs?.()
-      setReplaceNotice(`Replaced match in ${filePath}`)
-      await handleSearch(query, caseSensitive)
+      });
+      onRefreshDocs?.();
+      setReplaceNotice(`Replaced match in ${filePath}`);
+      await handleSearch(query, caseSensitive);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error'
-      setReplaceNotice(`Replace failed: ${msg}`)
+      const msg = err instanceof Error ? err.message : "Error";
+      setReplaceNotice(`Replace failed: ${msg}`);
     } finally {
-      setIsReplacing(false)
+      setIsReplacing(false);
     }
-  }
+  };
 
   const handleReplaceAll = async () => {
-    if (!query.trim() || totalMatches === 0) return
-    setIsReplacing(true)
-    setReplaceNotice(null)
+    if (!query.trim() || totalMatches === 0) return;
+    setIsReplacing(true);
+    setReplaceNotice(null);
     try {
       const res = await searchService.replaceMatches(projectName, {
         query: query.trim(),
         replaceWith: replaceQuery,
         caseSensitive,
-      })
-      onRefreshDocs?.()
-      setReplaceNotice(res.message)
-      await handleSearch(query, caseSensitive)
+      });
+      onRefreshDocs?.();
+      setReplaceNotice(res.message);
+      await handleSearch(query, caseSensitive);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error'
-      setReplaceNotice(`Replace all failed: ${msg}`)
+      const msg = err instanceof Error ? err.message : "Error";
+      setReplaceNotice(`Replace all failed: ${msg}`);
     } finally {
-      setIsReplacing(false)
+      setIsReplacing(false);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -157,10 +163,14 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
           <button
             type="button"
             onClick={() => setIsReplaceOpen(!isReplaceOpen)}
-            title={isReplaceOpen ? 'Hide Replace' : 'Toggle Replace'}
+            title={isReplaceOpen ? "Hide Replace" : "Toggle Replace"}
             className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            {isReplaceOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            {isReplaceOpen ? (
+              <ChevronDown className="size-3.5" />
+            ) : (
+              <ChevronRight className="size-3.5" />
+            )}
           </button>
           <div className="relative flex-1 flex items-center">
             <Search className="size-3.5 text-stone-400 absolute left-2.5 pointer-events-none" />
@@ -176,11 +186,15 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               <button
                 type="button"
                 onClick={() => setCaseSensitive(!caseSensitive)}
-                title={caseSensitive ? 'Match Case (Active)' : 'Match Case (Inactive)'}
+                title={
+                  caseSensitive
+                    ? "Match Case (Active)"
+                    : "Match Case (Inactive)"
+                }
                 className={`p-1 rounded text-xs transition-colors ${
                   caseSensitive
-                    ? 'bg-blue-50 dark:bg-zinc-700 text-blue-600 dark:text-blue-400'
-                    : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                    ? "bg-blue-50 dark:bg-zinc-700 text-blue-600 dark:text-blue-400"
+                    : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                 }`}
               >
                 <CaseSensitive className="size-3.5" />
@@ -189,7 +203,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               {query && (
                 <button
                   type="button"
-                  onClick={() => handleInputChange('')}
+                  onClick={() => handleInputChange("")}
                   title="Clear search"
                   className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded"
                 >
@@ -237,7 +251,8 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
         {/* Validation hint if query < 5 chars */}
         {query.trim().length > 0 && query.trim().length < 5 && (
           <div className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2 py-1 rounded">
-            Type at least {5 - query.trim().length} more character{5 - query.trim().length > 1 ? 's' : ''} to search...
+            Type at least {5 - query.trim().length} more character
+            {5 - query.trim().length > 1 ? "s" : ""} to search...
           </div>
         )}
       </div>
@@ -253,7 +268,8 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               </span>
             ) : (
               <span>
-                <strong>{totalMatches}</strong> results in <strong>{results.length}</strong> files
+                <strong>{totalMatches}</strong> results in{" "}
+                <strong>{results.length}</strong> files
               </span>
             )}
           </span>
@@ -293,7 +309,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               canReplace={isReplaceOpen}
               onToggle={() => toggleFile(fileRes.filePath)}
               onSelectMatch={(filePath, match) => {
-                onSelectMatch?.(filePath, match.lineNumber)
+                onSelectMatch?.(filePath, match.lineNumber);
               }}
               onReplaceMatch={handleReplaceSingle}
             />
@@ -308,5 +324,5 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
         )
       )}
     </div>
-  )
-}
+  );
+};

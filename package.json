@@ -3,13 +3,17 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "scripts": {                                                                                                      
-        "dev:frontend": "vite",                                                                                         
-        "dev:backend": "backend/.venv/bin/python -m backend.main",                                                      
-        "dev": "npm run dev:backend & npm run dev:frontend",                                                            
-        "build": "tsc && vite build",                                                                                   
-        "preview": "vite preview"                                                                                       
-      },         
+  "scripts": {
+    "dev:frontend": "vite",
+    "dev:backend": "backend/.venv/bin/python -m backend.main",
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\" \"*.{ts,tsx,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\" \"*.{ts,tsx,json}\"",
+    "release": "./scripts/release-public.sh",
+    "release:dry": "./scripts/release-public.sh --dry-run"
+  },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "katex": "^0.19.0",
@@ -29,6 +33,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.2",
+    "prettier": "^3.9.10",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "vite": "^6.1.0"

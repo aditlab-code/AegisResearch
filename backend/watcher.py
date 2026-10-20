@@ -5,13 +5,35 @@ from typing import Dict, Set, List
 from fastapi import WebSocket, WebSocketDisconnect
 
 # Directory names to ignore
-IGNORED_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", ".idea", ".vscode"}
+IGNORED_DIRS = {
+    ".git",
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".idea",
+    ".vscode",
+}
 
 # File extensions produced by LaTeX builds that should NOT trigger watcher events
 TEX_BUILD_ARTIFACT_EXTS = {
-    ".aux", ".log", ".toc", ".bbl", ".blg", ".fls",
-    ".fdb_latexmk", ".synctex.gz", ".out", ".lof", ".lot",
-    ".nav", ".snm", ".vrb", ".idx", ".ilg", ".ind"
+    ".aux",
+    ".log",
+    ".toc",
+    ".bbl",
+    ".blg",
+    ".fls",
+    ".fdb_latexmk",
+    ".synctex.gz",
+    ".out",
+    ".lof",
+    ".lot",
+    ".nav",
+    ".snm",
+    ".vrb",
+    ".idx",
+    ".ilg",
+    ".ind",
 }
 
 IGNORED_FILES = {".DS_Store"}
@@ -41,7 +63,9 @@ class WorkspaceWatcherManager:
 
         for root, dirs, files in os.walk(project_dir):
             # Mutate dirs in-place to skip ignored directories
-            dirs[:] = [d for d in dirs if d not in IGNORED_DIRS and not d.startswith(".")]
+            dirs[:] = [
+                d for d in dirs if d not in IGNORED_DIRS and not d.startswith(".")
+            ]
 
             root_path = Path(root)
             try:
@@ -105,7 +129,10 @@ class WorkspaceWatcherManager:
         try:
             while True:
                 await asyncio.sleep(0.5)  # 500ms smooth debounce
-                if project_name not in self._active_connections or not self._active_connections[project_name]:
+                if (
+                    project_name not in self._active_connections
+                    or not self._active_connections[project_name]
+                ):
                     break
 
                 current_snapshot = self._scan_mtimes(project_dir)

@@ -1,0 +1,30 @@
+\section{Panduan Sintaks \& Fitur Utama}
+\label{sec:sintaks}
+
+\subsection{Penulisan Rumus Matematika}
+LaTeX memiliki kemampuan luar biasa dalam merender rumus matematika:
+\begin{equation}
+    f(x) = \int_{-\infty}^{\infty} \frac{1}{\sqrt{2\pi\sigma^2}} e^{-\frac{(x-\mu)^2}{2\sigma^2}} dx = 1
+    \label{eq:normal_dist}
+\end{equation}
+Persamaan di atas dapat dirujuk secara otomatis menggunakan label \eqref{eq:normal_dist}.
+
+\subsection{Manajemen Sitasi Modern dengan Biber}
+Dengan \texttt{biblatex}, sitasi dapat dipanggil menggunakan perintah \texttt{\textbackslash cite}. Contohnya, karya fundamental Donald Knuth mengenai TeX \cite{knuth1984texbook} dan Leslie Lamport mengenai LaTeX \cite{lamport1994latex}.
+
+\subsection{Struktur Tabel}
+Tabel rapi dapat dibuat dengan paket \texttt{booktabs}:
+\begin{table}[htbp]
+\centering
+\caption{Perbandingan Format Dokumen Tradisional vs Modular}
+\label{tab:perbandingan}
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Satu File (Flat)} & \textbf{Modular} \\
+\midrule
+Navigasi Bab & Sulit & Sangat Mudah \\
+Kolaborasi Git & Rawan Konflik & Aman \& Terisolasi \\
+Kompilasi & Lambat & Cepat via Root File \\
+\bottomrule
+\end{tabular}
+\end{table}

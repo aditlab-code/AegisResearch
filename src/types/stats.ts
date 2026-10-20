@@ -1,0 +1,483 @@
+export type AnalysisType =
+  | "descriptive"
+  | "reliability"
+  | "regression"
+  | "manova"
+  | "pca"
+  | "ttest_one_sample"
+  | "ttest_independent"
+  | "ttest_paired"
+  | "anova_oneway"
+  | "anova_twoway"
+  | "correlation_pearson"
+  | "mann_whitney"
+  | "wilcoxon"
+  | "kruskal"
+  | "correlation_spearman"
+  | "chisquare";
+
+export type MeasurementScale = "nominal" | "ordinal" | "scale";
+export type TableStyle = "apa" | "ieee" | "classic";
+
+export interface VariableMeta {
+  name: string;
+  type?: string;
+  scale: MeasurementScale;
+}
+
+export interface DescriptiveRequest {
+  file_path: string;
+  variables: string[];
+  include_normality?: boolean;
+}
+
+export interface FrequencyEntry {
+  value: string | number;
+  count: number;
+  percentage: number;
+}
+
+export interface DescriptiveVariableResult {
+  variable: string;
+  scale?: MeasurementScale;
+  n: number;
+  mean?: number | null;
+  std?: number | null;
+  median?: number | null;
+  min?: number | null;
+  max?: number | null;
+  skewness?: number | null;
+  kurtosis?: number | null;
+  shapiro_w?: number | null;
+  shapiro_p?: number | null;
+  mode?: string | number | null;
+  frequencies?: FrequencyEntry[] | null;
+}
+
+export interface DescriptiveResponse {
+  analysis_type: "descriptive";
+  results: DescriptiveVariableResult[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface ReliabilityRequest {
+  file_path: string;
+  items: string[];
+}
+
+export interface ItemReliabilityStat {
+  item: string;
+  mean: number;
+  std: number;
+  corrected_item_total_corr: number;
+  alpha_if_deleted: number;
+}
+
+export interface ReliabilityResponse {
+  analysis_type: "reliability";
+  cronbach_alpha: number;
+  items_count: number;
+  sample_size: number;
+  item_stats: ItemReliabilityStat[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface RegressionRequest {
+  file_path: string;
+  dependent: string;
+  independents: string[];
+  check_vif?: boolean;
+  check_durbin_watson?: boolean;
+}
+
+export interface RegressionCoeff {
+  variable: string;
+  b: number;
+  std_err: number;
+  beta: number;
+  t: number;
+  p_value: number;
+  vif?: number | null;
+  tolerance?: number | null;
+}
+
+export interface RegressionResponse {
+  analysis_type: "regression";
+  dependent: string;
+  r: number;
+  r_squared: number;
+  adj_r_squared: number;
+  f_statistic: number;
+  f_p_value: number;
+  durbin_watson?: number | null;
+  coefficients: RegressionCoeff[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface ManovaRequest {
+  file_path: string;
+  dependents: string[];
+  factor: string;
+}
+
+export interface ManovaTestResult {
+  test_name: string;
+  value: number;
+  f_stat: number;
+  num_df: number;
+  den_df: number;
+  p_value: number;
+}
+
+export interface ManovaResponse {
+  analysis_type: "manova";
+  factor: string;
+  dependents: string[];
+  sample_size: number;
+  tests: ManovaTestResult[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface PcaRequest {
+  file_path: string;
+  variables: string[];
+  n_components?: number;
+}
+
+export interface PcaLoading {
+  variable: string;
+  components: number[];
+}
+
+export interface PcaResponse {
+  analysis_type: "pca";
+  n_components: number;
+  explained_variance_ratio: number[];
+  eigenvalues: number[];
+  loadings: PcaLoading[];
+  kmo?: number | null;
+  bartlett_p?: number | null;
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+// Parametric Interfaces
+export interface TTestOneSampleRequest {
+  file_path: string;
+  variable: string;
+  test_value?: number;
+}
+
+export interface TTestOneSampleResponse {
+  analysis_type: "ttest_one_sample";
+  variable: string;
+  test_value: number;
+  n: number;
+  mean: number;
+  std: number;
+  mean_diff: number;
+  t_statistic: number;
+  df: number;
+  p_value: number;
+  ci_95_lower: number;
+  ci_95_upper: number;
+  cohen_d: number;
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface TTestIndependentRequest {
+  file_path: string;
+  test_variable: string;
+  group_variable: string;
+}
+
+export interface GroupSummary {
+  name: string;
+  n: number;
+  mean: number;
+  std: number;
+}
+
+export interface TTestIndependentResponse {
+  analysis_type: "ttest_independent";
+  test_variable: string;
+  group_variable: string;
+  group1: GroupSummary;
+  group2: GroupSummary;
+  levene_f: number;
+  levene_p: number;
+  equal_var: {
+    t_statistic: number;
+    df: number;
+    p_value: number;
+    mean_diff: number;
+    cohen_d: number;
+  };
+  welch_var: {
+    t_statistic: number;
+    df: number;
+    p_value: number;
+    mean_diff: number;
+    cohen_d: number;
+  };
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface TTestPairedRequest {
+  file_path: string;
+  var1: string;
+  var2: string;
+}
+
+export interface TTestPairedResponse {
+  analysis_type: "ttest_paired";
+  var1: string;
+  var2: string;
+  n: number;
+  mean1: number;
+  std1: number;
+  mean2: number;
+  std2: number;
+  mean_diff: number;
+  correlation: number;
+  t_statistic: number;
+  df: number;
+  p_value: number;
+  cohen_d: number;
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface AnovaOneWayRequest {
+  file_path: string;
+  dependent: string;
+  factor: string;
+  post_hoc?: boolean;
+}
+
+export interface AnovaOneWayGroup {
+  group: string;
+  n: number;
+  mean: number;
+  std: number;
+}
+
+export interface TukeyResult {
+  group1: string;
+  group2: string;
+  mean_diff: number;
+  p_value: number;
+  reject: boolean;
+}
+
+export interface AnovaOneWayResponse {
+  analysis_type: "anova_oneway";
+  dependent: string;
+  factor: string;
+  total_n: number;
+  k_groups: number;
+  ss_between: number;
+  df_between: number;
+  ms_between: number;
+  f_statistic: number;
+  p_value: number;
+  eta_squared: number;
+  ss_within: number;
+  df_within: number;
+  ms_within: number;
+  ss_total: number;
+  df_total: number;
+  groups: AnovaOneWayGroup[];
+  post_hoc_tukey?: TukeyResult[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface AnovaTwoWayRequest {
+  file_path: string;
+  dependent: string;
+  factor1: string;
+  factor2: string;
+}
+
+export interface AnovaTwoWayEffect {
+  source: string;
+  sum_sq: number;
+  df: number;
+  mean_sq: number;
+  f_stat: number | null;
+  p_value: number | null;
+}
+
+export interface AnovaTwoWayResponse {
+  analysis_type: "anova_twoway";
+  dependent: string;
+  factor1: string;
+  factor2: string;
+  sample_size: number;
+  effects: AnovaTwoWayEffect[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface CorrelationRequest {
+  file_path: string;
+  variables: string[];
+}
+
+export interface CorrelationCell {
+  r?: number;
+  rho?: number;
+  p_value: number;
+  n: number;
+}
+
+export interface CorrelationRow {
+  variable: string;
+  correlations: CorrelationCell[];
+}
+
+export interface CorrelationResponse {
+  analysis_type: "correlation_pearson" | "correlation_spearman";
+  variables: string[];
+  sample_size: number;
+  matrix: CorrelationRow[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+// Non-Parametric Interfaces
+export interface MannWhitneyRequest {
+  file_path: string;
+  test_variable: string;
+  group_variable: string;
+}
+
+export interface MannWhitneyGroup {
+  name: string;
+  n: number;
+  median: number;
+  mean_rank: number;
+  sum_ranks: number;
+}
+
+export interface MannWhitneyResponse {
+  analysis_type: "mann_whitney_u";
+  test_variable: string;
+  group_variable: string;
+  group1: MannWhitneyGroup;
+  group2: MannWhitneyGroup;
+  u_statistic: number;
+  w_statistic: number;
+  z_score: number;
+  p_value: number;
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface WilcoxonSignedRankRequest {
+  file_path: string;
+  var1: string;
+  var2: string;
+}
+
+export interface WilcoxonSignedRankResponse {
+  analysis_type: "wilcoxon_signed_rank";
+  var1: string;
+  var2: string;
+  n_total: number;
+  n_effective: number;
+  positive_pairs: number;
+  negative_pairs: number;
+  median1: number;
+  median2: number;
+  w_statistic: number;
+  z_score: number;
+  p_value: number;
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface KruskalWallisRequest {
+  file_path: string;
+  test_variable: string;
+  group_variable: string;
+}
+
+export interface KruskalGroup {
+  group: string;
+  n: number;
+  median: number;
+  mean_rank: number;
+}
+
+export interface KruskalWallisResponse {
+  analysis_type: "kruskal_wallis";
+  test_variable: string;
+  group_variable: string;
+  sample_size: number;
+  k_groups: number;
+  h_statistic: number;
+  df: number;
+  p_value: number;
+  groups: KruskalGroup[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface ChiSquareIndependenceRequest {
+  file_path: string;
+  row_variable: string;
+  col_variable: string;
+}
+
+export interface CrosstabCell {
+  col: string;
+  observed: number;
+  expected: number;
+}
+
+export interface CrosstabRow {
+  row: string;
+  cells: CrosstabCell[];
+  total: number;
+}
+
+export interface ChiSquareIndependenceResponse {
+  analysis_type: "chisquare_independence";
+  row_variable: string;
+  col_variable: string;
+  sample_size: number;
+  chi2_statistic: number;
+  df: number;
+  p_value: number;
+  cramers_v: number;
+  row_labels: string[];
+  col_labels: string[];
+  crosstab: CrosstabRow[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export type AnalysisResult =
+  | DescriptiveResponse
+  | ReliabilityResponse
+  | RegressionResponse
+  | ManovaResponse
+  | PcaResponse
+  | TTestOneSampleResponse
+  | TTestIndependentResponse
+  | TTestPairedResponse
+  | AnovaOneWayResponse
+  | AnovaTwoWayResponse
+  | CorrelationResponse
+  | MannWhitneyResponse
+  | WilcoxonSignedRankResponse
+  | KruskalWallisResponse
+  | ChiSquareIndependenceResponse;

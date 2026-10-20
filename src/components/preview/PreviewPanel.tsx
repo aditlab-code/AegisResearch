@@ -1,22 +1,22 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { FileCode, Play } from 'lucide-react'
-import { Doc, PaperSize, PAPER_PRESETS } from '../../types'
-import { DocPreview } from './DocPreview'
-import { PDFViewer } from './PDFViewer'
-import { PreviewToolbar } from './PreviewToolbar'
-import { PaperSheet } from './PaperSheet'
-import { detectLatexPaperSize, BibEntry } from '../../utils'
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { FileCode, Play } from "lucide-react";
+import { Doc, PaperSize, PAPER_PRESETS } from "../../types";
+import { DocPreview } from "./DocPreview";
+import { PDFViewer } from "./PDFViewer";
+import { PreviewToolbar } from "./PreviewToolbar";
+import { PaperSheet } from "./PaperSheet";
+import { detectLatexPaperSize, BibEntry } from "../../utils";
 
-import { SyncTeXForwardTarget } from './PDFViewer'
+import { SyncTeXForwardTarget } from "./PDFViewer";
 
 export interface PreviewPanelProps {
-  doc: Doc
-  bibEntries?: BibEntry[]
-  pdfBlobUrl?: string
-  usePdfViewer?: boolean
-  onCompile?: () => void
-  onInverseSearch?: (query: { page: number; x: number; y: number }) => void
-  forwardTarget?: SyncTeXForwardTarget | null
+  doc: Doc;
+  bibEntries?: BibEntry[];
+  pdfBlobUrl?: string;
+  usePdfViewer?: boolean;
+  onCompile?: () => void;
+  onInverseSearch?: (query: { page: number; x: number; y: number }) => void;
+  forwardTarget?: SyncTeXForwardTarget | null;
 }
 
 export const PreviewPanel: React.FC<PreviewPanelProps> = ({
@@ -28,64 +28,87 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   onInverseSearch,
   forwardTarget,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [paperSize, setPaperSize] = useState<PaperSize>('a4')
-  const [zoom, setZoom] = useState<number>(1.0)
-  const [currentPage, setCurrentPage] = useState<number>(1)
-  const [totalPages, setTotalPages] = useState<number>(1)
-  const [pdfPageSize, setPdfPageSize] = useState<{ width: number; height: number } | null>(null)
-  const [syncEnabled, setSyncEnabled] = useState<boolean>(true)
-  const isLatex = doc.kind === 'tex'
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [paperSize, setPaperSize] = useState<PaperSize>("a4");
+  const [zoom, setZoom] = useState<number>(1.0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [pdfPageSize, setPdfPageSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [syncEnabled, setSyncEnabled] = useState<boolean>(true);
+  const isLatex = doc.kind === "tex";
 
   // Auto-detect paper size from doc content if kind is tex
   useEffect(() => {
-    if (doc.kind === 'tex') {
-      const detected = detectLatexPaperSize(doc.content)
-      setPaperSize(detected)
+    if (doc.kind === "tex") {
+      const detected = detectLatexPaperSize(doc.content);
+      setPaperSize(detected);
     } else {
-      setPaperSize('a4')
+      setPaperSize("a4");
     }
-  }, [doc.name, doc.kind, doc.content])
+  }, [doc.name, doc.kind, doc.content]);
 
   const handleZoomIn = () => {
-    setZoom((prev) => Math.min(2.5, +(prev + 0.15).toFixed(2)))
-  }
+    setZoom((prev) => Math.min(2.5, +(prev + 0.15).toFixed(2)));
+  };
 
   const handleZoomOut = () => {
-    setZoom((prev) => Math.max(0.4, +(prev - 0.15).toFixed(2)))
-  }
+    setZoom((prev) => Math.max(0.4, +(prev - 0.15).toFixed(2)));
+  };
 
   const handleFitWidth = useCallback(() => {
-    if (!containerRef.current) return
-    const containerWidth = containerRef.current.clientWidth - 48
-    const baseWidth = isLatex && pdfPageSize ? pdfPageSize.width : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseWidthPx
+    if (!containerRef.current) return;
+    const containerWidth = containerRef.current.clientWidth - 48;
+    const baseWidth =
+      isLatex && pdfPageSize
+        ? pdfPageSize.width
+        : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseWidthPx;
     if (baseWidth > 0 && containerWidth > 0) {
-      const newZoom = Math.min(2.5, Math.max(0.4, +(containerWidth / baseWidth).toFixed(2)))
-      setZoom(newZoom)
+      const newZoom = Math.min(
+        2.5,
+        Math.max(0.4, +(containerWidth / baseWidth).toFixed(2)),
+      );
+      setZoom(newZoom);
     }
-  }, [isLatex, pdfPageSize, paperSize])
+  }, [isLatex, pdfPageSize, paperSize]);
 
   const handleFitPage = useCallback(() => {
-    if (!containerRef.current) return
-    const containerHeight = containerRef.current.clientHeight - 48
-    const containerWidth = containerRef.current.clientWidth - 48
-    const baseHeight = isLatex && pdfPageSize ? pdfPageSize.height : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseHeightPx
-    const baseWidth = isLatex && pdfPageSize ? pdfPageSize.width : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseWidthPx
-    if (baseHeight > 0 && containerHeight > 0 && baseWidth > 0 && containerWidth > 0) {
-      const heightZoom = containerHeight / baseHeight
-      const widthZoom = containerWidth / baseWidth
-      const newZoom = Math.min(2.5, Math.max(0.4, +Math.min(heightZoom, widthZoom).toFixed(2)))
-      setZoom(newZoom)
+    if (!containerRef.current) return;
+    const containerHeight = containerRef.current.clientHeight - 48;
+    const containerWidth = containerRef.current.clientWidth - 48;
+    const baseHeight =
+      isLatex && pdfPageSize
+        ? pdfPageSize.height
+        : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseHeightPx;
+    const baseWidth =
+      isLatex && pdfPageSize
+        ? pdfPageSize.width
+        : (PAPER_PRESETS[paperSize] || PAPER_PRESETS.a4).baseWidthPx;
+    if (
+      baseHeight > 0 &&
+      containerHeight > 0 &&
+      baseWidth > 0 &&
+      containerWidth > 0
+    ) {
+      const heightZoom = containerHeight / baseHeight;
+      const widthZoom = containerWidth / baseWidth;
+      const newZoom = Math.min(
+        2.5,
+        Math.max(0.4, +Math.min(heightZoom, widthZoom).toFixed(2)),
+      );
+      setZoom(newZoom);
     }
-  }, [isLatex, pdfPageSize, paperSize])
+  }, [isLatex, pdfPageSize, paperSize]);
 
   const handlePageSelect = (newPage: number) => {
-    setCurrentPage(newPage)
-    const pageEl = document.getElementById(`pdf-page-${newPage}`)
+    setCurrentPage(newPage);
+    const pageEl = document.getElementById(`pdf-page-${newPage}`);
     if (pageEl) {
-      pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      pageEl.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }
+  };
 
   // CASE 1: LATEX WITH READY PDF -> INTERACTIVE MULTI-PAGE VIEWER WITH TOOLBAR & SYNCTEX
   if (isLatex && pdfBlobUrl) {
@@ -106,7 +129,10 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           syncEnabled={syncEnabled}
           onToggleSync={() => setSyncEnabled((prev) => !prev)}
         />
-        <div ref={containerRef} className="flex-1 min-h-0 w-full overflow-hidden">
+        <div
+          ref={containerRef}
+          className="flex-1 min-h-0 w-full overflow-hidden"
+        >
           <PDFViewer
             pdfUrl={pdfBlobUrl}
             zoom={zoom}
@@ -114,21 +140,24 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             syncEnabled={syncEnabled}
             forwardTarget={forwardTarget}
             onPageChange={(page, total) => {
-              setCurrentPage(page)
-              setTotalPages(total)
+              setCurrentPage(page);
+              setTotalPages(total);
             }}
             onPageDimensionsLoaded={(dims) => {
-              setPdfPageSize(dims)
+              setPdfPageSize(dims);
               if (containerRef.current && dims.width > 0) {
-                const containerWidth = containerRef.current.clientWidth - 48
-                const fitScale = Math.min(2.0, Math.max(0.4, +(containerWidth / dims.width).toFixed(2)))
-                setZoom(fitScale)
+                const containerWidth = containerRef.current.clientWidth - 48;
+                const fitScale = Math.min(
+                  2.0,
+                  Math.max(0.4, +(containerWidth / dims.width).toFixed(2)),
+                );
+                setZoom(fitScale);
               }
             }}
           />
         </div>
       </section>
-    )
+    );
   }
 
   // CASE 2: LATEX WITHOUT COMPILED PDF -> CLEAN EMPTY STATE WITH COMPILE BUTTON
@@ -139,10 +168,16 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           <div className="size-14 rounded-full bg-blue-50 dark:bg-zinc-800 flex items-center justify-center text-[#4078f2] dark:text-[#61afef] mb-4 border border-zinc-200 dark:border-zinc-700">
             <FileCode className="size-7" />
           </div>
-          <h3 className="text-zinc-900 dark:text-white font-medium text-sm mb-1">PDF Not Compiled Yet</h3>
+          <h3 className="text-zinc-900 dark:text-white font-medium text-sm mb-1">
+            PDF Not Compiled Yet
+          </h3>
           <p className="text-zinc-500 dark:text-zinc-400 text-xs mb-6 leading-relaxed">
-            LaTeX document <span className="font-mono text-zinc-700 dark:text-zinc-300">"{doc.name}"</span> does not
-            have a compiled PDF file on disk yet. Click the button below to compile with pdflatex.
+            LaTeX document{" "}
+            <span className="font-mono text-zinc-700 dark:text-zinc-300">
+              "{doc.name}"
+            </span>{" "}
+            does not have a compiled PDF file on disk yet. Click the button
+            below to compile with pdflatex.
           </p>
           {onCompile && (
             <button
@@ -156,7 +191,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           )}
         </div>
       </section>
-    )
+    );
   }
 
   // CASE 3: MARKDOWN MODE -> TRUE PRINT SHEET WITH CUSTOM TOOLBAR
@@ -179,12 +214,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       <div
         ref={containerRef}
         className="flex-1 w-full h-full overflow-auto p-8 flex justify-center items-start"
-        style={{ scrollBehavior: 'smooth' }}
+        style={{ scrollBehavior: "smooth" }}
       >
         <PaperSheet paperSize={paperSize} zoom={zoom} pageNumber={currentPage}>
           <DocPreview doc={doc} bibEntries={bibEntries} />
         </PaperSheet>
       </div>
     </section>
-  )
-}
+  );
+};

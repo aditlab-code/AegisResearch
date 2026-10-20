@@ -1,45 +1,59 @@
-import React from 'react'
-import { Play } from 'lucide-react'
-import { RibbonTab, EngineType } from '../../types'
-import type { OutlineNode } from '../../types'
-import { RIBBONS } from '../../constants'
-import { HomeRibbonGroup } from './HomeRibbonGroup'
-import { InsertRibbonGroup } from './InsertRibbonGroup'
-import { ReferencesRibbonGroup } from './ReferencesRibbonGroup'
-import { ReviewRibbonGroup } from './ReviewRibbonGroup'
-import { BibEntry, ScannedLabel, BibliographyStyleChoice } from '../../utils'
+import React from "react";
+import { Play } from "lucide-react";
+import { RibbonTab, EngineType } from "../../types";
+import type { OutlineNode } from "../../types";
+import { RIBBONS } from "../../constants";
+import { HomeRibbonGroup } from "./HomeRibbonGroup";
+import { InsertRibbonGroup } from "./InsertRibbonGroup";
+import { ReferencesRibbonGroup } from "./ReferencesRibbonGroup";
+import { ReviewRibbonGroup } from "./ReviewRibbonGroup";
+import { DataRibbonGroup } from "./DataRibbonGroup";
+import { AnalysisType, TableStyle } from "../../types/stats";
+import { BibEntry, ScannedLabel, BibliographyStyleChoice } from "../../utils";
 
 export interface RibbonBarProps {
-  currentTab: RibbonTab
-  isLatex?: boolean
-  onSelectTab: (tab: RibbonTab) => void
-  onInsertSnippet: (label: string) => void
-  onCompile?: () => void
-  onSyncToPdf?: () => void
-  engine?: EngineType
-  onChangeEngine?: (engine: EngineType) => void
-  onInsertCodeSnippet?: (code: string) => void
+  currentTab: RibbonTab;
+  isLatex?: boolean;
+  onSelectTab: (tab: RibbonTab) => void;
+  onInsertSnippet: (label: string) => void;
+  onCompile?: () => void;
+  onSyncToPdf?: () => void;
+  engine?: EngineType;
+  onChangeEngine?: (engine: EngineType) => void;
+  onInsertCodeSnippet?: (code: string) => void;
 
   // Home Ribbon sub-panel action handlers
-  onClipboardAction?: (action: 'copy' | 'cut' | 'paste') => void
-  onFormatAction?: (type: 'bold' | 'italic' | 'quote' | 'superscript' | 'subscript') => void
-  onAlignAction?: (type: 'left' | 'center' | 'right' | 'justify') => void
-  onStructureAction?: (type: 'heading1' | 'heading2' | 'numbering' | 'bullet' | 'line') => void
-  onSelectHeadingStyle?: (styleCode: string) => void
-  onPageAction?: (type: 'break' | 'next' | 'preview') => void
+  onClipboardAction?: (action: "copy" | "cut" | "paste") => void;
+  onFormatAction?: (
+    type: "bold" | "italic" | "quote" | "superscript" | "subscript",
+  ) => void;
+  onAlignAction?: (type: "left" | "center" | "right" | "justify") => void;
+  onStructureAction?: (
+    type: "heading1" | "heading2" | "numbering" | "bullet" | "line",
+  ) => void;
+  onSelectHeadingStyle?: (styleCode: string) => void;
+  onPageAction?: (type: "break" | "next" | "preview") => void;
 
   // References Ribbon props
-  bibEntries?: BibEntry[]
-  outline?: OutlineNode[]
-  scannedLabels?: ScannedLabel[]
-  onInsertCite?: (key: string) => void
-  onInsertStyle?: (style: BibliographyStyleChoice) => void
-  onSaveBibEntries?: (entries: BibEntry[]) => void
-  onInsertRef?: (refCode: string) => void
-  onInsertTocCode?: (code: string) => void
-  onInsertComment?: (code: string) => void
-  onOpenReviewPanel?: () => void
-  onOpenGitPanel?: () => void
+  bibEntries?: BibEntry[];
+  outline?: OutlineNode[];
+  scannedLabels?: ScannedLabel[];
+  onInsertCite?: (key: string) => void;
+  onInsertStyle?: (style: BibliographyStyleChoice) => void;
+  onSaveBibEntries?: (entries: BibEntry[]) => void;
+  onInsertRef?: (refCode: string) => void;
+  onInsertTocCode?: (code: string) => void;
+  onInsertComment?: (code: string) => void;
+  onOpenReviewPanel?: () => void;
+  onOpenGitPanel?: () => void;
+
+  // Data Ribbon props
+  onOpenAnalysis?: (type: AnalysisType) => void;
+  onOpenDataset?: () => void;
+  onOpenGuide?: () => void;
+  onOpenLatexOutputModal?: () => void;
+  selectedTableStyle?: TableStyle;
+  hasResults?: boolean;
 }
 export const RibbonBar: React.FC<RibbonBarProps> = ({
   currentTab,
@@ -48,7 +62,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
   onInsertSnippet,
   onCompile,
   onSyncToPdf,
-  engine = 'pdfLaTeX',
+  engine = "pdfLaTeX",
   onChangeEngine,
   onInsertCodeSnippet = () => {},
   onClipboardAction = () => {},
@@ -68,34 +82,40 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
   onInsertComment = () => {},
   onOpenReviewPanel = () => {},
   onOpenGitPanel = () => {},
+  onOpenAnalysis = () => {},
+  onOpenDataset = () => {},
+  onOpenGuide = () => {},
+  onOpenLatexOutputModal = () => {},
+  selectedTableStyle = "apa",
+  hasResults = false,
 }) => {
-  const tabs = Object.keys(RIBBONS) as RibbonTab[]
+  const tabs = Object.keys(RIBBONS) as RibbonTab[];
 
   return (
     <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shrink-0 relative z-30">
       {/* Ribbon Tabs Header */}
       <div className="flex gap-1 px-4 pt-1 text-sm bg-zinc-100/70 dark:bg-zinc-950/60 border-b border-zinc-200 dark:border-zinc-800">
         {tabs.map((tab) => {
-          const isActive = currentTab === tab
+          const isActive = currentTab === tab;
           return (
             <button
               key={tab}
               onClick={() => onSelectTab(tab)}
               className={`px-3 py-1.5 border-b-2 text-xs transition-colors ${
                 isActive
-                  ? 'border-[#4078f2] dark:border-[#61afef] text-[#4078f2] dark:text-[#61afef] font-semibold bg-white dark:bg-zinc-900'
-                  : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                  ? "border-[#4078f2] dark:border-[#61afef] text-[#4078f2] dark:text-[#61afef] font-semibold bg-white dark:bg-zinc-900"
+                  : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
               }`}
             >
               {tab}
             </button>
-          )
+          );
         })}
       </div>
 
       {/* Ribbon Tab Content Toolbar */}
       <div className="flex items-center gap-1 px-4 bg-white dark:bg-zinc-900 overflow-visible h-[68px] shrink-0 text-zinc-700 dark:text-zinc-200">
-        {currentTab === 'Home' ? (
+        {currentTab === "Home" ? (
           <HomeRibbonGroup
             isLatex={isLatex}
             onClipboardAction={onClipboardAction}
@@ -105,9 +125,12 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
             onSelectHeadingStyle={onSelectHeadingStyle}
             onPageAction={onPageAction}
           />
-        ) : currentTab === 'Insert' ? (
-          <InsertRibbonGroup isLatex={isLatex} onInsertCodeSnippet={onInsertCodeSnippet} />
-        ) : currentTab === 'References' ? (
+        ) : currentTab === "Insert" ? (
+          <InsertRibbonGroup
+            isLatex={isLatex}
+            onInsertCodeSnippet={onInsertCodeSnippet}
+          />
+        ) : currentTab === "References" ? (
           <ReferencesRibbonGroup
             isLatex={isLatex}
             outline={outline}
@@ -118,6 +141,15 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
             onSaveBibEntries={onSaveBibEntries}
             onInsertRef={onInsertRef}
             onInsertTocCode={onInsertTocCode}
+          />
+        ) : currentTab === "Data" ? (
+          <DataRibbonGroup
+            onOpenAnalysis={onOpenAnalysis}
+            onOpenDataset={onOpenDataset}
+            onOpenGuide={onOpenGuide}
+            onOpenLatexOutputModal={onOpenLatexOutputModal}
+            selectedTableStyle={selectedTableStyle}
+            hasResults={hasResults}
           />
         ) : (
           <ReviewRibbonGroup
@@ -157,5 +189,5 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

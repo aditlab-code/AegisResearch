@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
+
 def find_tex_bin(name: str) -> str:
     path_bin = shutil.which(name)
     if path_bin:
@@ -13,6 +14,7 @@ def find_tex_bin(name: str) -> str:
     candidates = [
         f"/usr/local/texlive/2025/bin/universal-darwin/{name}",
         f"/Library/TeX/texbin/{name}",
+        f"/usr/bin/vendor_perl/{name}",
         f"/usr/bin/{name}",
         f"/usr/local/bin/{name}",
     ]
@@ -58,7 +60,7 @@ async def compile_latex(
 ) -> Dict[str, Any]:
     target_tex = (project_dir / main_file).resolve()
     try:
-        target_tex.relative_to(project_dir.resolve())
+        rel_target = target_tex.relative_to(project_dir.resolve()).as_posix()
     except ValueError:
         return {
             "success": False,
@@ -77,9 +79,11 @@ async def compile_latex(
     pdf_name = stem + ".pdf"
     log_name = stem + ".log"
     aux_name = stem + ".aux"
+    bcf_name = stem + ".bcf"
     pdf_path = project_dir / pdf_name
     log_path = project_dir / log_name
     aux_path = project_dir / aux_name
+    bcf_path = project_dir / bcf_name
 
     # Pandoc Engine execution path for Markdown or Pandoc selection
     if engine.lower() == "pandoc" or target_tex.suffix.lower() == ".md":
@@ -107,7 +111,9 @@ async def compile_latex(
             cmd_pandoc.extend(["--citeproc", f"--bibliography={bib_files[0].name}"])
         cmd_pandoc.extend(["--toc", "-N"])
 
-        code_p, out_p, err_p = await run_cmd(cmd_pandoc, project_dir, timeout=timeout_sec)
+        code_p, out_p, err_p = await run_cmd(
+            cmd_pandoc, project_dir, timeout=timeout_sec
+        )
         log_p = (out_p + b"\n" + err_p).decode("utf-8", errors="replace")
 
         if code_p == 0 and pdf_path.exists():
@@ -124,38 +130,52 @@ async def compile_latex(
                 "success": False,
                 "message": f"Pandoc compilation failed with exit code {code_p}.",
                 "pdfName": None,
-                "errors": [err_msg] if err_msg else ["Pandoc compilation failed. Check markdown syntax."],
+                "errors": [err_msg]
+                if err_msg
+                else ["Pandoc compilation failed. Check markdown syntax."],
                 "logOutput": log_p[-3000:],
             }
 
     tex_bin = find_tex_bin("xelatex" if engine.lower() == "xelatex" else "pdflatex")
     bibtex_bin = find_tex_bin("bibtex")
+    biber_bin = find_tex_bin("biber")
+    is_biber_available = shutil.which(biber_bin) is not None or (
+        os.path.exists(biber_bin) and os.access(biber_bin, os.X_OK)
+    )
 
     cmd_pdf = [
         tex_bin,
         "-interaction=nonstopmode",
         "-synctex=1",
         "-output-directory=.",
-        target_tex.name,
+        rel_target,
     ]
     try:
-        # Pass 1: Initial pdflatex run (writes .aux and .toc)
-        code1, out1, _ = await run_cmd(cmd_pdf, project_dir, timeout=20)
+        # Pass 1: Initial pdflatex/xelatex run (writes .aux, .bcf, and .toc)
+        code1, out1, _ = await run_cmd(cmd_pdf, project_dir, timeout=25)
 
-        # Check if bibtex is needed (.aux contains \bibdata or \citation)
-        if aux_path.exists():
+        # Check if biber or bibtex is needed
+        ran_bib = False
+        if bcf_path.exists() and is_biber_available:
+            cmd_biber = [biber_bin, stem]
+            await run_cmd(cmd_biber, project_dir, timeout=25)
+            ran_bib = True
+        elif aux_path.exists():
             try:
                 aux_content = aux_path.read_text(encoding="utf-8", errors="replace")
                 if "\\citation" in aux_content or "\\bibdata" in aux_content:
                     cmd_bib = [bibtex_bin, stem]
                     await run_cmd(cmd_bib, project_dir, timeout=15)
-                    # Extra pdflatex pass after bibtex
-                    await run_cmd(cmd_pdf, project_dir, timeout=20)
+                    ran_bib = True
             except Exception:
                 pass
 
-        # Pass 2: Final pdflatex run (resolves cross-refs, labels, and TOC page numbers)
-        code_final, out_final, _ = await run_cmd(cmd_pdf, project_dir, timeout=20)
+        if ran_bib:
+            # Extra pass after bibliography tool
+            await run_cmd(cmd_pdf, project_dir, timeout=25)
+
+        # Pass 2: Final pdflatex/xelatex run (resolves cross-refs, labels, and TOC page numbers)
+        code_final, out_final, _ = await run_cmd(cmd_pdf, project_dir, timeout=25)
 
         log_content = ""
         if log_path.exists():
@@ -179,8 +199,12 @@ async def compile_latex(
                 "success": False,
                 "message": f"Compilation failed with exit code {code_final}.",
                 "pdfName": None,
-                "errors": errors if errors else ["LaTeX compilation error. Check syntax."],
-                "logOutput": log_content[-3000:] if log_content else out_final.decode("utf-8", errors="replace")[-2000:],
+                "errors": errors
+                if errors
+                else ["LaTeX compilation error. Check syntax."],
+                "logOutput": log_content[-3000:]
+                if log_content
+                else out_final.decode("utf-8", errors="replace")[-2000:],
             }
 
     except Exception as e:

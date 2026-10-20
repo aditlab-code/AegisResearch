@@ -1,0 +1,35 @@
+\documentclass[12pt,a4paper]{article}
+
+% Preamble
+\input{preamble/packages}
+\input{preamble/metadata}
+
+\title{\docTitle}
+\author{\docAuthor}
+\date{\docDate}
+
+\begin{document}
+
+\maketitle
+
+% Frontmatter
+\input{frontmatter/abstract_id}
+\input{frontmatter/abstract_en}
+\newpage
+\tableofcontents
+\newpage
+
+% Chapters
+\input{chapters/bab1_pendahuluan}
+\input{chapters/bab2_sintaks_dan_fitur}
+\input{chapters/bab3_penutup}
+
+% Bibliography
+\newpage
+\printbibliography[heading=bibintoc, title={Daftar Pustaka}]
+
+% Backmatter
+\newpage
+\input{backmatter/lampiran}
+
+\end{document}

@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { CheckCheck, MessageSquare, GitCompare, ChevronDown, Bookmark } from 'lucide-react'
-import { SpellingPopover } from './SpellingPopover'
-import { CommentPopover } from './CommentPopover'
+import React, { useState, useEffect, useRef } from "react";
+import {
+  CheckCheck,
+  MessageSquare,
+  GitCompare,
+  ChevronDown,
+  Bookmark,
+} from "lucide-react";
+import { SpellingPopover } from "./SpellingPopover";
+import { CommentPopover } from "./CommentPopover";
 
 export interface ReviewRibbonGroupProps {
-  isLatex?: boolean
-  onInsertComment: (commentCode: string) => void
-  onOpenReviewPanel?: () => void
-  onOpenGitPanel?: () => void
+  isLatex?: boolean;
+  onInsertComment: (commentCode: string) => void;
+  onOpenReviewPanel?: () => void;
+  onOpenGitPanel?: () => void;
 }
 
 export const ReviewRibbonGroup: React.FC<ReviewRibbonGroupProps> = ({
@@ -16,29 +22,34 @@ export const ReviewRibbonGroup: React.FC<ReviewRibbonGroupProps> = ({
   onOpenReviewPanel,
   onOpenGitPanel,
 }) => {
-  const [activePopover, setActivePopover] = useState<'spell' | 'comment' | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [activePopover, setActivePopover] = useState<
+    "spell" | "comment" | null
+  >(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const togglePopover = (type: 'spell' | 'comment') => {
-    setActivePopover((prev) => (prev === type ? null : type))
-  }
+  const togglePopover = (type: "spell" | "comment") => {
+    setActivePopover((prev) => (prev === type ? null : type));
+  };
 
   // Click-outside listener
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setActivePopover(null)
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setActivePopover(null);
       }
-    }
+    };
 
     if (activePopover) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [activePopover])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activePopover]);
 
   return (
     <div
@@ -49,11 +60,11 @@ export const ReviewRibbonGroup: React.FC<ReviewRibbonGroupProps> = ({
       <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-r border-zinc-200 dark:border-zinc-800">
         <button
           type="button"
-          onClick={() => togglePopover('spell')}
+          onClick={() => togglePopover("spell")}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors ${
-            activePopover === 'spell'
-              ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
-              : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+            activePopover === "spell"
+              ? "bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium"
+              : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
           }`}
         >
           <CheckCheck className="size-4 text-blue-600 dark:text-blue-400" />
@@ -65,7 +76,7 @@ export const ReviewRibbonGroup: React.FC<ReviewRibbonGroupProps> = ({
           Proofing
         </span>
 
-        {activePopover === 'spell' && (
+        {activePopover === "spell" && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <SpellingPopover onClose={() => setActivePopover(null)} />
           </div>
@@ -77,11 +88,11 @@ export const ReviewRibbonGroup: React.FC<ReviewRibbonGroupProps> = ({
         <div className="flex items-center gap-1 pt-0.5">
           <button
             type="button"
-            onClick={() => togglePopover('comment')}
+            onClick={() => togglePopover("comment")}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${
-              activePopover === 'comment'
-                ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium'
-                : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
+              activePopover === "comment"
+                ? "bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-medium"
+                : "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
             }`}
           >
             <MessageSquare className="size-4 text-blue-600 dark:text-blue-400" />
@@ -104,7 +115,7 @@ export const ReviewRibbonGroup: React.FC<ReviewRibbonGroupProps> = ({
           Comments & Notes
         </span>
 
-        {activePopover === 'comment' && (
+        {activePopover === "comment" && (
           <div className="absolute top-[calc(100%+6px)] left-0 z-50 shadow-2xl">
             <CommentPopover
               isLatex={isLatex}
@@ -131,5 +142,5 @@ export const ReviewRibbonGroup: React.FC<ReviewRibbonGroupProps> = ({
         </span>
       </div>
     </div>
-  )
-}
+  );
+};

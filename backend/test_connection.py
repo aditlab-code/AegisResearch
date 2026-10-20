@@ -5,12 +5,14 @@ from backend.config import WORKSPACE_DIR
 
 client = TestClient(app)
 
+
 def test_root_endpoint():
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
     assert "Scholarly LaTeX IDE Backend" in data["message"]
+
 
 def test_health_endpoint():
     response = client.get("/api/health")
@@ -19,6 +21,7 @@ def test_health_endpoint():
     assert data["status"] == "healthy"
     assert data["cors"] is True
     assert data["workspace_dir"] == str(WORKSPACE_DIR)
+
 
 def test_cors_headers():
     response = client.options(
@@ -29,20 +32,25 @@ def test_cors_headers():
         },
     )
     assert response.status_code == 200
-    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert (
+        response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    )
+
 
 def test_list_projects():
     response = client.get("/api/projects")
     assert response.status_code == 200
     projects = response.json()
     assert isinstance(projects, list)
-    assert "quantum-thesis" in projects
+    assert "template-thesis" in projects
+
 
 def test_create_project_lifecycle():
     project_name = "pytest-temp-project"
     temp_dir = WORKSPACE_DIR / project_name
     if temp_dir.exists():
         import shutil
+
         shutil.rmtree(temp_dir)
 
     try:
@@ -60,16 +68,18 @@ def test_create_project_lifecycle():
     finally:
         if temp_dir.exists():
             import shutil
+
             shutil.rmtree(temp_dir)
 
+
 def test_get_project_files_success():
-    response = client.get("/api/projects/quantum-thesis/files")
+    response = client.get("/api/projects/template-thesis/files")
     assert response.status_code == 200
     files = response.json()
     assert isinstance(files, list)
     file_names = {f["name"]: f for f in files}
-    assert "thesis.tex" in file_names
-    assert file_names["thesis.tex"]["kind"] == "tex"
+    assert "main.tex" in file_names
+    assert file_names["main.tex"]["kind"] == "tex"
     assert "notes.md" in file_names
     assert file_names["notes.md"]["kind"] == "md"
     assert "references.bib" in file_names
@@ -79,20 +89,24 @@ def test_get_project_files_success():
         assert "size" in f and isinstance(f["size"], int)
         assert "updatedAt" in f
 
+
 def test_get_project_files_not_found():
     response = client.get("/api/projects/non-existent-project-404/files")
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
 
+
 def test_project_invalid_name_protection():
     response = client.get("/api/projects/..%2F..%2Fetc/files")
     assert response.status_code in [400, 404]
+
 
 def test_create_and_scan_project_lifecycle():
     project_name = "pytest-scan-proj"
     temp_dir = WORKSPACE_DIR / project_name
     if temp_dir.exists():
         import shutil
+
         shutil.rmtree(temp_dir)
 
     try:
@@ -113,31 +127,37 @@ def test_create_and_scan_project_lifecycle():
     finally:
         if temp_dir.exists():
             import shutil
+
             shutil.rmtree(temp_dir)
 
+
 def test_read_file_success():
-    response = client.get("/api/projects/quantum-thesis/files/thesis.tex")
+    response = client.get("/api/projects/template-thesis/files/main.tex")
     assert response.status_code == 200
     data = response.json()
-    assert data["name"] == "thesis.tex"
-    assert data["path"] == "thesis.tex"
+    assert data["name"] == "main.tex"
+    assert data["path"] == "main.tex"
     assert "\\documentclass" in data["content"]
     assert data["size"] > 0
     assert "updatedAt" in data
 
+
 def test_read_file_not_found():
-    response = client.get("/api/projects/quantum-thesis/files/does_not_exist.tex")
+    response = client.get("/api/projects/template-thesis/files/does_not_exist.tex")
     assert response.status_code == 404
 
+
 def test_read_file_path_traversal():
-    response = client.get("/api/projects/quantum-thesis/files/..%2F..%2Fconfig.py")
+    response = client.get("/api/projects/template-thesis/files/..%2F..%2Fconfig.py")
     assert response.status_code in [400, 404]
+
 
 def test_save_file_lifecycle():
     project_name = "pytest-save-lifecycle"
     temp_dir = WORKSPACE_DIR / project_name
     if temp_dir.exists():
         import shutil
+
         shutil.rmtree(temp_dir)
 
     try:
@@ -168,4 +188,5 @@ def test_save_file_lifecycle():
     finally:
         if temp_dir.exists():
             import shutil
+
             shutil.rmtree(temp_dir)
