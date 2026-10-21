@@ -196,12 +196,16 @@ export function validateSlotScale(
     }
   }
 
-  if (analysisType === "anova_oneway" || analysisType === "anova_twoway") {
+  if (
+    analysisType === "anova_oneway" ||
+    analysisType === "anova_twoway" ||
+    analysisType === "ancova"
+  ) {
     if (role === "dependent" && scale === "nominal") {
       return {
         valid: false,
         warning:
-          "ANOVA dependent variable must be continuous (Scale). For ordinal/ranked data, use Kruskal-Wallis.",
+          "ANOVA/ANCOVA dependent variable must be continuous (Scale). For ordinal/ranked data, use Kruskal-Wallis.",
       };
     }
     if (role === "factor" && scale === "scale") {
@@ -209,6 +213,17 @@ export function validateSlotScale(
         valid: true,
         warning:
           "Continuous variable used as Factor. Factor should be categorical (Nominal/Ordinal) with distinct levels.",
+      };
+    }
+    if (
+      analysisType === "ancova" &&
+      role === "independent" &&
+      scale === "nominal"
+    ) {
+      return {
+        valid: false,
+        warning:
+          "Covariates in ANCOVA must be continuous quantitative variables (Scale).",
       };
     }
   }

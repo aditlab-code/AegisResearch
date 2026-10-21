@@ -3,3 +3,7 @@ export * from "./useCompiler";
 export * from "./useKeyboardShortcuts";
 export * from "./useWorkspaceSync";
 export * from "./useTheme";
+export * from "./useSyncTeXCoordination";
+export * from "./useBibliographyActions";
+export * from "./useEditorFormatting";
+export * from "./useAnalysisWorkspace";

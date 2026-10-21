@@ -35,6 +35,7 @@ from backend.services.stats_parametric import (
     run_ttest_paired,
     run_anova_oneway,
     run_anova_twoway,
+    run_ancova,
     run_correlation_pearson,
 )
 from backend.services.stats_nonparametric import (
@@ -44,6 +45,15 @@ from backend.services.stats_nonparametric import (
     run_correlation_spearman,
     run_chisquare_independence,
 )
+from backend.services.bibliometrics import (
+    get_bibliometric_overview,
+    compute_cooccurrence_network,
+    compute_thematic_map,
+    compute_thematic_evolution,
+    compute_bibliometric_laws,
+    generate_bibliometric_tikz,
+    BibliometricError,
+)
 from backend.services.latex_table_gen import (
     generate_descriptive_latex_table,
     generate_reliability_latex_table,
@@ -52,6 +62,7 @@ from backend.services.latex_table_gen import (
     generate_pca_latex_table,
     generate_ttest_latex_table,
     generate_anova_latex_table,
+    generate_ancova_latex_table,
     generate_correlation_latex_table,
     generate_nonparametric_latex_table,
     generate_chisquare_latex_table,
@@ -315,6 +326,16 @@ def resolve_file_path(project_dir: Path, file_path: str) -> Path:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid file path. Path traversal is not allowed.",
         )
+    if not target_file.exists() and "/" not in file_path and "\\" not in file_path:
+        for candidate in project_dir.rglob(file_path):
+            if candidate.is_file():
+                rel_parts = candidate.relative_to(project_dir).parts
+                if not any(
+                    part.startswith(".")
+                    or part in {".venv", "__pycache__", "node_modules"}
+                    for part in rel_parts
+                ):
+                    return candidate
     return target_file
 
 
@@ -717,6 +738,13 @@ class AnovaTwoWayRequest(BaseModel):
     factor2: str
 
 
+class AncovaRequest(BaseModel):
+    file_path: str
+    dependent: str
+    factor: str
+    covariates: List[str]
+
+
 class CorrelationRequest(BaseModel):
     file_path: str
     variables: List[str]
@@ -744,6 +772,43 @@ class ChiSquareIndependenceRequest(BaseModel):
     file_path: str
     row_variable: str
     col_variable: str
+
+
+class BibliometricsOverviewRequest(BaseModel):
+    file_path: str
+
+
+class BibliometricsNetworkRequest(BaseModel):
+    file_path: str
+    network_type: str = "keywords"
+    min_frequency: int = 3
+    top_n: int = 50
+    exclude_keywords: Optional[List[str]] = None
+    method: str = "equivalence"
+
+
+class BibliometricsThematicMapRequest(BaseModel):
+    file_path: str
+    network_type: str = "keywords"
+    min_frequency: int = 3
+    top_n: int = 60
+    exclude_keywords: Optional[List[str]] = None
+
+
+class BibliometricsThematicEvolutionRequest(BaseModel):
+    file_path: str
+    slice_count: int = 3
+    min_frequency: int = 2
+    exclude_keywords: Optional[List[str]] = None
+
+
+class BibliometricsLawsRequest(BaseModel):
+    file_path: str
+
+
+class BibliometricsExportTikzRequest(BaseModel):
+    graph_type: str
+    data: Dict[str, Any]
 
 
 @app.post(
@@ -1087,6 +1152,38 @@ async def analyze_anova_twoway(name: str, payload: AnovaTwoWayRequest):
 
 
 @app.post(
+    "/api/projects/{name}/stats/ancova",
+    tags=["Statistics"],
+)
+async def analyze_ancova(name: str, payload: AncovaRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            run_ancova,
+            target_file,
+            payload.dependent,
+            payload.factor,
+            payload.covariates,
+        )
+        latex_tables = generate_multi_style_table(generate_ancova_latex_table, res)
+        return {
+            "analysis_type": "ancova",
+            **res,
+            "latex_table": latex_tables["apa"],
+            "latex_tables": latex_tables,
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (StatsError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
     "/api/projects/{name}/stats/correlation/pearson",
     tags=["Statistics"],
 )
@@ -1274,6 +1371,148 @@ async def analyze_chisquare(name: str, payload: ChiSquareIndependenceRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
+
+
+@app.post(
+    "/api/projects/{name}/bibliometrics/overview",
+    tags=["Bibliometrics"],
+)
+async def api_bibliometrics_overview(name: str, payload: BibliometricsOverviewRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(get_bibliometric_overview, target_file)
+        return res
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (BibliometricError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/bibliometrics/network",
+    tags=["Bibliometrics"],
+)
+async def api_bibliometrics_network(name: str, payload: BibliometricsNetworkRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            compute_cooccurrence_network,
+            target_file,
+            payload.network_type,
+            payload.min_frequency,
+            payload.top_n,
+            payload.exclude_keywords,
+            payload.method,
+        )
+        return res
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (BibliometricError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/bibliometrics/thematic-map",
+    tags=["Bibliometrics"],
+)
+async def api_bibliometrics_thematic_map(
+    name: str, payload: BibliometricsThematicMapRequest
+):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            compute_thematic_map,
+            target_file,
+            payload.network_type,
+            payload.min_frequency,
+            payload.top_n,
+            payload.exclude_keywords,
+        )
+        tikz_code = generate_bibliometric_tikz("thematic_map", res)
+        return {**res, "tikz_code": tikz_code}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (BibliometricError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/bibliometrics/thematic-evolution",
+    tags=["Bibliometrics"],
+)
+async def api_bibliometrics_thematic_evolution(
+    name: str, payload: BibliometricsThematicEvolutionRequest
+):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(
+            compute_thematic_evolution,
+            target_file,
+            None,
+            payload.slice_count,
+            payload.min_frequency,
+            payload.exclude_keywords,
+        )
+        return res
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (BibliometricError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/bibliometrics/laws",
+    tags=["Bibliometrics"],
+)
+async def api_bibliometrics_laws(name: str, payload: BibliometricsLawsRequest):
+    project_dir = resolve_project_dir(name)
+    target_file = resolve_file_path(project_dir, payload.file_path)
+    try:
+        res = await asyncio.to_thread(compute_bibliometric_laws, target_file)
+        bradford_tikz = generate_bibliometric_tikz("bradford", res)
+        return {**res, "bradford_tikz": bradford_tikz}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except (BibliometricError, ValueError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@app.post(
+    "/api/projects/{name}/bibliometrics/export-tikz",
+    tags=["Bibliometrics"],
+)
+async def api_bibliometrics_export_tikz(
+    name: str, payload: BibliometricsExportTikzRequest
+):
+    try:
+        tikz = generate_bibliometric_tikz(payload.graph_type, payload.data)
+        return {"tikz_code": tikz}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @app.put(

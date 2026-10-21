@@ -101,6 +101,8 @@ def run_descriptive_analysis(
                     "median": None,
                     "min": None,
                     "max": None,
+                    "iqr": None,
+                    "coeff_variation": None,
                     "skewness": None,
                     "kurtosis": None,
                     "shapiro_w": None,
@@ -119,6 +121,12 @@ def run_descriptive_analysis(
         max_val = float(num_series.max())
         skew_val = float(stats.skew(num_series, bias=False)) if n > 2 else 0.0
         kurt_val = float(stats.kurtosis(num_series, bias=False)) if n > 3 else 0.0
+        iqr_val = (
+            float(np.percentile(num_series, 75) - np.percentile(num_series, 25))
+            if n > 1
+            else 0.0
+        )
+        cv_val = float(std_val / mean_val) if mean_val != 0.0 else None
 
         shapiro_w = None
         shapiro_p = None
@@ -140,6 +148,8 @@ def run_descriptive_analysis(
                 "median": median_val,
                 "min": min_val,
                 "max": max_val,
+                "iqr": iqr_val,
+                "coeff_variation": cv_val,
                 "skewness": skew_val,
                 "kurtosis": kurt_val,
                 "shapiro_w": shapiro_w,

@@ -570,6 +570,69 @@ def generate_anova_latex_table(
     return ""
 
 
+def generate_ancova_latex_table(
+    data: Dict[str, Any],
+    caption: str = "ANCOVA Summary Table",
+    label: str = "tab:ancova",
+    style: str = "apa",
+) -> str:
+    rules = _get_table_rules(style, "lrrrrrr")
+    dep = escape_latex(data.get("dependent", ""))
+    fac = escape_latex(data.get("factor", ""))
+    caption_lines = _format_caption_lines(f"{caption} for {dep} by {fac}", label, style)
+    effects = data.get("effects", [])
+
+    if style == "ieee":
+        col_headers = r"Source & SS & df & MS & F-Stat & p-Value & Partial Eta-Sq \\"
+    elif style == "classic":
+        col_headers = r"Source & SS & df & MS & F & p-Value & Partial Eta-Squared \\"
+    else:  # apa
+        col_headers = r"Source & $SS$ & $df$ & $MS$ & $F$ & $p$ & $\eta_p^2$ \\"
+
+    lines = [
+        r"\begin{table}[htbp]",
+        r"  \centering",
+        *caption_lines,
+        f"  \\begin{{tabular}}{{{rules['align']}}}",
+        rules["top"],
+        f"    {col_headers}",
+        rules["mid"],
+    ]
+
+    for eff in effects:
+        src = escape_latex(eff.get("source", ""))
+        ss = format_num(eff.get("sum_sq"))
+        df_v = eff.get("df", 0)
+        ms = format_num(eff.get("mean_sq"))
+        f_val = (
+            format_num(eff.get("f_statistic"), 3)
+            if eff.get("f_statistic") is not None
+            else "-"
+        )
+        p_val = (
+            format_p_value(eff.get("p_value"), style)
+            if eff.get("p_value") is not None
+            else "-"
+        )
+        eta = (
+            format_num(eff.get("partial_eta_squared"), 3)
+            if eff.get("partial_eta_squared") is not None
+            else "-"
+        )
+        lines.append(
+            f"    {src} & {ss} & {df_v} & {ms} & {f_val} & {p_val} & {eta} \\\\"
+        )
+
+    lines.extend(
+        [
+            rules["bottom"],
+            r"  \end{tabular}",
+            r"\end{table}",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def generate_correlation_latex_table(
     data: Dict[str, Any],
     caption: str = "Correlation Matrix",

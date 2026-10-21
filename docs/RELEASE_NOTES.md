@@ -27,7 +27,6 @@
 - **Real-Time Workspace Watcher**: FastAPI WebSocket connection (`/api/ws/workspace/{name}`) notifying the frontend of filesystem modifications instantly.
 
 ### 3. Multi-Pass Local LaTeX Compilation Engine
-### 3. Multi-Pass Local LaTeX Compilation Engine
 - **Local Native Execution**: Direct asynchronous subprocess execution of local `pdflatex` and `bibtex` engines with `-synctex=1` flag enabled to produce synchronized position maps (`.synctex.gz`).
 - **Automatic Reference & Citation Resolution**: Multi-pass compiler orchestrates:
   1. *Pass 1*: Initial `pdflatex` compilation to write `.aux` cross-reference keys and `.synctex.gz`.
@@ -70,7 +69,23 @@
   - *Non-Parametric Tests*: Mann-Whitney U, Wilcoxon Signed-Rank, Kruskal-Wallis H, Spearman Rank Correlation, and Chi-Square Test of Independence.
 - **Dynamic Multi-Style LaTeX Table Generator**: Generates publication-ready LaTeX tables across APA (`booktabs`), IEEE, and Classic LaTeX styles, rendered inside a dedicated full centered modal dialog with instant copy-to-clipboard and insert-to-editor triggers.
 
-### 9. Global Search & Replace
+### 9. Bibliometrics & Scientometrics Studio Workbench
+- **Ergonomic 3-Column Studio Layout**:
+  - *Left Column (Nav & Corpus Stats)*: Tab navigation between analytical modules, corpus metadata counters (articles, keywords, authors, journals), and quick action controls.
+  - *Center Column (Visual Viewport)*: Interactive SVG canvases with smooth tooltips, zero-jitter transform geometry, and responsive sizing.
+  - *Right Column (Context-Aware Configuration Panel)*: Dynamic parameter sliders tailored to the active tab (e.g., Min Frequency 2–50, Top Nodes 30–100, dynamic slice selection 2–4, or Bradford zone breakdown cards), eliminating false affordances.
+- **Architectural SSOT & Decoupled State**: Separation of query parameters (triggering backend analytical re-calculations) and visual layout parameters (instant 60 FPS slider adjustments without network roundtrips).
+- **Comprehensive Scientometric Analytical Modules**:
+  - *Co-Occurrence & Collaboration Networks*: Evaluates keyword co-occurrence and co-authorship networks with normalization (Jaccard Similarity, Cosine, Association Strength) and force-directed node repulsion to prevent visual crowding.
+  - *Thematic Map (Callon's Strategic Diagram)*: 2x2 quadrant matrix mapping themes across Centrality (relevance degree) and Density (development degree) into Motor Themes, Highly Developed/Niche Themes, Emerging/Declining Themes, and Basic/Transversal Themes.
+  - *Longitudinal Thematic Evolution*: Sankey diagram tracking thematic shifts across contiguous time slices (2, 3, or 4 periods) using thematic Inclusion Index with matched period keys.
+  - *Scientometric Laws of Distribution*:
+    - *Bradford's Law of Scattering*: Partitions journal sources into 3 concentric core zones with continuous rank boundary $\ln(n_1 + 0.5)$ avoiding collapsed zones when $n_1=1$.
+    - *Lotka's Law of Author Productivity*: Analyzes author frequency distributions against the theoretical power-law exponent ($\alpha=2$) with automated two-sided Kolmogorov-Smirnov (K-S) goodness-of-fit validation and critical threshold reporting.
+  - *SLR Stopword Cleaning & Top Keywords Exclude*: Interactive Systematic Literature Review (SLR) stopword management with one-click exclusion of dominant corpus terms.
+  - *Native LaTeX TikZ Vector Export*: Directly generates standalone PGFPlots and TikZ vector code (`thematic_map` and `bradford`) for lossless publication embedding.
+
+### 10. Global Search & Replace
 - **Project-Wide Search**: Scan all workspace files for keywords and expressions.
 - **Advanced Filters**: Toggle Case Sensitivity (`Aa`), Match Whole Word (`\b`), and Regular Expressions (`.*`).
 - **Search & Replace Capabilities**:
@@ -78,15 +93,15 @@
   - Per-match hover replacement for fine-grained control.
   - Atomic backend replacement endpoint (`POST /api/projects/{name}/search/replace`).
 
-### 10. Review Notes Panel
+### 11. Review Notes Panel
 - **Annotation Scanner**: Scans open documents for `TODO`, `FIXME`, and custom review tags.
 - **Jump to Line**: Click any scanned annotation to jump directly to the target line in the Monaco editor.
 
-### 11. Theming & Accessibility
+### 12. Theming & Accessibility
 - **Theme Switcher**: Instant switching between Light and Dark mode with automatic persistence in `localStorage`.
 - **Zinc Palette**: Professional, distraction-free neutral color palette optimized for long research sessions.
 
-### 12. Automation Shell Runners
+### 13. Automation Shell Runners
 - **`setup.sh`**: One-line cross-platform setup script detecting macOS (Homebrew), Debian/Ubuntu (APT), Fedora (DNF), and Windows WSL. Automatically provisions Python venv, LaTeX binaries, storage workspaces, and frontend dependencies.
 - **`run.sh`**: Concurrent process manager launching FastAPI and Vite together with port collision checks and clean `SIGINT`/`SIGTERM` signal trapping.
 
@@ -102,11 +117,12 @@
   - `pdfjs-dist` 4.10 (Native continuous multi-page canvas engine with DPR scaling)
   - `lucide-react` icons
   - `zustand` 5.0 for state management
-- **Backend & Statistical Engine**:
+- **Backend & Scientific Analysis Engine**:
   - FastAPI 0.115+ (Asynchronous REST & WebSocket API)
   - Uvicorn 0.32+
   - Pydantic v2.10+
   - Polars, NumPy, SciPy & Statsmodels for high-performance statistical computations
+  - Bibliometrics & Scientometrics Service (Co-occurrence networks, Callon strategic diagrams, Bradford & Lotka distribution laws, LaTeX TikZ exporter)
   - WatchFiles for filesystem event notification
 - **Compiler & Tools**:
   - TeX Live / MacTeX / BasicTeX (`pdflatex`, `bibtex`, `synctex`)

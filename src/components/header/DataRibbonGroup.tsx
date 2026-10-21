@@ -187,6 +187,17 @@ export const DataRibbonGroup: React.FC<DataRibbonGroupProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => onOpenAnalysis?.("ancova")}
+            title="Analysis of Covariance (ANCOVA) with Continuous Covariates"
+            className="flex flex-col items-center justify-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-zinc-700 dark:text-zinc-200"
+          >
+            <Split className="w-4 h-4 text-emerald-500" />
+            <span className="text-[10px] font-medium leading-none whitespace-nowrap">
+              ANCOVA
+            </span>
+          </button>
+          <button
+            type="button"
             onClick={() => onOpenAnalysis?.("correlation_pearson")}
             title="Bivariate Pearson Correlation Matrix (r)"
             className="flex flex-col items-center justify-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-zinc-700 dark:text-zinc-200"

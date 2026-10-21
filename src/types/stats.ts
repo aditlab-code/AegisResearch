@@ -9,6 +9,7 @@ export type AnalysisType =
   | "ttest_paired"
   | "anova_oneway"
   | "anova_twoway"
+  | "ancova"
   | "correlation_pearson"
   | "mann_whitney"
   | "wilcoxon"
@@ -46,6 +47,8 @@ export interface DescriptiveVariableResult {
   median?: number | null;
   min?: number | null;
   max?: number | null;
+  iqr?: number | null;
+  coeff_variation?: number | null;
   skewness?: number | null;
   kurtosis?: number | null;
   shapiro_w?: number | null;
@@ -211,6 +214,10 @@ export interface TTestIndependentResponse {
   group2: GroupSummary;
   levene_f: number;
   levene_p: number;
+  residuals_normality?: {
+    w: number;
+    p: number;
+  } | null;
   equal_var: {
     t_statistic: number;
     df: number;
@@ -288,6 +295,10 @@ export interface AnovaOneWayResponse {
   f_statistic: number;
   p_value: number;
   eta_squared: number;
+  residuals_normality?: {
+    w: number;
+    p: number;
+  } | null;
   ss_within: number;
   df_within: number;
   ms_within: number;
@@ -322,6 +333,52 @@ export interface AnovaTwoWayResponse {
   factor2: string;
   sample_size: number;
   effects: AnovaTwoWayEffect[];
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface AncovaRequest {
+  file_path: string;
+  dependent: string;
+  factor: string;
+  covariates: string[];
+}
+
+export interface AncovaEffect {
+  source: string;
+  sum_sq: number;
+  df: number;
+  mean_sq: number;
+  f_statistic: number | null;
+  p_value: number | null;
+  partial_eta_squared: number | null;
+}
+
+export interface AncovaAdjustedMean {
+  group: string;
+  n: number;
+  raw_mean: number;
+  adjusted_mean: number;
+}
+
+export interface AncovaResponse {
+  analysis_type: "ancova";
+  dependent: string;
+  factor: string;
+  covariates: string[];
+  total_n: number;
+  effects: AncovaEffect[];
+  adjusted_means: AncovaAdjustedMean[];
+  residuals_normality?: {
+    w: number;
+    p: number;
+  } | null;
+  homogeneity_of_slopes?: {
+    interaction: string;
+    f_statistic: number;
+    p_value: number;
+    assumption_met: boolean;
+  } | null;
   latex_table: string;
   latex_tables?: Record<string, string>;
 }
@@ -476,6 +533,7 @@ export type AnalysisResult =
   | TTestPairedResponse
   | AnovaOneWayResponse
   | AnovaTwoWayResponse
+  | AncovaResponse
   | CorrelationResponse
   | MannWhitneyResponse
   | WilcoxonSignedRankResponse

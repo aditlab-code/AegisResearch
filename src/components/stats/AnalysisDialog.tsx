@@ -32,6 +32,7 @@ import {
   TTestPairedRequest,
   AnovaOneWayRequest,
   AnovaTwoWayRequest,
+  AncovaRequest,
   CorrelationRequest,
   MannWhitneyRequest,
   WilcoxonSignedRankRequest,
@@ -122,6 +123,7 @@ export const AnalysisDialog: React.FC<AnalysisDialogProps> = ({
   const [corrVars, setCorrVars] = useState<string[]>([]);
   const [rowVar, setRowVar] = useState<string | null>(null);
   const [colVar, setColVar] = useState<string | null>(null);
+  const [ancovaCovariates, setAncovaCovariates] = useState<string[]>([]);
   const [postHocTukey, setPostHocTukey] = useState(true);
 
   const [loading, setLoading] = useState(false);
@@ -227,6 +229,22 @@ export const AnalysisDialog: React.FC<AnalysisDialogProps> = ({
         const v = validateSlotScale(scale, "factor", "anova_twoway");
         if (v.warning) warnings.push(v.warning);
       }
+    } else if (analysisType === "ancova") {
+      if (singleVar) {
+        const scale = variableScales[singleVar] || "scale";
+        const v = validateSlotScale(scale, "dependent", "ancova");
+        if (v.warning) warnings.push(v.warning);
+      }
+      if (groupVar) {
+        const scale = variableScales[groupVar] || "nominal";
+        const v = validateSlotScale(scale, "factor", "ancova");
+        if (v.warning) warnings.push(v.warning);
+      }
+      ancovaCovariates.forEach((vName) => {
+        const scale = variableScales[vName] || "scale";
+        const v = validateSlotScale(scale, "independent", "ancova");
+        if (v.warning) warnings.push(v.warning);
+      });
     } else if (analysisType === "correlation_pearson") {
       corrVars.forEach((vName) => {
         const scale = variableScales[vName] || "scale";
@@ -261,6 +279,7 @@ export const AnalysisDialog: React.FC<AnalysisDialogProps> = ({
     pairedVar2,
     factorVar1,
     factorVar2,
+    ancovaCovariates,
     corrVars,
     rowVar,
     colVar,
@@ -330,6 +349,12 @@ export const AnalysisDialog: React.FC<AnalysisDialogProps> = ({
           title: "Two-Way Factorial ANOVA",
           icon: Layers,
           desc: "Analyze main effects of two categorical factors and their interaction effect on an outcome.",
+        };
+      case "ancova":
+        return {
+          title: "Analysis of Covariance (ANCOVA)",
+          icon: BarChart3,
+          desc: "Evaluate treatment group differences on a continuous outcome while controlling for continuous covariate(s).",
         };
       case "correlation_pearson":
         return {
@@ -510,6 +535,23 @@ export const AnalysisDialog: React.FC<AnalysisDialogProps> = ({
           factor2: factorVar2,
         };
         res = await statsApi.runAnovaTwoWay(projectName, req);
+      } else if (analysisType === "ancova") {
+        if (!singleVar) {
+          throw new Error("Please select a Dependent Variable.");
+        }
+        if (!groupVar) {
+          throw new Error("Please select a Factor / Grouping Variable.");
+        }
+        if (ancovaCovariates.length === 0) {
+          throw new Error("Please select at least one Covariate variable.");
+        }
+        const req: AncovaRequest = {
+          file_path: filePath,
+          dependent: singleVar,
+          factor: groupVar,
+          covariates: ancovaCovariates,
+        };
+        res = await statsApi.runAncova(projectName, req);
       } else if (analysisType === "correlation_pearson") {
         if (corrVars.length < 2) {
           throw new Error("Correlation requires at least 2 variables.");
@@ -1461,6 +1503,134 @@ export const AnalysisDialog: React.FC<AnalysisDialogProps> = ({
                       <span className="text-zinc-400 italic text-[10px]">
                         Select Factor B
                       </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ANCOVA */}
+            {analysisType === "ancova" && (
+              <>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                      Dependent Variable (Continuous):
+                    </span>
+                    {selectedAvailable && (
+                      <button
+                        onClick={() => setSingleVar(selectedAvailable)}
+                        className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+                      >
+                        <ArrowRight className="w-2.5 h-2.5" /> Set Outcome
+                      </button>
+                    )}
+                  </div>
+                  <div className="p-1.5 border border-zinc-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-900 text-[11px] min-h-[30px] flex items-center justify-between">
+                    {singleVar ? (
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                          {singleVar}
+                        </span>
+                        <button
+                          onClick={() => setSingleVar(null)}
+                          className="hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-zinc-400 italic text-[10px]">
+                        Select continuous Scale outcome
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                      Factor Variable (Categorical):
+                    </span>
+                    {selectedAvailable && (
+                      <button
+                        onClick={() => setGroupVar(selectedAvailable)}
+                        className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+                      >
+                        <ArrowRight className="w-2.5 h-2.5" /> Set Factor
+                      </button>
+                    )}
+                  </div>
+                  <div className="p-1.5 border border-zinc-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-900 text-[11px] min-h-[30px] flex items-center justify-between">
+                    {groupVar ? (
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                          {groupVar}
+                        </span>
+                        <button
+                          onClick={() => setGroupVar(null)}
+                          className="hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-zinc-400 italic text-[10px]">
+                        Select categorical factor/treatment
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">
+                      Covariates ({ancovaCovariates.length}):
+                    </span>
+                    {selectedAvailable && (
+                      <button
+                        onClick={() => {
+                          if (
+                            selectedAvailable !== singleVar &&
+                            selectedAvailable !== groupVar &&
+                            !ancovaCovariates.includes(selectedAvailable)
+                          ) {
+                            setAncovaCovariates((prev) => [
+                              ...prev,
+                              selectedAvailable,
+                            ]);
+                          }
+                        }}
+                        className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+                      >
+                        <ArrowRight className="w-2.5 h-2.5" /> Add Covariate
+                      </button>
+                    )}
+                  </div>
+                  <div className="p-1.5 border border-zinc-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-900 text-[11px] min-h-[48px] flex flex-wrap gap-1 content-start">
+                    {ancovaCovariates.length === 0 ? (
+                      <span className="text-zinc-400 italic text-[10px]">
+                        Select 1 or more continuous covariates
+                      </span>
+                    ) : (
+                      ancovaCovariates.map((c) => (
+                        <span
+                          key={c}
+                          className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center gap-1 font-mono text-[10px]"
+                        >
+                          {c}
+                          <button
+                            onClick={() =>
+                              setAncovaCovariates((prev) =>
+                                prev.filter((v) => v !== c),
+                              )
+                            }
+                            className="hover:text-red-500"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </span>
+                      ))
                     )}
                   </div>
                 </div>

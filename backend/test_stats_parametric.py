@@ -8,6 +8,7 @@ from backend.services.stats_parametric import (
     run_ttest_paired,
     run_anova_oneway,
     run_anova_twoway,
+    run_ancova,
     run_correlation_pearson,
 )
 
@@ -60,6 +61,9 @@ def test_independent_ttest(parametric_csv_file):
     assert "equal_var" in res
     assert "welch_var" in res
     assert res["equal_var"]["p_value"] < 0.01  # Treatment strongly differs from Control
+    assert "residuals_normality" in res
+    assert res["residuals_normality"] is not None
+    assert 0.0 <= res["residuals_normality"]["w"] <= 1.0
 
 
 def test_paired_ttest(parametric_csv_file):
@@ -79,6 +83,9 @@ def test_anova_oneway(parametric_csv_file):
     assert res["ss_between"] > 0
     assert res["f_statistic"] > 0
     assert len(res["groups"]) == 3
+    assert "residuals_normality" in res
+    assert res["residuals_normality"] is not None
+    assert 0.0 <= res["residuals_normality"]["w"] <= 1.0
 
 
 def test_anova_twoway(parametric_csv_file):
@@ -97,3 +104,84 @@ def test_correlation_pearson(parametric_csv_file):
     assert len(res["matrix"]) == 3
     # Check diagonal
     assert res["matrix"][0]["correlations"][0]["r"] == 1.0
+
+
+def test_jasp_benchmark_parity():
+    csv_path = Path("benchmark_audit_200.csv")
+    if not csv_path.exists():
+        pytest.skip("benchmark_audit_200.csv not found")
+
+    from backend.services.stats import run_descriptive_analysis
+
+    # 1. Descriptive Parity
+    desc = run_descriptive_analysis(csv_path, ["study_hours", "exam_score"])
+    sh = next(d for d in desc if d["variable"] == "study_hours")
+    es = next(d for d in desc if d["variable"] == "exam_score")
+    assert round(sh["mean"], 2) == 32.24
+    assert round(sh["std"], 3) == 5.774
+    assert round(sh["iqr"], 3) == 7.525
+    assert round(sh["coeff_variation"], 4) == 0.1791
+    assert round(es["mean"], 2) == 83.60
+    assert round(es["std"], 3) == 9.358
+    assert abs(es["iqr"] - 11.625) < 1e-4  # JASP displays 11.63 (rounded from 11.625)
+    assert round(es["coeff_variation"], 4) == 0.1119
+
+    # 2. T-Test & Residuals Normality Parity
+    tt_sh = run_ttest_independent(csv_path, "study_hours", "group")
+    assert round(tt_sh["equal_var"]["t_statistic"], 4) == -0.9625
+    assert round(tt_sh["equal_var"]["df"]) == 198
+    assert round(tt_sh["equal_var"]["p_value"], 3) == 0.337
+    assert round(tt_sh["residuals_normality"]["w"], 4) == 0.9952
+    assert round(tt_sh["residuals_normality"]["p"], 3) == 0.783
+
+    tt_es = run_ttest_independent(csv_path, "exam_score", "group")
+    assert round(tt_es["equal_var"]["t_statistic"], 3) == -8.163
+    assert round(tt_es["equal_var"]["df"]) == 198
+    assert tt_es["equal_var"]["p_value"] < 0.001
+    assert round(tt_es["residuals_normality"]["w"], 4) == 0.9913
+    assert round(tt_es["residuals_normality"]["p"], 3) == 0.276
+
+    # 3. ANOVA One-Way Parity
+    an_sh = run_anova_oneway(csv_path, "study_hours", "group")
+    assert round(an_sh["ss_between"], 2) == 30.89
+    assert an_sh["df_between"] == 1
+    assert round(an_sh["ms_between"], 2) == 30.89
+    assert round(an_sh["f_statistic"], 4) == 0.9263
+    assert round(an_sh["p_value"], 3) == 0.337
+    assert round(an_sh["residuals_normality"]["w"], 4) == 0.9952
+    assert round(an_sh["residuals_normality"]["p"], 3) == 0.783
+
+    # 4. ANCOVA Parity on benchmark_audit_200.csv
+    anc = run_ancova(
+        csv_path,
+        dependent="exam_score",
+        factor="group",
+        covariates=["study_hours"],
+    )
+    assert anc["analysis_type"] == "ancova"
+    assert anc["total_n"] == 200
+    eff_group = next(e for e in anc["effects"] if e["source"] == "group")
+    eff_sh = next(e for e in anc["effects"] if e["source"] == "study_hours")
+    assert round(eff_group["sum_sq"], 2) == 3549.20
+    assert round(eff_group["f_statistic"], 2) == 177.91
+    assert eff_group["p_value"] < 0.001
+    assert round(eff_sh["sum_sq"], 2) == 9107.03
+    assert round(eff_sh["f_statistic"], 2) == 456.50
+    assert eff_sh["p_value"] < 0.001
+    assert round(anc["residuals_normality"]["w"], 4) == 0.9921
+    assert round(anc["residuals_normality"]["p"], 3) == 0.354
+
+
+def test_ancova(parametric_csv_file):
+    res = run_ancova(
+        parametric_csv_file,
+        dependent="score",
+        factor="group2",
+        covariates=["iq"],
+    )
+    assert res["analysis_type"] == "ancova"
+    assert res["total_n"] == 8
+    assert len(res["effects"]) >= 2
+    assert len(res["adjusted_means"]) == 2
+    assert "residuals_normality" in res
+    assert "homogeneity_of_slopes" in res

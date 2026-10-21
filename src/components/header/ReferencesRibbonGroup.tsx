@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Library, ExternalLink, ListTree, ChevronDown } from "lucide-react";
+import {
+  Library,
+  ExternalLink,
+  ListTree,
+  ChevronDown,
+  Share2,
+} from "lucide-react";
 import { BibEntry, ScannedLabel, BibliographyStyleChoice } from "../../utils";
 import { OutlineNode } from "../../types";
 import { BibliographyPopover } from "./BibliographyPopover";
@@ -16,6 +22,7 @@ export interface ReferencesRibbonGroupProps {
   onSaveBibEntries: (entries: BibEntry[]) => void;
   onInsertRef: (refCode: string) => void;
   onInsertTocCode: (code: string) => void;
+  onOpenBibliometrics?: () => void;
 }
 export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
   isLatex = true,
@@ -27,6 +34,7 @@ export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
   onSaveBibEntries,
   onInsertRef,
   onInsertTocCode,
+  onOpenBibliometrics,
 }) => {
   const [activePopover, setActivePopover] = useState<
     "bib" | "crossref" | "toc" | null
@@ -159,6 +167,24 @@ export const ReferencesRibbonGroup: React.FC<ReferencesRibbonGroupProps> = ({
           </div>
         )}
       </div>
+
+      {/* 4. Sub-panel Bibliometrics & Scientometrics */}
+      {onOpenBibliometrics && (
+        <div className="relative h-full flex flex-col items-center justify-between py-1 px-3 border-l border-zinc-200 dark:border-zinc-800">
+          <button
+            type="button"
+            onClick={onOpenBibliometrics}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-medium"
+            title="Launch Bibliometric & Scientometric Analysis"
+          >
+            <Share2 className="size-4 text-blue-600 dark:text-blue-400" />
+            <span>Bibliometrics</span>
+          </button>
+          <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mt-1">
+            Scientometrics
+          </span>
+        </div>
+      )}
     </div>
   );
 };

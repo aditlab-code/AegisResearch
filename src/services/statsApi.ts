@@ -20,6 +20,8 @@ import {
   AnovaOneWayResponse,
   AnovaTwoWayRequest,
   AnovaTwoWayResponse,
+  AncovaRequest,
+  AncovaResponse,
   CorrelationRequest,
   CorrelationResponse,
   MannWhitneyRequest,
@@ -129,6 +131,13 @@ export const statsApi = {
       `/api/projects/${encodeURIComponent(projectName)}/stats/anova/twoway`,
     );
     return postJson<AnovaTwoWayRequest, AnovaTwoWayResponse>(url, req);
+  },
+
+  runAncova: (projectName: string, req: AncovaRequest) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/ancova`,
+    );
+    return postJson<AncovaRequest, AncovaResponse>(url, req);
   },
 
   runCorrelationPearson: (projectName: string, req: CorrelationRequest) => {

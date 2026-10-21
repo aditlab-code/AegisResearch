@@ -49,6 +49,8 @@ def test_descriptive_analysis(sample_csv_file):
     assert x1_res["mean"] == 5.5
     assert x1_res["min"] == 1.0
     assert x1_res["max"] == 10.0
+    assert x1_res["iqr"] is not None
+    assert x1_res["coeff_variation"] is not None
     assert x1_res["shapiro_w"] is not None
 
     table = generate_descriptive_latex_table(res)

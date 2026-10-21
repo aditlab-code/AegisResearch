@@ -120,3 +120,19 @@ def test_api_chisquare():
     assert "cramers_v" in data
     assert "crosstab" in data
     assert r"\begin{table}" in data["latex_table"]
+
+
+def test_api_ancova():
+    payload = {
+        "file_path": "benchmark_audit_200.csv",
+        "dependent": "exam_score",
+        "factor": "group",
+        "covariates": ["study_hours"],
+    }
+    res = client.post("/api/projects/template-thesis/stats/ancova", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["analysis_type"] == "ancova"
+    assert "effects" in data
+    assert "adjusted_means" in data
+    assert r"\begin{table}" in data["latex_table"]

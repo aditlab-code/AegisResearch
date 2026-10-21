@@ -26,6 +26,7 @@ Writing academic papers, theses, and technical publications in LaTeX often force
 - **Bidirectional SyncTeX Navigation**: Double-click PDF text to jump to the exact LaTeX source line (Inverse Search), or press `Cmd/Ctrl + Alt + J` / click "Sync to PDF" to locate source lines in the preview (Forward Search).
 - **Embedded Git Studio**: Built-in visual commit and branch graph, staging, diff inspection, and branch switching tailored for scientific writing.
 - **Statistical Research Workbench & Data Ribbon**: Integrated quantitative analysis and scientific data workbench. Inspect datasets, run parametric & non-parametric tests, follow methodological guardrails, and generate publication-ready LaTeX tables (APA, IEEE, Classic) in one click.
+- **Bibliometrics & Scientometrics Studio**: Integrated scientific literature analysis workbench. Parse BibTeX corpora, analyze keyword co-occurrence & co-authorship networks, generate Callon 2x2 thematic strategic maps, track longitudinal thematic evolution across time slices via Sankey diagrams, validate Bradford and Lotka scientific laws, clean SLR stopwords, and export publication-ready LaTeX TikZ figures directly into your manuscript.
 - **Native PDF.js Multi-Page Viewer**: High-performance continuous scroll canvas viewer supporting zoom, Fit Width, Fit Page, High-DPI/Retina displays, and 100% aspect ratio preservation.
 - **Local AI-Ready**: Optional offline assistance powered by [Ollama](https://ollama.com) for syntax diagnostic and automated error recovery.
 
@@ -38,6 +39,7 @@ graph TD
     subgraph Client ["Frontend (React 18 + Vite + Monaco)"]
         UI["Academic Ribbon & Workbench Shell"]
         DataRibbon["Data Ribbon & Statistical Analysis Suite"]
+        BibStudio["Bibliometrics & Scientometrics Studio"]
         Monaco["Monaco Editor (LaTeX, BibTeX, Markdown)"]
         PDF["PDF.js Native Multi-Page Canvas Viewer"]
         GitPanel["Git Track Changes & SVG Commit Graph"]
@@ -53,6 +55,7 @@ graph TD
         CompilerService["Multi-Pass Compiler (-synctex=1)"]
         SyncTeXService["SyncTeX CLI Service (edit & view)"]
         StatsService["Statistical Engine (Polars, SciPy, Statsmodels)"]
+        BibService["Bibliometrics Engine (Networks, Bradford, Lotka, TikZ)"]
         TableGen["Multi-Style LaTeX Table Generator (APA, IEEE, Classic)"]
     end
 
@@ -64,6 +67,8 @@ graph TD
     end
 
     UI --> API
+    DataRibbon --> API
+    BibStudio --> API
     Monaco --> API
     Monaco <-->|Forward / Inverse Search| SyncClient
     SyncClient <-->|/synctex/inverse & /forward| SyncTeXService
@@ -72,6 +77,8 @@ graph TD
     WSClient <-->|WebSocket| Watcher
     
     API --> Storage
+    API --> StatsService
+    API --> BibService
     GitService --> GitCLI
     GitCLI --> Storage
     CompilerService --> TexEngine
@@ -152,6 +159,17 @@ chmod +x setup.sh run.sh
   - *Non-Parametric Tests*: Mann-Whitney U, Wilcoxon Signed-Rank, Kruskal-Wallis H, Spearman Rank Correlation, and Chi-Square Test of Independence.
 - **Dynamic Multi-Style LaTeX Table Generator**: Generates publication-ready LaTeX tables across APA (`booktabs`), IEEE, and Classic LaTeX styles, rendered inside a dedicated full centered modal dialog with instant copy-to-clipboard and insert-to-editor triggers.
 
+### 9. Bibliometrics & Scientometrics Studio
+- **Ergonomic 3-Column Studio Layout**: Navigation & Corpus Statistics (left), Interactive Visual Viewport (center), and Context-Aware Configuration & Inspection Panel (right).
+- **Co-Occurrence & Collaboration Networks**: Keyword co-occurrence and co-authorship networks with normalization (Jaccard, Cosine, Association Strength), collision avoidance physics, and custom node styling.
+- **Thematic Map (Callon's Strategic Diagram)**: 2x2 quadrant visualization mapping research themes across Centrality (relevance degree) and Density (development degree) into Motor Themes, Highly Developed/Niche Themes, Emerging/Declining Themes, and Basic/Transversal Themes.
+- **Longitudinal Thematic Evolution**: Interactive Sankey flow diagram tracking thematic shifts across customizable time periods (2, 3, or 4 time slices) via thematic Inclusion Index.
+- **Scientometric Laws of Distribution**:
+  - *Bradford's Law of Scattering*: Partitioning journal sources into 3 core concentric zones with continuous rank visualization.
+  - *Lotka's Law of Author Productivity*: Frequency-degree author power-law analysis with automated Kolmogorov-Smirnov (K-S) goodness-of-fit validation and critical value computation.
+- **SLR Stopword Management**: Dedicated Systematic Literature Review (SLR) stopword filtering with 1-click exclusion of top corpus keywords.
+- **Native LaTeX TikZ Vector Export**: One-click generation of compile-ready PGFPlots/TikZ figures for direct inclusion into LaTeX publications without loss of vector fidelity.
+
 ---
 
 ## 📁 Repository Structure
@@ -177,11 +195,14 @@ AegisResearch/
 │   │   ├── stats.py          # Descriptive, reliability & assumption statistics
 │   │   ├── stats_parametric.py # Parametric hypothesis tests & regressions
 │   │   ├── stats_nonparametric.py # Non-parametric rank & association tests
-│   │   └── latex_table_gen.py # Dynamic APA/IEEE/Classic LaTeX table generator
+│   │   ├── latex_table_gen.py # Dynamic APA/IEEE/Classic LaTeX table generator
+│   │   └── bibliometrics.py  # Scientometrics, networks, Bradford, Lotka & TikZ
 │   ├── test_compiler.py      # Multi-pass LaTeX compilation tests
 │   ├── test_synctex.py       # SyncTeX CLI parser & coordinate tests
 │   ├── test_stats.py         # Statistical calculation unit tests
 │   ├── test_stats_api.py     # Statistics API integration tests
+│   ├── test_bibliometrics.py # Bibliometric engine unit tests
+│   ├── test_bibliometrics_api.py # Bibliometric API integration tests
 │   └── latex_workspaces/     # Local workspace storage for user LaTeX projects
 └── src/
     ├── components/
@@ -189,7 +210,8 @@ AegisResearch/
     │   ├── header/           # TitleBar & RibbonBar toolbar ("Sync to PDF", Data Ribbon)
     │   ├── sidebar/          # FileTree, GitTrackPanel, SearchPanel, ReviewNotes
     │   ├── preview/          # PDFViewer native canvas & PreviewPanel/Toolbar
-    │   └── stats/            # Statistical AnalysisDialog, ResultsViewer, MethodAdvisor
+    │   ├── stats/            # Statistical AnalysisDialog, ResultsViewer, MethodAdvisor
+    │   └── bibliometrics/    # Bibliometrics Studio (layout, panels, views, hooks)
     ├── services/             # Frontend API clients (projects, search, git, synctex, stats)
     ├── hooks/                # Custom hooks (shortcuts, git, compile, file tree)
     └── types/                # TypeScript interface definitions (stats, documents)
@@ -212,9 +234,9 @@ The backend can be configured via environment variables or a `.env` file located
 
 ## 📚 Documentation
 - [How to Install (macOS, Linux, WSL)](docs/HOW_TO_INSTALL.md)
-- [Release Notes v0.1.0](docs/RELEASE_NOTES.md)
-- [Project Roadmap](docs/roadmap.md)
-- [SyncTeX Bidirectional Spec](docs/spec-synctex-bidirectional.md)
+- [Release Notes](docs/RELEASE_NOTES.md)
+- [Project Roadmap](docs/internal/roadmap.md)
+- [System Architecture](docs/internal/architecture.md)
 
 ---
 
@@ -229,8 +251,14 @@ bash -n setup.sh && bash -n run.sh
 # Type-check and build frontend
 rtk npm run build
 
-# Run backend unit & integration test suite (35+ tests)
-rtk backend/.venv/bin/pytest backend/test_*.py
+# Check frontend code formatting
+rtk npm run format:check
+
+# Run backend unit & integration test suite (85 tests)
+rtk backend/.venv/bin/pytest backend/
+
+# Check backend Python code formatting
+rtk backend/.venv/bin/ruff format --check backend/
 ```
 
 ---

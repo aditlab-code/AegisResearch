@@ -43,6 +43,7 @@ export interface RibbonBarProps {
   onSaveBibEntries?: (entries: BibEntry[]) => void;
   onInsertRef?: (refCode: string) => void;
   onInsertTocCode?: (code: string) => void;
+  onOpenBibliometrics?: () => void;
   onInsertComment?: (code: string) => void;
   onOpenReviewPanel?: () => void;
   onOpenGitPanel?: () => void;
@@ -79,6 +80,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
   onSaveBibEntries = () => {},
   onInsertRef = () => {},
   onInsertTocCode = () => {},
+  onOpenBibliometrics = () => {},
   onInsertComment = () => {},
   onOpenReviewPanel = () => {},
   onOpenGitPanel = () => {},
@@ -141,6 +143,7 @@ export const RibbonBar: React.FC<RibbonBarProps> = ({
             onSaveBibEntries={onSaveBibEntries}
             onInsertRef={onInsertRef}
             onInsertTocCode={onInsertTocCode}
+            onOpenBibliometrics={onOpenBibliometrics}
           />
         ) : currentTab === "Data" ? (
           <DataRibbonGroup

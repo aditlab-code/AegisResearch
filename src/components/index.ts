@@ -5,3 +5,4 @@ export * from "./editor";
 export * from "./preview";
 export * from "./statusbar";
 export * from "./stats";
+export * from "./bibliometrics";

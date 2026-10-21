@@ -118,6 +118,19 @@ def run_ttest_independent(
     )
     cohens_d = (mean_diff / s_pooled) if s_pooled > 0 else 0.0
 
+    # Normality of Residuals (Shapiro-Wilk on residuals e = y - mean_group)
+    residuals = np.concatenate([np.asarray(g1) - m1, np.asarray(g2) - m2])
+    residuals_normality = None
+    if 3 <= len(residuals) <= 5000:
+        try:
+            sw_res = stats.shapiro(residuals)
+            residuals_normality = {
+                "w": float(sw_res.statistic),
+                "p": float(sw_res.pvalue),
+            }
+        except Exception:
+            residuals_normality = None
+
     return {
         "analysis_type": "ttest_independent",
         "test_variable": test_variable,
@@ -138,6 +151,7 @@ def run_ttest_independent(
         "cohens_d": float(cohens_d),
         "levene_f": levene_f,
         "levene_p": levene_p,
+        "residuals_normality": residuals_normality,
         "equal_var": {
             "t_statistic": float(t_eq.statistic),
             "df": float(n1 + n2 - 2),
@@ -294,6 +308,23 @@ def run_anova_oneway(
         except Exception:
             pass
 
+    # Normality of Residuals (Shapiro-Wilk on residuals e = y - mean_group)
+    residuals_list = []
+    for g_data in grouped_data:
+        if len(g_data) > 0:
+            residuals_list.append(np.asarray(g_data) - np.mean(g_data))
+    residuals = np.concatenate(residuals_list) if residuals_list else np.array([])
+    residuals_normality = None
+    if 3 <= len(residuals) <= 5000:
+        try:
+            sw_res = stats.shapiro(residuals)
+            residuals_normality = {
+                "w": float(sw_res.statistic),
+                "p": float(sw_res.pvalue),
+            }
+        except Exception:
+            residuals_normality = None
+
     return {
         "analysis_type": "anova_oneway",
         "dependent": dependent,
@@ -310,6 +341,7 @@ def run_anova_oneway(
         "f_statistic": f_stat,
         "p_value": p_val,
         "eta_squared": eta_sq,
+        "residuals_normality": residuals_normality,
         "groups": group_stats,
         "pairwise": pairwise_comps,
     }
@@ -427,4 +459,177 @@ def run_correlation_pearson(file_path: Path, variables: List[str]) -> Dict[str, 
         "variables": variables,
         "sample_size": len(df),
         "matrix": matrix,
+    }
+
+
+def run_ancova(
+    file_path: Path, dependent: str, factor: str, covariates: List[str]
+) -> Dict[str, Any]:
+    """Computes Analysis of Covariance (ANCOVA) with Type II SS and adjusted means."""
+    if not covariates:
+        raise StatsError("ANCOVA requires at least one covariate variable")
+
+    cols = [dependent, factor] + covariates
+    df = _load_selected_columns(file_path, cols).dropna()
+    df[dependent] = df[dependent].astype(float)
+    df[factor] = df[factor].astype(str)
+    for c in covariates:
+        df[c] = df[c].astype(float)
+
+    n = len(df)
+    unique_factors = sorted(df[factor].unique())
+    if len(unique_factors) < 2:
+        raise StatsError(
+            f"ANCOVA requires at least 2 groups in Factor '{factor}', found {len(unique_factors)}"
+        )
+    if n < len(unique_factors) + len(covariates) + 1:
+        raise StatsError("Sample size is too small for ANCOVA")
+
+    try:
+        import pandas as pd
+        from scipy import stats
+        import statsmodels.api as sm
+        from statsmodels.formula.api import ols
+    except ImportError as e:
+        raise StatsError("SciPy and Statsmodels are required for ANCOVA") from e
+
+    # Build formula: Q('dep') ~ C(Q('factor')) + Q('cov1') + ...
+    covar_terms = " + ".join([f"Q('{c}')" for c in covariates])
+    formula = f"Q('{dependent}') ~ C(Q('{factor}')) + {covar_terms}"
+
+    try:
+        model = ols(formula, data=df).fit()
+        aov_table = sm.stats.anova_lm(model, typ=2)
+    except Exception as e:
+        raise StatsError(f"ANCOVA model fitting failed: {e}") from e
+
+    residual_ss = (
+        float(aov_table.loc["Residual", "sum_sq"])
+        if "Residual" in aov_table.index
+        else 0.0
+    )
+
+    effects = []
+    for idx, row in aov_table.iterrows():
+        source_name = str(idx)
+        if "Residual" in source_name:
+            source_label = "Residual"
+        elif f"C(Q('{factor}'))" in source_name:
+            source_label = factor
+        else:
+            matched_cov = None
+            for c in covariates:
+                if f"Q('{c}')" in source_name or c == source_name:
+                    matched_cov = c
+                    break
+            source_label = matched_cov if matched_cov else source_name
+
+        ss = float(row.get("sum_sq", 0.0))
+        df_val = float(row.get("df", 0.0))
+        f_val = (
+            float(row.get("F", 0.0))
+            if not math.isnan(row.get("F", float("nan")))
+            else None
+        )
+        p_val = (
+            float(row.get("PR(>F)", 1.0))
+            if not math.isnan(row.get("PR(>F)", float("nan")))
+            else None
+        )
+        ms_val = (ss / df_val) if df_val > 0 else 0.0
+        partial_eta = (
+            (ss / (ss + residual_ss))
+            if (residual_ss > 0 and f_val is not None)
+            else None
+        )
+
+        effects.append(
+            {
+                "source": source_label,
+                "sum_sq": ss,
+                "df": df_val,
+                "mean_sq": ms_val,
+                "f_statistic": f_val,
+                "p_value": p_val,
+                "partial_eta_squared": partial_eta,
+            }
+        )
+
+    # Estimated Marginal Means (Adjusted Means) evaluated at mean of covariates
+    covar_means = {c: float(df[c].mean()) for c in covariates}
+    adjusted_means = []
+    for f_val in unique_factors:
+        sub_group = df[df[factor] == f_val]
+        raw_m = float(sub_group[dependent].mean()) if len(sub_group) > 0 else 0.0
+        n_group = len(sub_group)
+
+        pred_dict = {factor: [f_val]}
+        for c in covariates:
+            pred_dict[c] = [covar_means[c]]
+        pred_df = pd.DataFrame(pred_dict)
+        pred_val = float(model.predict(pred_df).iloc[0])
+
+        adjusted_means.append(
+            {
+                "group": str(f_val),
+                "n": n_group,
+                "raw_mean": raw_m,
+                "adjusted_mean": pred_val,
+            }
+        )
+
+    # Normality of Residuals
+    residuals_normality = None
+    residuals = model.resid.values
+    if 3 <= len(residuals) <= 5000:
+        try:
+            sw_res = stats.shapiro(residuals)
+            residuals_normality = {
+                "w": float(sw_res.statistic),
+                "p": float(sw_res.pvalue),
+            }
+        except Exception:
+            residuals_normality = None
+
+    # Test Homogeneity of Regression Slopes (Factor x Covariate Interaction)
+    homogeneity_of_slopes = None
+    try:
+        int_terms = " + ".join([f"C(Q('{factor}')):Q('{c}')" for c in covariates])
+        int_formula = f"{formula} + {int_terms}"
+        int_model = ols(int_formula, data=df).fit()
+        int_aov = sm.stats.anova_lm(int_model, typ=2)
+
+        for idx, row in int_aov.iterrows():
+            if ":" in str(idx):
+                f_int = (
+                    float(row.get("F", 0.0))
+                    if not math.isnan(row.get("F", float("nan")))
+                    else None
+                )
+                p_int = (
+                    float(row.get("PR(>F)", 1.0))
+                    if not math.isnan(row.get("PR(>F)", float("nan")))
+                    else None
+                )
+                if f_int is not None and p_int is not None:
+                    homogeneity_of_slopes = {
+                        "interaction": f"{factor} × {covariates[0]}",
+                        "f_statistic": f_int,
+                        "p_value": p_int,
+                        "assumption_met": p_int >= 0.05,
+                    }
+                    break
+    except Exception:
+        homogeneity_of_slopes = None
+
+    return {
+        "analysis_type": "ancova",
+        "dependent": dependent,
+        "factor": factor,
+        "covariates": covariates,
+        "total_n": n,
+        "effects": effects,
+        "adjusted_means": adjusted_means,
+        "residuals_normality": residuals_normality,
+        "homogeneity_of_slopes": homogeneity_of_slopes,
     }

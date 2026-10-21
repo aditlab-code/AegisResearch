@@ -429,6 +429,14 @@ export const StatisticalGuideModal: React.FC<StatisticalGuideModalProps> = ({
     },
     {
       scale: "scale",
+      purpose: "Factor Analysis with Continuous Covariate",
+      groups: "≥ 2 Groups + Covariate",
+      design: "Between Subjects + Covariate",
+      normalTest: { title: "Analysis of Covariance (ANCOVA)", type: "ancova" },
+      note: "Tests group differences while controlling for continuous covariate(s) via Type II SS.",
+    },
+    {
+      scale: "scale",
       purpose: "Bivariate Linear Correlation",
       groups: "Bivariate",
       design: "Continuous",
