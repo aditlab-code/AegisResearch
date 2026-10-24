@@ -2,6 +2,7 @@ export type AnalysisType =
   | "descriptive"
   | "reliability"
   | "regression"
+  | "logistic_regression"
   | "manova"
   | "pca"
   | "ttest_one_sample"
@@ -26,10 +27,16 @@ export interface VariableMeta {
   scale: MeasurementScale;
 }
 
-export interface DescriptiveRequest {
+export interface StatsBaseRequest {
   file_path: string;
+  include_plot?: boolean;
+  plot_type?: string;
+}
+
+export interface DescriptiveRequest extends StatsBaseRequest {
   variables: string[];
   include_normality?: boolean;
+  missing_strategy?: "listwise" | "pairwise";
 }
 
 export interface FrequencyEntry {
@@ -38,11 +45,23 @@ export interface FrequencyEntry {
   percentage: number;
 }
 
+export interface VariableCompletenessAudit {
+  n_total: number;
+  n_valid: number;
+  n_missing: number;
+  missing_pct: number;
+}
+
 export interface DescriptiveVariableResult {
   variable: string;
   scale?: MeasurementScale;
   n: number;
+  n_total?: number;
+  n_valid?: number;
+  n_missing?: number;
+  missing_pct?: number;
   mean?: number | null;
+  variance?: number | null;
   std?: number | null;
   median?: number | null;
   min?: number | null;
@@ -64,8 +83,7 @@ export interface DescriptiveResponse {
   latex_tables?: Record<string, string>;
 }
 
-export interface ReliabilityRequest {
-  file_path: string;
+export interface ReliabilityRequest extends StatsBaseRequest {
   items: string[];
 }
 
@@ -87,12 +105,13 @@ export interface ReliabilityResponse {
   latex_tables?: Record<string, string>;
 }
 
-export interface RegressionRequest {
-  file_path: string;
+export interface RegressionRequest extends StatsBaseRequest {
   dependent: string;
   independents: string[];
   check_vif?: boolean;
   check_durbin_watson?: boolean;
+  baseline_independents?: string[];
+  missing_strategy?: "listwise" | "pairwise";
 }
 
 export interface RegressionCoeff {
@@ -106,9 +125,25 @@ export interface RegressionCoeff {
   tolerance?: number | null;
 }
 
+export interface CollinearityDiagnostic {
+  dimension: number;
+  eigenvalue: number;
+  condition_index: number;
+}
+
+export interface FChangeResult {
+  r2_change: number;
+  f_change: number;
+  df1: number;
+  df2: number;
+  p_change: number;
+}
+
 export interface RegressionResponse {
   analysis_type: "regression";
   dependent: string;
+  sample_size?: number;
+  sample_audit?: Record<string, VariableCompletenessAudit>;
   r: number;
   r_squared: number;
   adj_r_squared: number;
@@ -116,12 +151,81 @@ export interface RegressionResponse {
   f_p_value: number;
   durbin_watson?: number | null;
   coefficients: RegressionCoeff[];
+  collinearity_diagnostics?: CollinearityDiagnostic[];
+  f_change?: FChangeResult | null;
   latex_table: string;
   latex_tables?: Record<string, string>;
 }
 
-export interface ManovaRequest {
-  file_path: string;
+export interface LogisticRegressionRequest extends StatsBaseRequest {
+  dependent: string;
+  independents: string[];
+  cutoff?: number;
+  missing_strategy?: "listwise" | "pairwise";
+}
+
+export interface LogisticCoeff {
+  variable: string;
+  b: number;
+  std_err: number;
+  wald: number;
+  df: number;
+  p_value: number;
+  odds_ratio: number;
+  or_ci_lower: number;
+  or_ci_upper: number;
+}
+
+export interface LogisticRegressionResponse {
+  analysis_type: "logistic_regression";
+  dependent: string;
+  independents: string[];
+  sample_size: number;
+  sample_audit?: Record<string, VariableCompletenessAudit>;
+  reference_category: string;
+  event_category: string;
+  cutoff: number;
+  log_likelihood: number;
+  null_log_likelihood: number;
+  deviance: number;
+  aic: number;
+  bic: number;
+  model_chi2: number;
+  model_chi2_df: number;
+  model_chi2_p: number;
+  pseudo_r2: {
+    mcfadden: number;
+    cox_snell: number;
+    nagelkerke: number;
+  };
+  coefficients: LogisticCoeff[];
+  classification: {
+    cutoff: number;
+    tp: number;
+    tn: number;
+    fp: number;
+    fn: number;
+    accuracy: number;
+    sensitivity: number;
+    specificity: number;
+    precision: number;
+    f1_score: number;
+    auc: number;
+  };
+  roc_curve: {
+    threshold: number;
+    fpr: number;
+    tpr: number;
+  }[];
+  residuals_summary?: {
+    deviance: { min: number; max: number; mean: number; std: number };
+    pearson: { min: number; max: number; mean: number; std: number };
+  };
+  latex_table: string;
+  latex_tables?: Record<string, string>;
+}
+
+export interface ManovaRequest extends StatsBaseRequest {
   dependents: string[];
   factor: string;
 }
@@ -135,18 +239,33 @@ export interface ManovaTestResult {
   p_value: number;
 }
 
+export interface ManovaGroupDescriptive {
+  group: string;
+  n: number;
+  variables: Record<string, { mean: number; std: number }>;
+}
+
+export interface BoxMResult {
+  m_stat: number;
+  chi2: number;
+  df: number;
+  p_value: number;
+  assumption_met: boolean;
+}
+
 export interface ManovaResponse {
   analysis_type: "manova";
   factor: string;
   dependents: string[];
   sample_size: number;
   tests: ManovaTestResult[];
+  group_descriptives?: ManovaGroupDescriptive[];
+  box_m?: BoxMResult | null;
   latex_table: string;
   latex_tables?: Record<string, string>;
 }
 
-export interface PcaRequest {
-  file_path: string;
+export interface PcaRequest extends StatsBaseRequest {
   variables: string[];
   n_components?: number;
 }
@@ -169,16 +288,28 @@ export interface PcaResponse {
 }
 
 // Parametric Interfaces
-export interface TTestOneSampleRequest {
-  file_path: string;
+export interface ComparativeTestResult {
+  test_name: string;
+  statistic: number;
+  df?: number | null;
+  p_value: number;
+  mean_diff?: number | null;
+  effect_size_name?: string | null;
+  effect_size?: number | null;
+}
+
+export interface TTestOneSampleRequest extends StatsBaseRequest {
   variable: string;
   test_value?: number;
+  alternative?: "two-sided" | "greater" | "less";
+  missing_strategy?: "pairwise" | "listwise";
 }
 
 export interface TTestOneSampleResponse {
   analysis_type: "ttest_one_sample";
   variable: string;
   test_value: number;
+  alternative?: string;
   n: number;
   mean: number;
   std: number;
@@ -186,17 +317,23 @@ export interface TTestOneSampleResponse {
   t_statistic: number;
   df: number;
   p_value: number;
-  ci_95_lower: number;
-  ci_95_upper: number;
-  cohen_d: number;
+  ci_95_lower?: number;
+  ci_95_upper?: number;
+  cohen_d?: number;
+  residuals_normality?: {
+    w: number;
+    p: number;
+  } | null;
+  comparative_tests?: ComparativeTestResult[];
   latex_table: string;
   latex_tables?: Record<string, string>;
 }
 
-export interface TTestIndependentRequest {
-  file_path: string;
+export interface TTestIndependentRequest extends StatsBaseRequest {
   test_variable: string;
   group_variable: string;
+  alternative?: "two-sided" | "greater" | "less";
+  missing_strategy?: "pairwise" | "listwise";
 }
 
 export interface GroupSummary {
@@ -204,12 +341,14 @@ export interface GroupSummary {
   n: number;
   mean: number;
   std: number;
+  median?: number;
 }
 
 export interface TTestIndependentResponse {
   analysis_type: "ttest_independent";
   test_variable: string;
   group_variable: string;
+  alternative?: string;
   group1: GroupSummary;
   group2: GroupSummary;
   levene_f: number;
@@ -232,37 +371,46 @@ export interface TTestIndependentResponse {
     mean_diff: number;
     cohen_d: number;
   };
+  comparative_tests?: ComparativeTestResult[];
   latex_table: string;
   latex_tables?: Record<string, string>;
 }
 
-export interface TTestPairedRequest {
-  file_path: string;
+export interface TTestPairedRequest extends StatsBaseRequest {
   var1: string;
   var2: string;
+  alternative?: "two-sided" | "greater" | "less";
+  missing_strategy?: "pairwise" | "listwise";
 }
 
 export interface TTestPairedResponse {
   analysis_type: "ttest_paired";
   var1: string;
   var2: string;
+  alternative?: string;
   n: number;
   mean1: number;
   std1: number;
   mean2: number;
   std2: number;
   mean_diff: number;
+  std_diff: number;
   correlation: number;
+  corr_p_value: number;
   t_statistic: number;
   df: number;
   p_value: number;
-  cohen_d: number;
+  cohen_d?: number;
+  residuals_normality?: {
+    w: number;
+    p: number;
+  } | null;
+  comparative_tests?: ComparativeTestResult[];
   latex_table: string;
   latex_tables?: Record<string, string>;
 }
 
-export interface AnovaOneWayRequest {
-  file_path: string;
+export interface AnovaOneWayRequest extends StatsBaseRequest {
   dependent: string;
   factor: string;
   post_hoc?: boolean;
@@ -299,6 +447,11 @@ export interface AnovaOneWayResponse {
     w: number;
     p: number;
   } | null;
+  levene_test?: {
+    statistic: number;
+    p_value: number;
+    assumption_met: boolean;
+  } | null;
   ss_within: number;
   df_within: number;
   ms_within: number;
@@ -310,8 +463,7 @@ export interface AnovaOneWayResponse {
   latex_tables?: Record<string, string>;
 }
 
-export interface AnovaTwoWayRequest {
-  file_path: string;
+export interface AnovaTwoWayRequest extends StatsBaseRequest {
   dependent: string;
   factor1: string;
   factor2: string;
@@ -324,6 +476,7 @@ export interface AnovaTwoWayEffect {
   mean_sq: number;
   f_stat: number | null;
   p_value: number | null;
+  partial_eta_squared?: number | null;
 }
 
 export interface AnovaTwoWayResponse {
@@ -333,12 +486,20 @@ export interface AnovaTwoWayResponse {
   factor2: string;
   sample_size: number;
   effects: AnovaTwoWayEffect[];
+  residuals_normality?: {
+    w: number;
+    p: number;
+  } | null;
+  levene_test?: {
+    statistic: number;
+    p_value: number;
+    assumption_met: boolean;
+  } | null;
   latex_table: string;
   latex_tables?: Record<string, string>;
 }
 
-export interface AncovaRequest {
-  file_path: string;
+export interface AncovaRequest extends StatsBaseRequest {
   dependent: string;
   factor: string;
   covariates: string[];
@@ -383,8 +544,7 @@ export interface AncovaResponse {
   latex_tables?: Record<string, string>;
 }
 
-export interface CorrelationRequest {
-  file_path: string;
+export interface CorrelationRequest extends StatsBaseRequest {
   variables: string[];
 }
 
@@ -410,8 +570,7 @@ export interface CorrelationResponse {
 }
 
 // Non-Parametric Interfaces
-export interface MannWhitneyRequest {
-  file_path: string;
+export interface MannWhitneyRequest extends StatsBaseRequest {
   test_variable: string;
   group_variable: string;
 }
@@ -438,8 +597,7 @@ export interface MannWhitneyResponse {
   latex_tables?: Record<string, string>;
 }
 
-export interface WilcoxonSignedRankRequest {
-  file_path: string;
+export interface WilcoxonSignedRankRequest extends StatsBaseRequest {
   var1: string;
   var2: string;
 }
@@ -461,8 +619,7 @@ export interface WilcoxonSignedRankResponse {
   latex_tables?: Record<string, string>;
 }
 
-export interface KruskalWallisRequest {
-  file_path: string;
+export interface KruskalWallisRequest extends StatsBaseRequest {
   test_variable: string;
   group_variable: string;
 }
@@ -488,8 +645,7 @@ export interface KruskalWallisResponse {
   latex_tables?: Record<string, string>;
 }
 
-export interface ChiSquareIndependenceRequest {
-  file_path: string;
+export interface ChiSquareIndependenceRequest extends StatsBaseRequest {
   row_variable: string;
   col_variable: string;
 }
@@ -522,10 +678,42 @@ export interface ChiSquareIndependenceResponse {
   latex_tables?: Record<string, string>;
 }
 
-export type AnalysisResult =
+export interface DiagnosticPlotResult {
+  plot_type: string;
+  image_path: string;
+  image_data_url?: string;
+  absolute_path?: string;
+  latex_snippet: string;
+  caption: string;
+  label: string;
+  variable?: string;
+  dependent?: string;
+  factor?: string;
+  auc?: number;
+  [key: string]: any;
+}
+
+export interface StandardizedPlotRequest {
+  file_path: string;
+  plot_type: string;
+  dependent?: string;
+  factor?: string;
+  factor2?: string;
+  independents?: string[];
+  variables?: string[];
+  covariates?: string[];
+  var1?: string;
+  var2?: string;
+  test_value?: number;
+  alternative?: string;
+  cutoff?: number;
+}
+
+export type AnalysisResult = (
   | DescriptiveResponse
   | ReliabilityResponse
   | RegressionResponse
+  | LogisticRegressionResponse
   | ManovaResponse
   | PcaResponse
   | TTestOneSampleResponse
@@ -538,4 +726,8 @@ export type AnalysisResult =
   | MannWhitneyResponse
   | WilcoxonSignedRankResponse
   | KruskalWallisResponse
-  | ChiSquareIndependenceResponse;
+  | ChiSquareIndependenceResponse
+) & {
+  plot?: DiagnosticPlotResult;
+  plot_error?: string;
+};

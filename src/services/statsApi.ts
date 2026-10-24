@@ -6,6 +6,8 @@ import {
   ReliabilityResponse,
   RegressionRequest,
   RegressionResponse,
+  LogisticRegressionRequest,
+  LogisticRegressionResponse,
   ManovaRequest,
   ManovaResponse,
   PcaRequest,
@@ -32,6 +34,8 @@ import {
   KruskalWallisResponse,
   ChiSquareIndependenceRequest,
   ChiSquareIndependenceResponse,
+  DiagnosticPlotResult,
+  StandardizedPlotRequest,
 } from "../types/stats";
 
 async function postJson<TReq, TRes>(url: string, payload: TReq): Promise<TRes> {
@@ -78,6 +82,19 @@ export const statsApi = {
       `/api/projects/${encodeURIComponent(projectName)}/stats/regression`,
     );
     return postJson<RegressionRequest, RegressionResponse>(url, req);
+  },
+
+  runLogisticRegression: (
+    projectName: string,
+    req: LogisticRegressionRequest,
+  ) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/logistic`,
+    );
+    return postJson<LogisticRegressionRequest, LogisticRegressionResponse>(
+      url,
+      req,
+    );
   },
 
   runManova: (projectName: string, req: ManovaRequest) => {
@@ -187,5 +204,122 @@ export const statsApi = {
       ChiSquareIndependenceRequest,
       ChiSquareIndependenceResponse
     >(url, req);
+  },
+
+  plotDistribution: (
+    projectName: string,
+    req: { file_path: string; variable: string },
+  ) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/plots/distribution`,
+    );
+    return postJson<
+      { file_path: string; variable: string },
+      DiagnosticPlotResult
+    >(url, req);
+  },
+
+  plotGroupComparison: (
+    projectName: string,
+    req: { file_path: string; dependent: string; factor: string },
+  ) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/plots/group-comparison`,
+    );
+    return postJson<
+      { file_path: string; dependent: string; factor: string },
+      DiagnosticPlotResult
+    >(url, req);
+  },
+
+  plotRegressionDiagnostics: (
+    projectName: string,
+    req: { file_path: string; dependent: string; independents: string[] },
+  ) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/plots/regression-diagnostics`,
+    );
+    return postJson<
+      { file_path: string; dependent: string; independents: string[] },
+      DiagnosticPlotResult
+    >(url, req);
+  },
+
+  plotRocCurve: (
+    projectName: string,
+    req: {
+      file_path: string;
+      dependent: string;
+      independents: string[];
+      cutoff?: number;
+    },
+  ) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/plots/roc`,
+    );
+    return postJson<
+      {
+        file_path: string;
+        dependent: string;
+        independents: string[];
+        cutoff?: number;
+      },
+      DiagnosticPlotResult
+    >(url, req);
+  },
+
+  plotMeanDifference: (
+    projectName: string,
+    req: {
+      file_path: string;
+      test_variable: string;
+      group_variable: string;
+      alternative?: string;
+    },
+  ) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/plots/mean-difference`,
+    );
+    return postJson<
+      {
+        file_path: string;
+        test_variable: string;
+        group_variable: string;
+        alternative?: string;
+      },
+      DiagnosticPlotResult
+    >(url, req);
+  },
+
+  plotCriticalRegion: (
+    projectName: string,
+    req: {
+      file_path: string;
+      test_variable: string;
+      group_variable?: string;
+      test_value?: number;
+      alternative?: string;
+    },
+  ) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/plots/critical-region`,
+    );
+    return postJson<
+      {
+        file_path: string;
+        test_variable: string;
+        group_variable?: string;
+        test_value?: number;
+        alternative?: string;
+      },
+      DiagnosticPlotResult
+    >(url, req);
+  },
+
+  generatePlot: (projectName: string, req: StandardizedPlotRequest) => {
+    const url = buildApiUrl(
+      `/api/projects/${encodeURIComponent(projectName)}/stats/plots/generate`,
+    );
+    return postJson<StandardizedPlotRequest, DiagnosticPlotResult>(url, req);
   },
 };

@@ -25,7 +25,8 @@ Writing academic papers, theses, and technical publications in LaTeX often force
 - **Native LaTeX & SyncTeX Engine**: Directly interfaces with your local TeX distribution (`pdflatex` + `bibtex` + `synctex`) with automatic multi-pass compilation and bidirectional navigation.
 - **Bidirectional SyncTeX Navigation**: Double-click PDF text to jump to the exact LaTeX source line (Inverse Search), or press `Cmd/Ctrl + Alt + J` / click "Sync to PDF" to locate source lines in the preview (Forward Search).
 - **Embedded Git Studio**: Built-in visual commit and branch graph, staging, diff inspection, and branch switching tailored for scientific writing.
-- **Statistical Research Workbench & Data Ribbon**: Integrated quantitative analysis and scientific data workbench. Inspect datasets, run parametric & non-parametric tests, follow methodological guardrails, and generate publication-ready LaTeX tables (APA, IEEE, Classic) in one click.
+- **Statistical Research Workbench & Data Ribbon**: Integrated quantitative analysis and scientific data workbench. Inspect datasets, run parametric & non-parametric tests, follow Stevens' methodological guardrails, and generate publication-ready LaTeX tables (APA, IEEE, Classic) in one click.
+- **Diagnostic Plot Engine & LaTeX Figure Export**: Headless 300 DPI visualization engine (Matplotlib Agg) with 0-latency Base64 dual-delivery. Generates distribution & Q-Q plots, group comparison boxplots, paired slopegraphs, interaction plots, ANCOVA adjusted means, correlation heatmaps, chi-square mosaics, regression residuals, and ROC curves, accompanied by drop-in `\begin{figure}` LaTeX snippets and independent Clear Plot controls.
 - **Bibliometrics & Scientometrics Studio**: Integrated scientific literature analysis workbench. Parse BibTeX corpora, analyze keyword co-occurrence & co-authorship networks, generate Callon 2x2 thematic strategic maps, track longitudinal thematic evolution across time slices via Sankey diagrams, validate Bradford and Lotka scientific laws, clean SLR stopwords, and export publication-ready LaTeX TikZ figures directly into your manuscript.
 - **Native PDF.js Multi-Page Viewer**: High-performance continuous scroll canvas viewer supporting zoom, Fit Width, Fit Page, High-DPI/Retina displays, and 100% aspect ratio preservation.
 - **Local AI-Ready**: Optional offline assistance powered by [Ollama](https://ollama.com) for syntax diagnostic and automated error recovery.
@@ -170,6 +171,21 @@ chmod +x setup.sh run.sh
 - **SLR Stopword Management**: Dedicated Systematic Literature Review (SLR) stopword filtering with 1-click exclusion of top corpus keywords.
 - **Native LaTeX TikZ Vector Export**: One-click generation of compile-ready PGFPlots/TikZ figures for direct inclusion into LaTeX publications without loss of vector fidelity.
 
+### 10. Publication-Quality Diagnostic Plotting & LaTeX Figure Export
+- **Headless 300 DPI Rendering**: Pure headless Matplotlib (`Agg`) generating publication-grade PNG visualizations stored directly inside `{project}/assets/stats_plots/`.
+- **0-Latency Base64 Dual-Delivery**: Returns Base64 `image_data_url` for instantaneous UI preview without HTTP 404 timing race conditions, while simultaneously writing PNGs to disk for LaTeX compilation.
+- **Concurrent Single-Step Flow**: Selected diagnostic plots run concurrently with statistical computations in one single step from in-memory sanitized DataFrames.
+- **Comprehensive Diagnostic Catalog**:
+  - *Descriptives & Normality*: Distribution Histogram with KDE overlay and Normal Q-Q Plot.
+  - *Group Comparisons & ANOVA*: Hybrid Boxplot with jittered scatter overlay and cell means.
+  - *Repeated / Paired Measures*: Paired Slopegraph with individual subject trajectories and bold group mean change.
+  - *Factorial Interaction & Covariates*: Two-Way ANOVA interaction line plot and ANCOVA adjusted vs unadjusted marginal means bar chart.
+  - *Association & Contingency*: Annotated Correlation Matrix Heatmap (Pearson/Spearman) and Chi-Square observed vs expected frequency mosaic.
+  - *Predictive Modeling*: Linear Regression residuals vs fitted diagnostics and Binary Logistic Regression ROC curve with AUC metric.
+  - *Inferential Hypothesis Testing*: Mean Difference 95% Confidence Interval error bar and Theoretical Null Distribution rejection region curve ($t$ and $F$).
+- **Ready-to-Insert LaTeX Figure Export**: One-click "Copy Figure LaTeX" or "Insert to Document" generates standard `\begin{figure}[htbp]...\includegraphics{...}...\caption{...}...\label{...}\end{figure}` snippets.
+- **Independent Clear Controls**: Dedicated "Clear Plot" to dismiss visual graphs without losing analysis tables, and top-level "Clear Analysis" to reset the entire workbench.
+
 ---
 
 ## 📁 Repository Structure
@@ -195,6 +211,8 @@ AegisResearch/
 │   │   ├── stats.py          # Descriptive, reliability & assumption statistics
 │   │   ├── stats_parametric.py # Parametric hypothesis tests & regressions
 │   │   ├── stats_nonparametric.py # Non-parametric rank & association tests
+│   │   ├── stats_logistic.py # Binary logistic regression (GLM Binomial & ROC)
+│   │   ├── stats_plots.py    # Headless 300 DPI Matplotlib diagnostic plotting engine
 │   │   ├── latex_table_gen.py # Dynamic APA/IEEE/Classic LaTeX table generator
 │   │   └── bibliometrics.py  # Scientometrics, networks, Bradford, Lotka & TikZ
 │   ├── test_compiler.py      # Multi-pass LaTeX compilation tests
@@ -254,7 +272,7 @@ rtk npm run build
 # Check frontend code formatting
 rtk npm run format:check
 
-# Run backend unit & integration test suite (85 tests)
+# Run backend unit & integration test suite (101 tests)
 rtk backend/.venv/bin/pytest backend/
 
 # Check backend Python code formatting

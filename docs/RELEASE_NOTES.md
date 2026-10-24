@@ -1,4 +1,56 @@
-# Release Notes: Aegis Research v0.1.0 (Beta)
+# Release Notes: Aegis Research
+
+## 🚀 Version 0.1.1 (Modular Architecture Overhaul)
+
+**Release Date:** October 2026  
+**Version:** `0.1.1`  
+**Repository:** [aditlab-code/AegisResearch](https://github.com/aditlab-code/AegisResearch)
+
+---
+
+### 🌟 Overview & Architecture Slicing
+Version 0.1.1 represents a massive architectural modularization and code quality overhaul of Aegis Research. Ten monolithic source files (>1,000 lines) across the backend and frontend have been systematically decomposed into cohesive, single-responsibility sub-packages and sub-components adhering to strict line budgets (<350 target lines, <500 hard ceiling) with zero API contract mutations, 100% backward compatibility, and 101 unit tests passing.
+
+---
+
+### 📦 Key Architectural Enhancements in v0.1.1
+
+#### 1. Backend Router & Schema Decomposition
+- **`backend/main.py` Slimming**: Transformed from a monolithic 3,255-line server file into a clean, 85-line application factory and APIRouter aggregator.
+- **Dedicated APIRouters (`backend/routers/`)**: Extracted 73 endpoints and WebSocket handlers into modular domain routers:
+  - `projects_router.py`: Workspace discovery, folder browsing, native directory dialogs, file tree inspection, and CRUD.
+  - `compiler_router.py`: Multi-pass `pdflatex` + `bibtex` compilation and compiler log parsing.
+  - `git_ops_router.py`, `git_branch_router.py`, `git_router.py`: Visual commit graph, staging, diff inspection, commit authoring, and branch management.
+  - `dataset_router.py`: CSV dataset ingestion, summary statistics, and column type inference.
+  - `stats_basic_router.py`: Descriptive statistics, normality testing (Shapiro-Wilk, K-S), and reliability (Cronbach's alpha).
+  - `stats_inferential_router.py`: Parametric tests (t-tests, ANOVA, correlation) and non-parametric counterparts (Mann-Whitney, Wilcoxon, Kruskal-Wallis, Chi-square).
+  - `stats_advanced_router.py`: Multivariate linear regression (with VIF multicollinearity), logistic regression, MANOVA, and PCA.
+  - `stats_plots_router.py`: Diagnostic plot generation (residuals, Q-Q, boxplots, ROC curves) and standalone Figure LaTeX exporter.
+  - `bib_router.py`: Bibliometric network analysis, Callon thematic maps, Bradford/Lotka laws, and TikZ export.
+  - `ws_router.py`: Real-time filesystem watcher WebSocket connection.
+- **Centralized Pydantic Schemas (`backend/schemas/`)**: Decoupled data contracts into `project_schemas.py`, `git_schemas.py`, `stats_schemas.py`, and `bib_schemas.py`.
+
+#### 2. Specialized Scientific Sub-Packages (`backend/services/`)
+- **Table Exporters (`backend/services/exporters/`)**: Decomposed `latex_table_gen.py` (986 lines) into `table_core.py`, `stats_tables.py`, `parametric_tables.py`, and `nonparametric_tables.py` with complete APA, IEEE, and Classic styling preserved via backward-compatible facades.
+- **Bibliometrics Engine (`backend/services/bibliometrics/`)**: Replaced monolithic 850-line file with a clean sub-package (`bibtex_parser.py`, `network_engine.py`, `thematic_engine.py`, `scientometric_laws.py`, `tikz_export.py`).
+- **Publication Diagnostic Plots (`backend/services/plots/`)**: Modularized 1,375-line plotting engine into `plot_core.py`, `diagnostic_plots.py`, `interaction_plots.py`, and `multivariate_plots.py`.
+- **Unified Statistical Services (`backend/services/stats/`)**: Consolidated over 2,100 lines of disparate statistics code into `descriptive.py`, `parametric_basic.py`, `parametric_anova.py`, `multivariate.py`, `nonparametric.py`, and `logistic.py`.
+
+#### 3. Frontend Component Slicing & Registry Architecture
+- **Statistical Guide Modal (`src/components/stats/guide/`)**: Sliced 1,205-line modal into an ergonomic 118-line shell supported by `WizardTab.tsx`, `MatrixTab.tsx`, `WorkflowTab.tsx`, and declarative recommendation rules.
+- **Git Track Changes Studio (`src/components/sidebar/git/`)**: Decomposed 1,096-line Git sidebar into a 107-line shell with dedicated `GitCommitGraphCanvas.tsx`, `GitStagingList.tsx`, `GitDiffViewer.tsx`, `GitBranchModal.tsx`, and `useGitManager.ts` hook.
+- **Analysis Dialog Suite (`src/components/stats/dialog/`)**: Decomposed 2,458-line dialog into a 240-line controller with declarative `testRegistry.ts`, `VariableSlots.tsx`, `VariableList.tsx`, and specialized analytical sub-forms.
+- **Results Viewer Modal (`src/components/stats/results/`)**: Decomposed 3,076-line results modal into a 162-line modal shell with `plotRegistry.ts`, `LatexTableSection.tsx`, `DiagnosticPlotSection.tsx`, and dedicated sub-views for Group Comparisons, Regression, Multivariate, and Non-Parametric tests.
+
+#### 4. Quality & Verification Gates
+- **101/101 Backend Tests**: 100% pass rate across all Pytest suites (`test_workspaces.py`, `test_compiler.py`, `test_git.py`, `test_stats.py`, `test_bibliometrics.py`).
+- **Zero Lint & Formatting Errors**: Ruff format check passes cleanly without regressions.
+- **Production Build Integrity**: Vite compiles 1,766 modules cleanly in under 5.5 seconds with zero TypeScript or packaging errors.
+- **Prettier Code Standard**: 100% compliant across all React & TypeScript sources.
+
+---
+
+## 🔬 Version 0.1.0 (Initial Beta Release)
 
 **Release Date:** October 2026  
 **Version:** `0.1.0` (Initial Beta Release)  

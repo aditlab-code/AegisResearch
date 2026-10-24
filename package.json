@@ -1,7 +1,7 @@
 {
   "name": "scholarly-latex-ide",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev:frontend": "vite",
@@ -12,6 +12,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\" \"*.{ts,tsx,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\" \"*.{ts,tsx,json}\"",
     "release": "./scripts/release-public.sh",
+    "release:force": "./scripts/release-public.sh --force",
     "release:dry": "./scripts/release-public.sh --dry-run"
   },
   "dependencies": {

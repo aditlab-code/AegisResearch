@@ -220,6 +220,17 @@ export const DataRibbonGroup: React.FC<DataRibbonGroupProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => onOpenAnalysis?.("logistic_regression")}
+            title="Binary Logistic Regression (Odds Ratio exp(B), Pseudo R², ROC-AUC)"
+            className="flex flex-col items-center justify-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-zinc-700 dark:text-zinc-200"
+          >
+            <Sliders className="w-4 h-4 text-violet-500" />
+            <span className="text-[10px] font-medium leading-none whitespace-nowrap">
+              Logistic
+            </span>
+          </button>
+          <button
+            type="button"
             onClick={() => onOpenAnalysis?.("manova")}
             title="Multivariate Analysis of Variance (MANOVA)"
             className="flex flex-col items-center justify-center gap-1 px-2 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition text-zinc-700 dark:text-zinc-200"

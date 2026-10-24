@@ -45,6 +45,8 @@ backend/latex_workspaces/**/assets/*.parquet
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+assets/stats_plots/
+**/assets/stats_plots/
 
 # Environment variables & local secrets
 .env

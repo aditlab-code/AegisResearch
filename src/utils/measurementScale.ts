@@ -131,6 +131,16 @@ export function validateSlotScale(
     }
   }
 
+  if (analysisType === "logistic_regression") {
+    if (role === "dependent" && scale === "scale") {
+      return {
+        valid: true,
+        warning:
+          "Binary Logistic Regression requires a binary categorical dependent variable (2 distinct classes).",
+      };
+    }
+  }
+
   if (analysisType === "manova") {
     if (role === "dependent" && scale === "nominal") {
       return {

@@ -641,7 +641,10 @@ export default function App() {
         isOpen={resultModalOpen}
         onClose={() => setResultModalOpen(false)}
         result={analysisResult}
+        projectName={projectName}
+        filePath={datasetFilePath}
         onInsertLatex={handleInsertLatex}
+        onClearAnalysis={() => setAnalysisResult(null)}
       />
       <StatisticalGuideModal
         isOpen={guideModalOpen}

@@ -86,6 +86,7 @@ def test_anova_oneway(parametric_csv_file):
     assert "residuals_normality" in res
     assert res["residuals_normality"] is not None
     assert 0.0 <= res["residuals_normality"]["w"] <= 1.0
+    assert "levene_test" in res
 
 
 def test_anova_twoway(parametric_csv_file):
@@ -94,6 +95,8 @@ def test_anova_twoway(parametric_csv_file):
     )
     assert res["sample_size"] == 8
     assert len(res["effects"]) >= 3
+    assert "residuals_normality" in res
+    assert "levene_test" in res
 
 
 def test_correlation_pearson(parametric_csv_file):
@@ -185,3 +188,45 @@ def test_ancova(parametric_csv_file):
     assert len(res["adjusted_means"]) == 2
     assert "residuals_normality" in res
     assert "homogeneity_of_slopes" in res
+
+
+def test_unified_ttest_family(parametric_csv_file):
+    # 1. Independent T-Test with comparative tests and directional hypothesis
+    res_ind = run_ttest_independent(
+        parametric_csv_file,
+        test_variable="score",
+        group_variable="group2",
+        alternative="greater",
+    )
+    assert res_ind["alternative"] == "greater"
+    assert len(res_ind["comparative_tests"]) == 3
+    test_names = [t["test_name"] for t in res_ind["comparative_tests"]]
+    assert "Student's t" in test_names
+    assert "Welch's t" in test_names
+    assert "Mann-Whitney U" in test_names
+
+    # 2. Paired T-Test with comparative tests and directional hypothesis
+    res_paired = run_ttest_paired(
+        parametric_csv_file,
+        var1="post_score",
+        var2="pre_score",
+        alternative="greater",
+    )
+    assert res_paired["alternative"] == "greater"
+    assert len(res_paired["comparative_tests"]) == 2
+    assert res_paired["residuals_normality"] is not None
+
+    # 3. One-Sample T-Test with comparative tests
+    res_one = run_ttest_one_sample(
+        parametric_csv_file,
+        variable="pre_score",
+        test_value=60.0,
+        alternative="two-sided",
+    )
+    assert res_one["alternative"] == "two-sided"
+    assert len(res_one["comparative_tests"]) == 3
+    one_names = [t["test_name"] for t in res_one["comparative_tests"]]
+    assert "Student's t" in one_names
+    assert "Wilcoxon Signed-Rank" in one_names
+    assert "Z-Test" in one_names
+    assert res_one["residuals_normality"] is not None
